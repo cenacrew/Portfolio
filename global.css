@@ -1,0 +1,18 @@
+:root {
+    /* fonts */
+    --font-raleway: Raleway;
+  
+    /* font sizes */
+    --font-size-base: 32px;
+    --font-size-lg: 54px;
+  
+    /* Colors */
+    --color-1: #EBE3E0;
+    --color-2: #0d0c62;
+  
+    /* border radiuses */
+    --br-sm: 20px;
+    --br-md: 30px;
+    --br-lg: 38px;
+}
+  

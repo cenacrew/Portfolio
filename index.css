@@ -1,0 +1,104 @@
+
+
+body {
+    margin: 0;
+    min-height: 100%;
+    font-family: 'Work Sans', sans-serif;
+    background: var(--color-1);
+    
+}
+
+.navv {
+    position: fixed;
+    background-color: var(--color-2);
+      top: 0px;
+      padding: 1%;
+      width: 100%;
+      z-index: 6;
+      display: flex;
+      flex-wrap: wrap;
+}
+
+#colors {
+    border-radius: 25px;
+    background: var(--color-2);
+    padding: 8px; 
+    width: 30px;
+    height: auto;
+    color: white;  
+}
+
+#bvn {
+    border-radius: 25px;
+    background: var(--color-2);
+    padding: 8px; 
+    width: 110px;
+    height: auto;
+    color: white;  
+}
+
+#uk{
+    width: 50px;
+}
+
+#moon{
+    width: 50px;
+}
+
+#palette{
+    width: 50px;
+}
+
+
+  
+
+#photo{
+    display:flex;
+    width: 500px;
+    height: 500px;
+    background-color: var(--color-2);
+    border-radius: 50%;
+    margin: 0 auto;
+    margin-top: -150px;
+}
+
+
+
+
+
+
+
+.switch {
+    display: flex;
+    /* Rounded border */
+    border-radius: 9999px;
+    /* Size */
+    height: 2rem;
+    width: 4rem;
+    /* Demo */
+    margin-bottom: 0.5rem;
+}
+
+.switch__input {
+    /* Hide the input */
+    display: none;
+}
+
+.switch__circle {
+    /* Rounded border */
+    border-radius: 9999px;
+    /* Size */
+    width: 2rem;
+    background-color: var(--color-1);
+}
+
+
+/* OFF status */
+.switch--off {
+    background-color: var(--color-2);
+    border: 1px solid var(--color-2);
+}
+.switch--off .switch__circle {
+    border: 1px solid var(--color-2);
+}
+
