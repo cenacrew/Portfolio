@@ -12,70 +12,82 @@
 </head>
 
 <body>
-    <di class="content">
+    <div class="content">
 		<!---Accueil-->
-		<!---Menu-->
-		<div class="navv">
-
-			<input type="button" value="Accueil"
-				onClick="document.getElementById('accueil').scrollIntoView();" />
-			<input type="button" value="Projets"
-				onClick="document.getElementById('projets').scrollIntoView();" />
-			<input type="button" value="Qui-suis-je"
-				onClick="document.getElementById('QSJ').scrollIntoView();" />
-			<input type="button" value="Contact"
-				onClick="document.getElementById('contact').scrollIntoView();" />
-		</div>
-
-
-
-
-		<!---Features-->
-		<div class="features">
-			<img id="uk" alt="UK Flag" src="data/img/uk.png">
-			<p id="colors">new</p>
-			<img id="palette" alt="color palette" src="data/vector/palette.svg">		
-
-			<!---DarkMode-->				
-			<label class="switch switch--off">
-				<input type="checkbox" class="switch__input" />
-				
-				<!-- Circle -->
-				<div class="switch__circle"></div>
-			</label>
-			<img id="moon" alt="moon" src="data/vector/moon.svg">
-		</div>
-
-
-
-
-		<!---Profil-->
-		<section id="profil">
-			<p id="bvn">Bienvenue ! 👋</p>
-			<h1>Sourdois Pajot Valentin</h1>
-			<p>Développeur Full-Stack</p>
-			<img id="github" alt="github logo" src="data/vector/github.svg">
-			<img id="linkedin" alt="linkedin logo" src="data/vector/linkedin.svg">
-		</section>
-
-
-
-		<!---Cercle centrale-->
-		<div class="carousel">
-			<div class="mid">
-				<img id="photo" alt="ma photo" src="data/img/pp.png">				
+		<div class="accueil">
+		
+			<!---Menu-->
+			<div class="navv">
+				<input type="button" value="Accueil" onClick="document.getElementById('accueil').scrollIntoView();" />
+				<input type="button" value="Projets" onClick="document.getElementById('projets').scrollIntoView();" />
+				<input type="button" value="Qui-suis-je" onClick="document.getElementById('QSJ').scrollIntoView();" />
+				<input type="button" value="Contact" onClick="document.getElementById('contact').scrollIntoView();" />
 			</div>
-			<div class="skill-icons">
-
+		
+		
+		
+		
+			<!---Features-->
+			<div class="features">
+				<img id="uk" alt="UK Flag" src="data/img/uk.png">
+				<p id="colors">new</p>
+				<img id="palette" alt="color palette" src="data/vector/palette.svg">
+		
+				<!---DarkMode-->
+				<label class="switch switch--off">
+					<input type="checkbox" class="switch__input" />
+		
+					<!-- Circle -->
+					<div class="switch__circle"></div>
+				</label>
+				<img id="moon" alt="moon" src="data/vector/moon.svg">
+			</div>
+		
+		
+		
+		
+			<!---Profil-->
+			<section id="profil">
+				<p id="bvn">Bienvenue ! 👋</p>
+				<h1>Sourdois Pajot Valentin</h1>
+				<p>Développeur Full-Stack</p>
+				<img id="github" alt="github logo" src="data/vector/github.svg">
+				<img id="linkedin" alt="linkedin logo" src="data/vector/linkedin.svg">
+			</section>
+		
+		
+		
+			<!---Cercle centrale-->
+			<div class="carousel">
+				<div class="mid">
+					<img id="photo" alt="ma photo" src="data/img/pp.png">
+				</div>
+				<div class="skill-icons">
+		
+				</div>
+			</div>
+		
+			<!---CV-->
+			<div class="cv">
+				<p>Télécharger mon CV</p>
+				<img id="download" alt="logo download" src="data/vector/download.svg">
+		
 			</div>
 		</div>
-
-		<!---CV-->
-		<div class="cv">
-			<p>Télécharger mon CV</p>
-			<img id="download" alt="logo download" src="data/vector/download.svg">
-
+		
+		<!---Qui-suis-je-->
+		<div class="QSJ">
+			<p id="QSJTitle">Qui suis-je ?</p>
+			<div class="firstP">			
+				<img id="creation" alt="illustration creation" src="data/img/creation.png">
+				<p>Lorem ipsum dolor sit amet</p>
+			</div>
+			<div class="secondP">
+				<p>Lorem ipsum dolor sit amet</p>
+				<img id="creation" alt="illustration creation" src="data/img/creation.png">
+			</div>	
 		</div>
+
 
 	</div>
 	<!---Footer-->

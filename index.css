@@ -1,5 +1,3 @@
-
-
 body {
     margin: 0;
     min-height: 100%;
@@ -14,28 +12,29 @@ html{
     scroll-behavior: smooth;
 }
 
-.content{
+.accueil{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
-    vertical-align: middle;
     
 }
 
-#features{
-    padding-top: 500px;
-      padding-bottom: 25px;
-      align-items: center;
-    justify-content: center;
+.features{
+    width: 80%;
+    padding-top: 50px;
+    display: flex;
+    align-items: center;
   }
 
 .navv {
     position: fixed;
     background-color: var(--color-2);
-      top: 0px;
-      padding: 1%;
-      width: 100%;
-      z-index: 1;
-      display: flex;
-      flex-wrap: wrap;
+    top: 0px;
+    padding: 1%;
+    width:80%;
+    z-index: -1;
+    display: flex;
 }
 
 #colors {
@@ -73,6 +72,9 @@ html{
     width: 50px;
 }
 
+#creation{ 
+    width: 250px;
+}
 
   
 
@@ -125,4 +127,3 @@ html{
 .switch--off .switch__circle {
     border: 1px solid var(--color-2);
 }
-
