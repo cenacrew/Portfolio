@@ -1,15 +1,21 @@
 :root {
     /* fonts */
     --font-raleway: Raleway;
-  
-    /* font sizes */
-    --font-size-base: 32px;
-    --font-size-lg: 54px;
+    --font-family-raleway: Raleway;
   
     /* Colors */
     --color-1: #EBE3E0;
     --color-2: #0d0c62;
+    --color-accent-1: #ffffff;
+    --color-accent-2: #000000;
   
+    /* font sizes */
+    --font-size-s: 24px;
+    --font-size-m: 32px;
+    --font-size-l: 54px;
+    --font-size-xl: 60px;
+  
+
     /* border radiuses */
     --br-sm: 20px;
     --br-md: 30px;

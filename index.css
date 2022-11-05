@@ -3,10 +3,29 @@
 body {
     margin: 0;
     min-height: 100%;
-    font-family: 'Work Sans', sans-serif;
+    font-family: 'Raleway', sans-serif;
     background: var(--color-1);
+    height:4280px;
+    width:1920px;
     
 }
+
+html{
+    scroll-behavior: smooth;
+}
+
+.content{
+    text-align: center;
+    vertical-align: middle;
+    
+}
+
+#features{
+    padding-top: 500px;
+      padding-bottom: 25px;
+      align-items: center;
+    justify-content: center;
+  }
 
 .navv {
     position: fixed;
@@ -14,7 +33,7 @@ body {
       top: 0px;
       padding: 1%;
       width: 100%;
-      z-index: 6;
+      z-index: 1;
       display: flex;
       flex-wrap: wrap;
 }
@@ -25,20 +44,21 @@ body {
     padding: 8px; 
     width: 30px;
     height: auto;
-    color: white;  
+    color: var(--color-accent-1);  
 }
 
 #bvn {
     border-radius: 25px;
     background: var(--color-2);
     padding: 8px; 
-    width: 110px;
+    width: 115px;
     height: auto;
-    color: white;  
+    color: var(--color-accent-1);  
 }
 
 #uk{
     width: 50px;
+    z-index: 2;
 }
 
 #moon{
@@ -46,6 +66,10 @@ body {
 }
 
 #palette{
+    width: 50px;
+}
+
+#download{
     width: 50px;
 }
 
