@@ -17,13 +17,12 @@ body {
 }
 
 
-nav {
+.navv {
     position: fixed;
     background-color: var(--color-2);
     top: 10px;
     padding: 1%;
     width:90%;
-    z-index: -1;
     display: flex;
     border-radius: 15px;
     flex-direction: row;
@@ -31,13 +30,13 @@ nav {
     
 }
 
-nav a {
+.navv a {
     color: var(--color-accent-1);
     margin: 0 20px;
-    
+    text-decoration: none;
 }
 
-nav:nth-child(1) {
+.navv:nth-child(1) {
     justify-self: flex-start;
 }
 
@@ -45,7 +44,7 @@ nav:nth-child(1) {
 
 .features{
     width: 80%;
-    padding-top: 50px;
+    padding-top: 70px;
     display: flex;
     align-items: center;
   }
@@ -56,7 +55,7 @@ nav:nth-child(1) {
     border-radius: 25px;
     background: var(--color-2);
     padding: 8px; 
-    width: 30px;
+    width: 48px;
     height: auto;
     color: var(--color-accent-1);  
 }
@@ -93,7 +92,6 @@ div.secondrow>div{
 
 #uk{
     width: 50px;
-    z-index: 2;
 }
 
 #moon{
