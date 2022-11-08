@@ -21,4 +21,9 @@
     --br-md: 30px;
     --br-lg: 38px;
 }
-  
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
