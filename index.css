@@ -21,16 +21,39 @@ body {
     position: fixed;
     background-color: var(--color-2);
     top: 10px;
-    padding: 1%;
+    padding: 12px;
     width:90%;
-    display: flex;
+    margin-left: 5%;
     border-radius: 15px;
-    flex-direction: row;
-    justify-content: space-around;
     
 }
 
-.navv a {
+.navv > ul {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    list-style: none;
+}
+
+
+
+.navv > ul  li {
+    display: inline-block;
+    transition : all 0.3s ease 0s;
+}
+
+.navv li a {
+    transition:all 0.3s ease 0s;
+    font-size: var(--font-size-m) ;
+
+}
+
+.navv > ul li:hover {
+    transform: scale(1.08);
+    
+}
+
+.navv a  {
     color: var(--color-accent-1);
     margin: 0 20px;
     text-decoration: none;
