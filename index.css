@@ -66,19 +66,23 @@ body {
 
 
 .features{
-    margin-top: 70px;
-    align-items: center;
-    border: solid;
-    border-color: red;
+    margin-top: 80px;
     display:flex;
+    align-items: flex-start;
     width:90%;
     margin-left: 5%;
+    justify-content: space-between;
 }
 
 
-.features > div {
-    border: solid;
-    border-color: blue;
+
+.features div img {
+    width: 30px;
+    height: 30px;
+}
+
+.features .settings {
+    display: flex;
 }
 
 
@@ -89,14 +93,39 @@ body {
     text-align: center;
 }
 
+.dark-mode{
+    --color-1: var(--color-2-t);
+    --color-2:var(--color-1-t);
+    --color-accent-1: #000000;
+}
+
+.s-button {
+    margin-bottom: 3px;
+}
+
 
 .colors p {
     border-radius: 25px;
     background: var(--color-2);
-    padding: 8px; 
+    text-align: center;
     width: 48px;
-    height: auto;
+    height: 25px;
+    font-size: 18px;
     color: var(--color-accent-1);  
+}
+
+
+.text{
+    color:var(--color-2);
+}
+
+.center {
+    margin: auto;
+    margin-top: 200px;
+    width: 90%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 #bvn {
@@ -106,6 +135,30 @@ body {
     width: 135px;
     height: auto;
     color: var(--color-accent-1);  
+}
+
+#profil {
+    flex: 1.2;
+}
+
+.carousel {
+    flex: 2;
+}
+
+.cv {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#profil img {
+    height: 30px;
+    width: 30px;
+}
+
+#profil h1 {
+    font-size: var(--font-size-xl);
 }
 
 div.firstrow>div{
@@ -187,8 +240,8 @@ div.secondrow>div{
 .switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
+    width: 48px;
+    height: 25px;
   }
   
   /* Hide default HTML checkbox */
@@ -208,37 +261,29 @@ div.secondrow>div{
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+   
     -webkit-transition: .4s;
     transition: .4s;
   }
   
   .slider:before {
-    border:solid;
-    border-color: var(--color-2);
     position: absolute;
     content: "";
-    height: 26px;
-    width: 26px;
-    left: -1px;
-    bottom: -1px;
-    background-color: white;
+    height: 15px;
+    width: 15px;
+    left: 1.5px;
+    bottom: 2px;
+    background-color: var(--color-2);
     -webkit-transition: .4s;
     transition: .4s;
   }
   
-  input:checked + .slider {
-    background-color: var(--color-2);
-  }
-  
-  input:focus + .slider {
-    box-shadow: 0 0 1px var(--color-2);
-  }
+ 
   
   input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
+    -webkit-transform: translateX(23px);
+    -ms-transform: translateX(23px);
+    transform: translateX(23px);
   }
   
   /* Rounded sliders */
