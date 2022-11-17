@@ -19,11 +19,11 @@
 			<!---Menu-->
 			<div class="navv">
 				<ul>
-					<li><a href="#accueil">Accueil</a></li>
+					<li class="m"><a href="#accueil">Accueil</a></li>
 					<div>
-						<li><a href="#QSJ">Qui-suis-je</a></li>
-						<li><a href="#projets">Projets</a></li>
-						<li><a href="#contact">Contact</a></li>
+						<li class="m"><a href="#QSJ">Qui-suis-je</a></li>
+						<li class="m"><a href="#projets">Projets</a></li>
+						<li class="m"><a href="#contact">Contact</a></li>
 					</div>
 				</ul>
 			</div>
@@ -33,48 +33,58 @@
 			<!---Features-->
 			<div class="features">
 				<img id="uk" alt="UK Flag" src="data/img/uk.png">
-				<p id="colors">new</p>
-				<img id="palette" alt="color palette" src="data/vector/palette.svg">
-		
-				<!---DarkMode-->
-				<label class="switch switch--off">
-					<input type="checkbox" class="switch__input" />
-		
-					<!-- Circle -->
-					<div class="switch__circle"></div>
-				</label>
-				<img id="moon" alt="moon" src="data/vector/moon.svg">
+				<div class="settings">
+					<div class="colors">
+						<p class="s-button s">new</p>
+						<img id="palette" alt="color palette" src="data/vector/palette.svg">
+					</div>
+					
+					<!---DarkMode-->
+					<div class="darkmode">
+						<label class="switch s-button">
+							<input type="checkbox" onclick="DMFunction()">
+							<span class="slider round"></span>
+						</label>
+						<img id="moon" alt="moon" src="data/vector/moon.svg">
+					</div>		
+				</div>	
 			</div>
 		
+			<script>
+				function DMFunction() {
+				   var element = document.body;
+				   element.classList.toggle("dark-mode");
+				}
+			</script>
 		
-		
-		
-			<!---Profil-->
-			<section id="profil">
-				<p id="bvn">Bienvenue ! 👋</p>
-				<h1>Sourdois Pajot Valentin</h1>
-				<p>Développeur Full-Stack</p>
-				<img id="github" alt="github logo" src="data/vector/github.svg">
-				<img id="linkedin" alt="linkedin logo" src="data/vector/linkedin.svg">
-			</section>
-		
-		
-		
-			<!---Cercle centrale-->
-			<div class="carousel">
-				<div class="mid">
-					<img id="photo" alt="ma photo" src="data/img/pp.png">
+			<div class="center">
+				<!---Profil-->
+				<section id="profil">
+					<p id="bvn" class="m">Bienvenue ! 👋</p>
+					<h1 class="text xl">Sourdois Pajot Valentin</h1>
+					<p class="text m">Développeur Full-Stack</p>
+					<img id="github" alt="github logo" src="data/vector/github.svg">
+					<img id="linkedin" alt="linkedin logo" src="data/vector/linkedin.svg">
+				</section>
+			
+			
+			
+				<!---Cercle centrale-->
+				<div class="carousel">
+					<div class="mid">
+						<img id="photo" alt="ma photo" src="data/img/pp.png">
+					</div>
+					<div class="skill-icons">
+			
+					</div>
 				</div>
-				<div class="skill-icons">
-		
+			
+				<!---CV-->
+				<div class="cv">
+					<p class="text m">Télécharger mon CV</p>
+					<img id="download" alt="logo download" src="data/vector/download.svg">
+			
 				</div>
-			</div>
-		
-			<!---CV-->
-			<div class="cv">
-				<p>Télécharger mon CV</p>
-				<img id="download" alt="logo download" src="data/vector/download.svg">
-		
 			</div>
 		</div>
 		
@@ -83,26 +93,24 @@
 
 		<!---Qui-suis-je-->
 		<div id="QSJ">
-			<p id="QSJTitle">Qui suis-je ?</p>
-			<div class="firstP">			
+			<p id="QSJTitle" class="title text l">Qui suis-je ?</p>
+			<div class="QSJContent">		
 				<img id="creation" alt="illustration creation" src="data/img/creation.png">
-				<p>Je suis quelqu'un de passionné et créatif qui s'intéresse énormément à l'art numérique
+				<p id="firstP" class="text m para">Je suis quelqu'un de passionné et créatif qui s'intéresse énormément à l'art numérique
 					dans sa globalité. Le branding, donc tout ce qui est la création de logo, de DA etc
 					ainsi que l'UI design sont des choses que j'aime beaucoup aussi. Cela m'a amené à
 					maitrisé des logiciels tels que Photoshop, Lightroom ou Figma. Ces passions et ses
 					logiciels sont des choses qui m'aident et m'accompagnent dans mes créations informatiques
 					qui est ma principale passion avec tout ce qu'il le concerne de près ou de loin.</p>
-			</div>
-			<br>
-			<div class="secondP">
-				<p>Au niveau de ma formation, je suis actuellement en deuxième année à l'IUT de bordeaux.
+				<br>
+				<p id="secondP" class="text m para">Au niveau de ma formation, je suis actuellement en deuxième année à l'IUT de bordeaux.
 					Je suis une formation en 3 ans et recherche actuellement un stage pour me forger une
 					vraie expérience professionnelle et surtout de voir comment elle gravite avec l'informatique
 					en son centre. C'est sans doute dans ce but-là que vous lisez ces lignes donc merci d'être
 					aller jusqu'ici et espère que mon portfolio vous plait. Avant cela, j'ai effectué un bac
 					STI2D au Lycée Albert Claveille a Périgueux (24) que j'ai décroché avec la mention très bien.</p>
-				<img id="creation" alt="illustration creation" src="data/img/formation.png">
-			</div>	
+				<img id="formation" alt="illustration formation" src="data/img/formation.png">
+			</div>				
 		</div>
 
 
@@ -112,8 +120,8 @@
 
 		<!---Projets-->
 		<div id="projets">
-			<p id="projetsTitle">Projets</p>
-			<div class="firstrow">
+			<p id="projetsTitle" class="title text l">Projets</p>
+			<div class="firstRow">
 				<div class="card1">
 
 				</div>
@@ -124,7 +132,7 @@
 
 				</div>
 			</div>
-			<div class="secondrow">
+			<div class="secondRow">
 				<div class="card4">
 
 				</div>
@@ -136,18 +144,15 @@
 				</div>
 		</div>
 
-
 		<!---Séparator-->
 		<div class="separator">
 
-
-		
 		<!---Contact-->
 		<div id="contact">
-			<p id="contactTitle">Contact</p>
+			<p id="contactTitle" class="title text l">Contact</p>
 			<div class="mail">
 					<img id="mail" alt="mail logo" src="data/vector/mail.svg">
-					<p>contact@cenacrew.com</p>
+					<p class="text m">contact@cenacrew.com</p>
 			</div>
 
 			<div class="linkedincontact">
@@ -156,16 +161,13 @@
 
 			<div class="phone">
 					<img id="phone" alt="phone logo" src="data/vector/phone.svg">
-					<p>0783381438</p>
+					<p class="text m">0783381438</p>
 			</div>
-
-
-
 	</div>
 	<!---Footer-->
 	<footer class="main-footer">
 		<div class="footer-wrapper">
-			<p> © 2022 cenacrew.com</p>
+			<p class="text m"> © 2022 cenacrew.com</p>
 		</div>
 	</footer>
 
