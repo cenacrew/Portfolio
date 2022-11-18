@@ -78,7 +78,9 @@ body {
     justify-self: flex-start;
 }
 
-
+.svg{
+    fill:var(--color-2);
+}
 
 .features{
     margin-top: 80px;
