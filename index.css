@@ -296,6 +296,44 @@ div.secondRow>div{
 }
 
 
+.contactInfo {
+    
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 40px);
+    grid-column-gap: 10px;
+    grid-row-gap: 20px;
+    }
+    
+.mail1 { 
+    grid-area: 1 / 1 / 2 / 2; 
+    display:flex;
+    justify-content:center;}
+.mail2 { 
+    grid-area: 2 / 1 / 3 / 2; 
+    display:flex;
+    justify-content:center;}
+.l1 { 
+    grid-area: 1 / 2 / 2 / 3; 
+    display:flex;
+    justify-content:center;}
+.tel1 { 
+    grid-area: 1 / 3 / 2 / 4; 
+    display:flex;
+    justify-content:center;}
+.tel2 { 
+    grid-area: 2 / 3 / 3 / 4;
+    display:flex;
+    justify-content:center;}
+     
+
+
+.copyright{
+    display:flex;
+    justify-content:center;
+}
+
+
 #uk{
     width: 50px;
 }
