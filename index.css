@@ -219,6 +219,7 @@ body {
 }
 
 .firstRow {
+    justify-content:center;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: 1fr;
@@ -227,22 +228,49 @@ body {
 
 }
 
-.card1 { grid-area: 1 / 1 / 2 / 2; }
-.card2 { grid-area: 1 / 2 / 2 / 3; }
-.card3 { grid-area: 1 / 3 / 2 / 4; }
+.card1 { 
+    grid-area: 1 / 1 / 2 / 2;
+    margin-left:auto;
+    margin-right:auto; 
+}
+.card2 { 
+    grid-area: 1 / 2 / 2 / 3;
+    margin-left:auto;
+    margin-right:auto;
+ }
+.card3 { 
+    grid-area: 1 / 3 / 2 / 4; 
+    margin-left:auto;
+    margin-right:auto;
+}
 
 .secondRow {
+    margin-top:50px;
+    margin-bottom:50px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: 1fr;
     grid-column-gap: 50px;
     grid-row-gap: 0px;
 
+
 }
 
-.card4 { grid-area: 1 / 1 / 2 / 2; }
-.card5 { grid-area: 1 / 2 / 2 / 3; }
-.card6 { grid-area: 1 / 3 / 2 / 4; }
+.card4 { 
+    grid-area: 1 / 1 / 2 / 2;
+    margin-left:auto;
+    margin-right:auto; 
+}
+.card5 { 
+    grid-area: 1 / 2 / 2 / 3; 
+    margin-left:auto;
+    margin-right:auto;
+}
+.card6 { 
+    grid-area: 1 / 3 / 2 / 4; 
+    margin-left:auto;
+    margin-right:auto;
+}
 
 
 
