@@ -177,7 +177,6 @@ body {
 #photo{
     display:flex;
     width: 500px;
-    height: 500px;
     background-color: var(--color-2);
     border-radius: 50%;
     margin: 0 auto;
@@ -231,8 +230,12 @@ body {
 .card1 { 
     grid-area: 1 / 1 / 2 / 2;
     margin-left:auto;
-    margin-right:auto; 
+    margin-right:auto;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
 }
+
 .card2 { 
     grid-area: 1 / 2 / 2 / 3;
     margin-left:auto;
@@ -357,6 +360,10 @@ div.secondRow>div{
 #creation{
     margin-left: 20px;
     width: 70%;
+}
+
+.wip{
+    width: 400px;
 }
 
 #mail{ 
