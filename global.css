@@ -11,6 +11,7 @@
     --color-accent-1: #ffffff;
 
     /* font sizes */
+    --font-size-xs: 20px;
     --font-size-s: 24px;
     --font-size-m: 32px;
     --font-size-l: 54px;
