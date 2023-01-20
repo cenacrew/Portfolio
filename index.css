@@ -102,6 +102,12 @@ body {
     display: flex;
 }
 
+#palette{
+    padding-left: 5px;
+    width:20px;
+    height: 35px;
+}
+
 
 .darkmode{
     display: flex;
@@ -271,17 +277,26 @@ body {
 .card4 { 
     grid-area: 1 / 1 / 2 / 2;
     margin-left:auto;
-    margin-right:auto; 
+    margin-right:auto;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
 }
 .card5 { 
     grid-area: 1 / 2 / 2 / 3; 
     margin-left:auto;
     margin-right:auto;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
 }
 .card6 { 
     grid-area: 1 / 3 / 2 / 4; 
     margin-left:auto;
     margin-right:auto;
+    display:flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 
@@ -412,6 +427,30 @@ div.secondRow>div{
 
 .wip{
     width: 400px;
+}
+
+#illuRSA{
+    width:200px;
+}
+
+#illuJPO{
+    width:300px;
+}
+
+#illuPong{
+    padding:15px;
+}
+
+#illuBloom{
+    width:200px;
+}
+
+#illuDemineur{
+    width:200px;
+}
+
+#illuWatchlist{
+    width:250px;
 }
 
 #mail{ 

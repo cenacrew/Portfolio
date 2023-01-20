@@ -36,8 +36,8 @@
 				<div class="settings">
 					<div class="colors">
 						<p class="s-button s">new</p>
-						<svg width="35px" viewBox="0 0 324.99 324.99">
-							<path id="palette" class="svg" d="M307.6,129.885c-11.453-11.447-23.783-16.778-38.805-16.778c-6.189,0-12.056,0.858-17.729,1.688
+						<svg width="35px" id="palette" viewBox="0 0 324.99 324.99">
+							<path  class="svg" d="M307.6,129.885c-11.453-11.447-23.783-16.778-38.805-16.778c-6.189,0-12.056,0.858-17.729,1.688
 								c-5.094,0.745-9.905,1.449-14.453,1.45c-8.27,0-14.197-2.397-19.82-8.017c-10.107-10.101-8.545-20.758-6.569-34.25
 								c2.357-16.096,5.291-36.127-15.101-56.508C183.578,5.932,167.848,0.081,148.372,0.081c-37.296,0-78.367,21.546-99.662,42.829
 								C17.398,74.205,0.1,115.758,0,159.917c-0.1,44.168,17.018,85.656,48.199,116.82c31.077,31.061,72.452,48.168,116.504,48.171
@@ -149,19 +149,12 @@
 			<p id="QSJTitle" class="title text l">Qui suis-je ?</p>
 			<div class="QSJContent">		
 				<img id="creation" alt="illustration creation" src="./files/img/creation.png">
-				<p id="firstP" class="text m para">Je suis quelqu'un de passionné et créatif qui s'intéresse énormément à l'art numérique
-					dans sa globalité. Le branding, donc tout ce qui est la création de logo, de DA etc
-					ainsi que l'UI design sont des choses que j'aime beaucoup aussi. Cela m'a amené à
-					maitrisé des logiciels tels que Photoshop, Lightroom ou Figma. Ces passions et ses
-					logiciels sont des choses qui m'aident et m'accompagnent dans mes créations informatiques
-					qui est ma principale passion avec tout ce qu'il le concerne de près ou de loin.</p>
+				<p id="firstP" class="text m para">Je suis passionné et créatif, intéressé par l'art numérique et la création de logo, DA, UI design, et maîtrisant des logiciels tels que Photoshop,
+					Lightroom et Figma. Mes passions et logiciels m'aident dans mes créations informatiques, ma principale passion.</p>
 				<br>
-				<p id="secondP" class="text m para">Au niveau de ma formation, je suis actuellement en deuxième année à l'IUT de bordeaux.
-					Je suis une formation en 3 ans et recherche actuellement un stage pour me forger une
-					vraie expérience professionnelle et surtout de voir comment elle gravite avec l'informatique
-					en son centre. C'est sans doute dans ce but-là que vous lisez ces lignes donc merci d'être
-					aller jusqu'ici et espère que mon portfolio vous plait. Avant cela, j'ai effectué un bac
-					STI2D au Lycée Albert Claveille a Périgueux (24) que j'ai décroché avec la mention très bien.</p>
+				<p id="secondP" class="text m para">Je suis actuellement en deuxième année d'une formation en informatique de 3 ans à 
+					l'IUT de Bordeaux. Je recherche un stage pour acquérir une expérience professionnelle. J'ai obtenu mon bac STI2D avec
+					mention très bien au Lycée Albert Claveille à Périgueux.</p>
 				<img id="formation" alt="illustration formation" src="./files/img/formation.png">
 			</div>				
 		</div>
@@ -177,7 +170,7 @@
 			<div class="firstRow">
 				<div class="card1 card">
 					<p class="cardTitle">Mini-RSA</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/miniRSA.png" class="illuprojets" id="illuRSA">
 					<p class="cardDesc">Pouvoir crypter et décrypter des message à base de génération de clé et en implémenter son interface</p>
 					<div class="tag">
 						<p>html</p>
@@ -206,7 +199,7 @@
 				</div>
 				<div class="card2  card">
 					<p class="cardTitle">Affiche JPO</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/JPO.png" class="wip" id="illuJPO">
 					<p class="cardDesc">Réaliser les différentes affiches et badges pour la journée portes ouvertes 2022 de l'IUT informatique tout en respectant un cahier des charges précis</p>
 					<div class="tag">
 						<p>photoshop</p>
@@ -218,7 +211,7 @@
 				</div>
 				<div class="card3  card">
 					<p class="cardTitle">Pong</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/pong.png" class="wip" id="illuPong">
 					<p class="cardDesc">Réaliser un jeu reprenant le principe de "pong" en pouvant controler 2 raquettes, un mode avec 4 balles et le rajout d'obstacles</p>
 					<div class="tag">
 						<p>processing</p>
@@ -247,13 +240,13 @@
 			<div class="secondRow">
 				<div class="card4  card">
 					<p class="cardTitle">BloomFilter</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/Bloom.png" class="wip" id="illuBloom">
 					<p class="cardDesc">Réaliser un Filtre de Bloom fonctionnant de trois facon différentes puis un benchmark de ce filtre et en réaliser un papier d'analyse</p>
 					<div class="tag">
 						<p>java</p>
 					</div>
 					<div class="link">
-					<a href="./files/pdf/analyseBloomFilter.pdf" target="_blank"><svg width="45px" viewBox="0 0 512 512">
+					<a href="./files/RapportBloomFilter.pdf" target="_blank"><svg width="45px" viewBox="0 0 512 512">
 						<path class="svg" d="m251.6,185.7c-36.9,0-67,31.5-67,70.3 0,38.7 30,70.3 67,70.3 36.9,0 67-31.5 67-70.3 0-38.7-30.1-70.3-67-70.3z"/>
       					<path class="svg" d="m251.6,367.1c-59.4,0-107.8-49.8-107.8-111.1 0-61.3 48.4-111.1 107.8-111.1s107.8,49.8 107.8,111.1c0,61.3-48.4,111.1-107.8,111.1zm246.3-121.9c-63.8-102.4-149.8-158.8-241.9-158.8-92.1,0-178.1,56.4-241.9,158.8-4.1,6.6-4.1,15 0,21.6 63.8,102.4 149.8,158.8 241.9,158.8 92.1,0 178-56.4 241.9-158.8 4.1-6.6 4.1-15 0-21.6z"/>  
 					</svg></a>
@@ -264,7 +257,7 @@
 				</div>
 				<div class="card5  card">
 				<p class="cardTitle">Démineur</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/demineur.png" class="wip" id="illuDemineur">
 					<p class="cardDesc">Corriger, optimiser et améliorer un démineur en java, via l'utilisation de branche et de merge</p>
 					<div class="tag">
 						<p>java</p>
@@ -278,7 +271,7 @@
 				</div>
 				<div class="card6  card">
 				<p class="cardTitle">WatchList</p>
-					<img src="./files/img/wip.png" class="wip">
+					<img src="./files/img/watchlist.png" class="wip" id="illuWatchlist">
 					<p class="cardDesc">En partant de rien, réaliser un site permetant de voir une liste de series, les liker, suivre notre progression et plein d'autre fontionalité donné petit a petit</p>
 					<div class="tag">
 						<p>PHP</p>
@@ -287,7 +280,7 @@
 						<p>Symfony</p>
 					</div>
 					<div class="link">
-					<a href="https://github.com/cenacrew/DemineurProject" target="_blank"><svg width="40px" viewBox="0 0 27 27">
+					<a href="https://gitlab-ce.iut.u-bordeaux.fr/lecopeaux/e7-dev-app" target="_blank"><svg width="40px" viewBox="0 0 27 27">
 							<path id="github" class="svg" d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
 					</svg></a>
 					</div>
