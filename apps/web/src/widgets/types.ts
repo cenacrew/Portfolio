@@ -1,6 +1,6 @@
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { z } from "zod";
-import type { Widget } from "@portfolio/shared";
+import type { Widget, WidgetSize } from "@portfolio/shared";
 
 // Props every widget Renderer receives. `config` is the already-validated,
 // typed config for this widget's type; `widget` is the full row.
@@ -10,39 +10,49 @@ export type WidgetRendererProps<TConfig> = {
 };
 
 // Renderers may be server components (sync or async — e.g. github-stats,
-// weather fetch data server-side) or client components.
+// weather, guestbook, poll fetch data server-side) or client components.
 export type WidgetRenderer<TConfig> = (
   props: WidgetRendererProps<TConfig>,
 ) => ReactNode | Promise<ReactNode>;
 
-// Typed shape used when authoring a widget definition. `schema` is kept
-// loose (ZodTypeAny) because schemas using `.default()` have a different
-// input vs output type, which an invariant `z.ZodType<TConfig>` rejects.
-// TConfig is inferred from `defaultConfig` + `Renderer` instead.
-export interface WidgetDefinition<TConfig> {
+// Props every widget Editor (admin) receives. Controlled: it reports config
+// changes upward; the admin validates with `schema` before saving.
+export type WidgetEditorProps<TConfig> = {
+  config: TConfig;
+  onChange: (next: TConfig) => void;
+};
+
+export type WidgetEditor<TConfig> = ComponentType<WidgetEditorProps<TConfig>>;
+
+// Client-safe metadata for one widget type (no Renderer — see renderers.tsx).
+// Safe to import from client components (admin grid, editors).
+export interface WidgetMeta<TConfig> {
   schema: z.ZodTypeAny;
   defaultConfig: TConfig;
   label: string;
+  // A short human description shown in the admin "add widget" gallery.
+  description?: string;
+  // Full-bleed widgets skip the tile padding (maps, embeds, photos).
   bleed?: boolean;
-  Renderer: WidgetRenderer<TConfig>;
-  // Editor?: ComponentType — added in phase 3.
+  // Grid sizes the admin offers for this type (declared per widget).
+  sizes: readonly WidgetSize[];
+  // Admin edit form. Optional (a few widgets have no editable config).
+  Editor?: WidgetEditor<TConfig>;
 }
 
-// Config-erased entry stored in the registry, so a heterogeneous map of
-// widget types shares one value type. Consumers validate `config` with
-// `schema` before handing it to `Renderer`.
+// Config-erased entry stored in the registry map.
 export interface RegistryEntry {
   schema: z.ZodTypeAny;
   defaultConfig: unknown;
   label: string;
+  description?: string;
   bleed?: boolean;
-  Renderer: WidgetRenderer<unknown>;
+  sizes: readonly WidgetSize[];
+  Editor?: WidgetEditor<unknown>;
 }
 
-// Authors a definition with full per-type inference, then erases the config
+// Authors a meta entry with full per-type inference, then erases the config
 // generic in a single controlled cast so it can live in the registry map.
-export function defineWidget<TConfig>(
-  def: WidgetDefinition<TConfig>,
-): RegistryEntry {
-  return def as unknown as RegistryEntry;
+export function defineWidget<TConfig>(meta: WidgetMeta<TConfig>): RegistryEntry {
+  return meta as unknown as RegistryEntry;
 }

@@ -1,131 +1,169 @@
+import type { WidgetSize } from "@portfolio/shared";
 import type { WidgetType } from "@portfolio/shared";
 import { defineWidget, type RegistryEntry } from "./types";
 
-import SocialLinkRenderer from "./social-link/Renderer";
 import * as socialLink from "./social-link/schema";
-import NoteRenderer from "./note/Renderer";
 import * as note from "./note/schema";
-import LocationMapRenderer from "./location-map/Renderer";
 import * as locationMap from "./location-map/schema";
-import GuestbookRenderer from "./guestbook/Renderer";
 import * as guestbook from "./guestbook/schema";
-import SpotifyEmbedRenderer from "./spotify-embed/Renderer";
 import * as spotifyEmbed from "./spotify-embed/schema";
-import NowPlayingRenderer from "./spotify-now-playing/Renderer";
 import * as nowPlaying from "./spotify-now-playing/schema";
-import PhotoRenderer from "./photo/Renderer";
 import * as photo from "./photo/schema";
-import GithubStatsRenderer from "./github-stats/Renderer";
 import * as githubStats from "./github-stats/schema";
-import StatusRenderer from "./status/Renderer";
 import * as status from "./status/schema";
-import WeatherRenderer from "./weather/Renderer";
 import * as weather from "./weather/schema";
-import CountdownRenderer from "./countdown/Renderer";
 import * as countdown from "./countdown/schema";
-import WatchlistRenderer from "./watchlist/Renderer";
 import * as watchlist from "./watchlist/schema";
-import VisitorCounterRenderer from "./visitor-counter/Renderer";
 import * as visitorCounter from "./visitor-counter/schema";
-import PollRenderer from "./poll/Renderer";
 import * as poll from "./poll/schema";
-import FreeLinkRenderer from "./free-link/Renderer";
 import * as freeLink from "./free-link/schema";
 
-// Add a widget type = one folder + one line below. Nothing else.
+import SocialLinkEditor from "./social-link/Editor";
+import NoteEditor from "./note/Editor";
+import LocationMapEditor from "./location-map/Editor";
+import GuestbookEditor from "./guestbook/Editor";
+import SpotifyEmbedEditor from "./spotify-embed/Editor";
+import NowPlayingEditor from "./spotify-now-playing/Editor";
+import PhotoEditor from "./photo/Editor";
+import GithubStatsEditor from "./github-stats/Editor";
+import StatusEditor from "./status/Editor";
+import WeatherEditor from "./weather/Editor";
+import CountdownEditor from "./countdown/Editor";
+import WatchlistEditor from "./watchlist/Editor";
+import VisitorCounterEditor from "./visitor-counter/Editor";
+import PollEditor from "./poll/Editor";
+import FreeLinkEditor from "./free-link/Editor";
+
+const s = (w: number, h: number): WidgetSize => ({ w, h });
+
+// Client-safe registry: schema, defaults, label, sizes and admin Editor for
+// each widget type. NO Renderer here (renderers are server components and live
+// in renderers.tsx) so this module is importable from client components.
+//
+// Add a widget type = one folder (schema + Renderer + Editor) + one entry here.
 export const registry: Record<WidgetType, RegistryEntry> = {
   "social-link": defineWidget({
     schema: socialLink.socialLinkSchema,
     defaultConfig: socialLink.socialLinkDefault,
     label: socialLink.socialLinkLabel,
-    Renderer: SocialLinkRenderer,
+    description: "Lien vers un réseau social, icône de marque.",
+    sizes: [s(1, 1), s(2, 1)],
+    Editor: SocialLinkEditor,
   }),
   note: defineWidget({
     schema: note.noteSchema,
     defaultConfig: note.noteDefault,
     label: note.noteLabel,
-    Renderer: NoteRenderer,
+    description: "Un mot libre, style post-it.",
+    sizes: [s(1, 1), s(2, 1), s(1, 2), s(2, 2)],
+    Editor: NoteEditor,
   }),
   "location-map": defineWidget({
     schema: locationMap.locationMapSchema,
     defaultConfig: locationMap.locationMapDefault,
     label: locationMap.locationMapLabel,
+    description: "Carte de ta ville.",
     bleed: true,
-    Renderer: LocationMapRenderer,
+    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    Editor: LocationMapEditor,
   }),
   guestbook: defineWidget({
     schema: guestbook.guestbookSchema,
     defaultConfig: guestbook.guestbookDefault,
     label: guestbook.guestbookLabel,
-    Renderer: GuestbookRenderer,
+    description: "Les visiteurs laissent un mot.",
+    sizes: [s(3, 2), s(2, 2), s(2, 3)],
+    Editor: GuestbookEditor,
   }),
   "spotify-embed": defineWidget({
     schema: spotifyEmbed.spotifyEmbedSchema,
     defaultConfig: spotifyEmbed.spotifyEmbedDefault,
     label: spotifyEmbed.spotifyEmbedLabel,
+    description: "Playlist ou album Spotify intégré.",
     bleed: true,
-    Renderer: SpotifyEmbedRenderer,
+    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    Editor: SpotifyEmbedEditor,
   }),
   "spotify-now-playing": defineWidget({
     schema: nowPlaying.nowPlayingSchema,
     defaultConfig: nowPlaying.nowPlayingDefault,
     label: nowPlaying.nowPlayingLabel,
-    Renderer: NowPlayingRenderer,
+    description: "Le titre en cours d'écoute (live).",
+    sizes: [s(2, 1), s(2, 2)],
+    Editor: NowPlayingEditor,
   }),
   photo: defineWidget({
     schema: photo.photoSchema,
     defaultConfig: photo.photoDefault,
     label: photo.photoLabel,
+    description: "Une photo ou un mini-carrousel.",
     bleed: true,
-    Renderer: PhotoRenderer,
+    sizes: [s(2, 2), s(1, 1), s(2, 1), s(3, 2)],
+    Editor: PhotoEditor,
   }),
   "github-stats": defineWidget({
     schema: githubStats.githubStatsSchema,
     defaultConfig: githubStats.githubStatsDefault,
     label: githubStats.githubStatsLabel,
-    Renderer: GithubStatsRenderer,
+    description: "Graphe de contributions GitHub.",
+    sizes: [s(3, 2), s(2, 2), s(4, 2)],
+    Editor: GithubStatsEditor,
   }),
   status: defineWidget({
     schema: status.statusSchema,
     defaultConfig: status.statusDefault,
     label: status.statusLabel,
-    Renderer: StatusRenderer,
+    description: "Ton statut / humeur du moment.",
+    sizes: [s(2, 1), s(3, 1), s(2, 2)],
+    Editor: StatusEditor,
   }),
   weather: defineWidget({
     schema: weather.weatherSchema,
     defaultConfig: weather.weatherDefault,
     label: weather.weatherLabel,
-    Renderer: WeatherRenderer,
+    description: "Météo locale (Open-Meteo).",
+    sizes: [s(1, 1), s(2, 1)],
+    Editor: WeatherEditor,
   }),
   countdown: defineWidget({
     schema: countdown.countdownSchema,
     defaultConfig: countdown.countdownDefault,
     label: countdown.countdownLabel,
-    Renderer: CountdownRenderer,
+    description: "Compte à rebours vers une date.",
+    sizes: [s(1, 1), s(2, 1), s(2, 2)],
+    Editor: CountdownEditor,
   }),
   watchlist: defineWidget({
     schema: watchlist.watchlistSchema,
     defaultConfig: watchlist.watchlistDefault,
     label: watchlist.watchlistLabel,
-    Renderer: WatchlistRenderer,
+    description: "Films / séries en cours.",
+    sizes: [s(2, 2), s(2, 3), s(3, 2)],
+    Editor: WatchlistEditor,
   }),
   "visitor-counter": defineWidget({
     schema: visitorCounter.visitorCounterSchema,
     defaultConfig: visitorCounter.visitorCounterDefault,
     label: visitorCounter.visitorCounterLabel,
-    Renderer: VisitorCounterRenderer,
+    description: "Compteur de visites (live).",
+    sizes: [s(1, 1), s(2, 1)],
+    Editor: VisitorCounterEditor,
   }),
   poll: defineWidget({
     schema: poll.pollSchema,
     defaultConfig: poll.pollDefault,
     label: poll.pollLabel,
-    Renderer: PollRenderer,
+    description: "Un sondage, les visiteurs votent.",
+    sizes: [s(1, 2), s(2, 2), s(2, 3)],
+    Editor: PollEditor,
   }),
   "free-link": defineWidget({
     schema: freeLink.freeLinkSchema,
     defaultConfig: freeLink.freeLinkDefault,
     label: freeLink.freeLinkLabel,
-    Renderer: FreeLinkRenderer,
+    description: "N'importe quelle URL (titre + visuel).",
+    sizes: [s(2, 1), s(1, 1), s(2, 2)],
+    Editor: FreeLinkEditor,
   }),
 };
 

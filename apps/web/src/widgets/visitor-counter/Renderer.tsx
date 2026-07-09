@@ -4,18 +4,40 @@ import { useEffect, useRef, useState } from "react";
 import type { WidgetRendererProps } from "../types";
 import type { VisitorCounterConfig } from "./schema";
 
-// Phase 2: mock value. Counts up from 0 on mount for a lively feel.
-// Phase 3 swaps the seed for a Supabase RPC (increment_visits).
-export default function VisitorCounterRenderer({
-  config,
-}: WidgetRendererProps<VisitorCounterConfig>) {
+const SESSION_KEY = "qr-visit-counted";
+
+// Live counter. Increments once per browser session (sessionStorage guard) via
+// the visits RPC; subsequent loads just read the total. Falls back to the
+// config seed when Supabase isn't configured (API returns count: null).
+export default function VisitorCounterRenderer({ config }: WidgetRendererProps<VisitorCounterConfig>) {
+  const [target, setTarget] = useState<number>(config.count);
   const [n, setN] = useState(0);
-  const started = useRef(false);
+  const done = useRef(false);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    const target = config.count;
+    if (done.current) return;
+    done.current = true;
+    const counted = typeof sessionStorage !== "undefined" && sessionStorage.getItem(SESSION_KEY);
+    const method = counted ? "GET" : "POST";
+    fetch("/api/visits", { method })
+      .then((r) => r.json())
+      .then((json: { count: number | null }) => {
+        if (typeof json.count === "number") {
+          setTarget(json.count);
+          try {
+            sessionStorage.setItem(SESSION_KEY, "1");
+          } catch {
+            /* private mode */
+          }
+        }
+      })
+      .catch(() => {
+        /* keep seed */
+      });
+  }, []);
+
+  // Count-up animation toward the current target.
+  useEffect(() => {
     const dur = 1100;
     const t0 = performance.now();
     let raf = 0;
@@ -27,7 +49,7 @@ export default function VisitorCounterRenderer({
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [config.count]);
+  }, [target]);
 
   return (
     <div className="w-visits">

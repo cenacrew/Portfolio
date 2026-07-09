@@ -4,3 +4,4 @@
 
 export * from "./grid";
 export * from "./widget";
+export * from "./supabase";
