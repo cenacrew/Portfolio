@@ -3,8 +3,9 @@ import QrHeader from "./QrHeader";
 import BentoGrid from "./BentoGrid";
 
 // Public bento dashboard behind the printed QR codes (cenacrew.com/qrcode).
-// Rendered from a typed local config (packages/shared model); phase 3 swaps
-// the data source for Supabase without touching the widgets.
+// Reads widgets from Supabase at request time (falls back to the local phase-2
+// config when Supabase isn't configured), with live updates via Realtime.
+export const dynamic = "force-dynamic";
 
 export default function QrcodePage() {
   return (

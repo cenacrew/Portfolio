@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.47.10",
     "zod": "^3.25.76"
   }
 }

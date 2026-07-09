@@ -1,32 +1,23 @@
-"use client";
-
-import { useState } from "react";
+import { getGuestbookMessages } from "@portfolio/shared";
+import { getPublicServerSupabase } from "@/lib/supabase/server";
 import type { WidgetRendererProps } from "../types";
 import type { GuestbookConfig, GuestbookMessage } from "./schema";
+import GuestbookForm from "./GuestbookForm";
 
-// Phase 2: UI only, mock data. Submitting prepends locally to simulate the
-// "direct publish" flow. Phase 3 wires this to a Supabase table + moderation.
-export default function GuestbookRenderer({
-  config,
-}: WidgetRendererProps<GuestbookConfig>) {
-  const [messages, setMessages] = useState<GuestbookMessage[]>(config.seed);
-  const [author, setAuthor] = useState("");
-  const [message, setMessage] = useState("");
+// Server component: reads real messages from Supabase (falls back to the
+// widget's seed when Supabase isn't configured). The form is a client child
+// that POSTs to /api/guestbook and refreshes the board.
+export default async function GuestbookRenderer({ config }: WidgetRendererProps<GuestbookConfig>) {
+  let messages: GuestbookMessage[] = config.seed;
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = message.trim();
-    if (!trimmed) return;
-    setMessages((prev) => [
-      {
-        author: author.trim() || "Anonyme",
-        message: trimmed,
-        createdAt: new Date().toISOString(),
-      },
-      ...prev,
-    ]);
-    setAuthor("");
-    setMessage("");
+  const supabase = getPublicServerSupabase();
+  if (supabase) {
+    try {
+      const rows = await getGuestbookMessages(supabase, 50);
+      messages = rows.map((r) => ({ author: r.author, message: r.message, createdAt: r.created_at }));
+    } catch {
+      // keep seed fallback
+    }
   }
 
   return (
@@ -43,36 +34,10 @@ export default function GuestbookRenderer({
             <span className="w-guest__author">{m.author}</span>
           </li>
         ))}
-        {messages.length === 0 && (
-          <li className="w-guest__empty">Sois le premier à écrire.</li>
-        )}
+        {messages.length === 0 && <li className="w-guest__empty">Sois le premier à écrire.</li>}
       </ul>
 
-      <form className="w-guest__form" onSubmit={submit}>
-        <input
-          className="w-input w-guest__name"
-          value={author}
-          onChange={(e) => setAuthor(e.target.value)}
-          placeholder="Ton nom"
-          maxLength={40}
-          aria-label="Ton nom"
-        />
-        <div className="w-guest__send">
-          <input
-            className="w-input"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={config.prompt}
-            maxLength={140}
-            aria-label="Ton message"
-          />
-          <button className="w-btn w-btn--icon" type="submit" aria-label="Publier">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden>
-              <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12 2-12 2z" />
-            </svg>
-          </button>
-        </div>
-      </form>
+      <GuestbookForm prompt={config.prompt} />
     </div>
   );
 }

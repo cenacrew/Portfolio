@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Widget } from "@portfolio/shared";
 import { registry } from "@/widgets/registry";
+import { renderers } from "@/widgets/renderers";
 
 export default function WidgetTile({
   widget,
@@ -10,7 +11,7 @@ export default function WidgetTile({
   index: number;
 }) {
   const def = registry[widget.type];
-  const Renderer = def.Renderer;
+  const Renderer = renderers[widget.type];
   const { mobile: m, desktop: d } = widget.layout;
 
   const style = {
