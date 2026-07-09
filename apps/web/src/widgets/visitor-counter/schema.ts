@@ -1,15 +1,4 @@
-import { z } from "zod";
-
-export const visitorCounterSchema = z.object({
-  count: z.number().int().nonnegative(),
-  label: z.string().default("visites"),
-});
-
-export type VisitorCounterConfig = z.infer<typeof visitorCounterSchema>;
-
-export const visitorCounterDefault: VisitorCounterConfig = {
-  count: 0,
-  label: "visites",
-};
-
-export const visitorCounterLabel = "Compteur de visites";
+// Config schema moved to @portfolio/shared/widget-configs so the mobile admin
+// can reuse it. Re-exported here to keep the web widget registry architecture
+// (one folder per type) intact.
+export * from "@portfolio/shared/widget-configs/visitor-counter";

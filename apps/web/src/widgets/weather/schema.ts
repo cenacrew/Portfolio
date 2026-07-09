@@ -1,17 +1,4 @@
-import { z } from "zod";
-
-export const weatherSchema = z.object({
-  city: z.string().min(1),
-  lat: z.number(),
-  lng: z.number(),
-});
-
-export type WeatherConfig = z.infer<typeof weatherSchema>;
-
-export const weatherDefault: WeatherConfig = {
-  city: "Bordeaux",
-  lat: 44.8378,
-  lng: -0.5792,
-};
-
-export const weatherLabel = "Météo locale";
+// Config schema moved to @portfolio/shared/widget-configs so the mobile admin
+// can reuse it. Re-exported here to keep the web widget registry architecture
+// (one folder per type) intact.
+export * from "@portfolio/shared/widget-configs/weather";

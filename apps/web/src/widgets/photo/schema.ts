@@ -1,21 +1,4 @@
-import { z } from "zod";
-
-export const photoSchema = z.object({
-  images: z
-    .array(
-      z.object({
-        src: z.string().min(1),
-        alt: z.string().default(""),
-        caption: z.string().optional(),
-      }),
-    )
-    .min(1),
-});
-
-export type PhotoConfig = z.infer<typeof photoSchema>;
-
-export const photoDefault: PhotoConfig = {
-  images: [{ src: "/files/img/pp.png", alt: "" }],
-};
-
-export const photoLabel = "Photo / mini-galerie";
+// Config schema moved to @portfolio/shared/widget-configs so the mobile admin
+// can reuse it. Re-exported here to keep the web widget registry architecture
+// (one folder per type) intact.
+export * from "@portfolio/shared/widget-configs/photo";
