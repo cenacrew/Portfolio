@@ -6,20 +6,27 @@
    ============================================================ */
 
 .qr-page {
-  /* palette — light */
-  --qr-bg: #ebe3e0;
-  --qr-bg-2: #f2ece9;
-  --qr-ink: #0d0c62;
-  --qr-ink-soft: rgba(13, 12, 98, 0.62);
-  --qr-ink-faint: rgba(13, 12, 98, 0.4);
-  --qr-tile: #fbf8f6;
-  --qr-tile-2: #f1eae5;
-  --qr-line: rgba(13, 12, 98, 0.1);
-  --qr-line-strong: rgba(13, 12, 98, 0.18);
-  --qr-shadow: 0 1px 2px rgba(13, 12, 98, 0.05),
-    0 12px 26px -14px rgba(13, 12, 98, 0.18);
-  --qr-shadow-hover: 0 2px 4px rgba(13, 12, 98, 0.08),
-    0 20px 40px -16px rgba(13, 12, 98, 0.28);
+  /* Two base colours drive the whole board. Default = portfolio cream + navy.
+     The palette button (randoma11y) overrides --c1/--c2 inline at runtime; the
+     rest of the palette is derived from them so everything stays legible, and
+     dark mode simply swaps which one is paper and which one is ink. */
+  --c1: #ebe3e0; /* paper */
+  --c2: #0d0c62; /* ink */
+
+  /* palette — light: paper = c1, ink = c2 */
+  --qr-bg: var(--c1);
+  --qr-bg-2: color-mix(in srgb, var(--c1) 80%, #fff);
+  --qr-ink: var(--c2);
+  --qr-ink-soft: color-mix(in srgb, var(--c2) 62%, transparent);
+  --qr-ink-faint: color-mix(in srgb, var(--c2) 40%, transparent);
+  --qr-tile: color-mix(in srgb, var(--c1) 40%, #fff);
+  --qr-tile-2: color-mix(in srgb, var(--c1) 74%, #fff);
+  --qr-line: color-mix(in srgb, var(--c2) 10%, transparent);
+  --qr-line-strong: color-mix(in srgb, var(--c2) 18%, transparent);
+  --qr-shadow: 0 1px 2px color-mix(in srgb, var(--c2) 6%, transparent),
+    0 12px 26px -14px color-mix(in srgb, var(--c2) 20%, transparent);
+  --qr-shadow-hover: 0 2px 4px color-mix(in srgb, var(--c2) 9%, transparent),
+    0 20px 40px -16px color-mix(in srgb, var(--c2) 30%, transparent);
   --qr-live: #24c08a;
   --qr-spotify: #1db954;
 
@@ -49,16 +56,17 @@
 }
 
 body.dark-mode .qr-page {
-  /* palette — dark */
-  --qr-bg: #08083a;
-  --qr-bg-2: #0d0c62;
-  --qr-ink: #ebe3e0;
-  --qr-ink-soft: rgba(235, 227, 224, 0.66);
-  --qr-ink-faint: rgba(235, 227, 224, 0.42);
-  --qr-tile: #15155c;
-  --qr-tile-2: #1d1c6e;
-  --qr-line: rgba(235, 227, 224, 0.12);
-  --qr-line-strong: rgba(235, 227, 224, 0.22);
+  /* palette — dark: paper = c2 (darkened), ink = c1. This is the inversion of
+     the current pair, so the palette button's colours flip cleanly. */
+  --qr-bg: color-mix(in srgb, var(--c2) 82%, #000);
+  --qr-bg-2: var(--c2);
+  --qr-ink: var(--c1);
+  --qr-ink-soft: color-mix(in srgb, var(--c1) 66%, transparent);
+  --qr-ink-faint: color-mix(in srgb, var(--c1) 42%, transparent);
+  --qr-tile: color-mix(in srgb, var(--c2) 88%, #fff 12%);
+  --qr-tile-2: color-mix(in srgb, var(--c2) 80%, #fff 20%);
+  --qr-line: color-mix(in srgb, var(--c1) 12%, transparent);
+  --qr-line-strong: color-mix(in srgb, var(--c1) 22%, transparent);
   --qr-shadow: 0 1px 2px rgba(0, 0, 0, 0.3),
     0 14px 30px -16px rgba(0, 0, 0, 0.55);
   --qr-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.4),
@@ -126,6 +134,24 @@ body.dark-mode .qr-page {
 .qr-theme:hover {
   transform: translateY(-2px);
 }
+.qr-controls {
+  display: inline-flex;
+  gap: 8px;
+}
+.qr-palette svg {
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.qr-palette:hover svg {
+  transform: rotate(-18deg);
+}
+.qr-palette[data-busy] svg {
+  animation: qr-spin 0.7s linear infinite;
+}
+@keyframes qr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .qr-name {
   font-family: var(--font-bricolage), "Raleway", sans-serif;
@@ -175,6 +201,10 @@ body.dark-mode .qr-page {
   position: relative;
   min-width: 0;
   min-height: 0;
+  /* Each tile is a size container: widgets adapt their layout to the actual
+     tile dimensions (phase 4.5, universal formats) instead of being cropped. */
+  container-type: size;
+  container-name: tile;
   border-radius: 20px;
   background: var(--qr-tile);
   border: 1px solid var(--qr-line);
@@ -682,6 +712,44 @@ body.dark-mode .qr-page {
   transform: scale(1.2);
 }
 
+/* ---------- video ---------- */
+.w-video {
+  position: relative;
+}
+.w-video__el {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: var(--qr-tile-2);
+}
+.w-video__caption {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+.w-video--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--qr-ink-faint);
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--qr-tile-2);
+}
+.w-video__glyph {
+  font-size: 22px;
+}
+
 /* ---------- github stats ---------- */
 .w-gh {
   display: flex;
@@ -1115,6 +1183,119 @@ body.dark-mode .qr-page {
 }
 .qr-foot a:hover {
   color: var(--qr-ink);
+}
+
+/* ============================================================
+   FORMAT ADAPTATION — universal 9 sizes (1x1 … 3x3)
+   Each tile is a size container (see .qr-tile). Widgets reflow to the real
+   tile shape instead of being cropped: compact summaries when narrow/short,
+   roomier type when large. Thresholds are in container (tile) dimensions.
+   ============================================================ */
+
+/* ---- NARROW tiles (≈ 1 grid column): collapse dense widgets to a summary. */
+@container tile (max-width: 200px) {
+  /* guestbook → just the header + count */
+  .w-guest__list,
+  .w-guest__form {
+    display: none;
+  }
+  /* poll → question + total, no option bars */
+  .w-poll__opts {
+    display: none;
+  }
+  .w-poll__q {
+    font-size: 12.5px;
+  }
+  /* watchlist → title + count, no rows */
+  .w-watch__list {
+    display: none;
+  }
+  /* github → identity + heatmap only */
+  .w-gh__repos {
+    display: none;
+  }
+  .w-gh__stats {
+    font-size: 10.5px;
+    gap: 8px;
+  }
+  /* now-playing & free-link → stack, drop secondary detail */
+  .w-np__row {
+    flex-wrap: wrap;
+  }
+  .w-flink {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .w-flink__desc {
+    display: none;
+  }
+  /* status text tightened so it never spills a tiny tile */
+  .w-status__text {
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
+  .w-status__emoji {
+    font-size: 16px;
+  }
+}
+
+/* Add a small "+N" affordance on collapsed lists so the summary reads as one. */
+@container tile (max-width: 200px) {
+  .w-guest__count,
+  .w-watch__head .w-eyebrow {
+    opacity: 0.9;
+  }
+}
+
+/* ---- SHORT tiles (≈ 1 grid row): drop overlays/rows that need height. */
+@container tile (max-height: 150px) {
+  .w-gh__repos {
+    display: none;
+  }
+  .w-map__label {
+    padding: 3px 8px;
+    font-size: 11px;
+    bottom: 8px;
+    left: 8px;
+  }
+  .w-cd__grid {
+    gap: 4px;
+  }
+}
+
+/* ---- WIDE + TALL tiles (≈ 3x2 and up): let hero widgets breathe. */
+@container tile (min-width: 300px) and (min-height: 220px) {
+  .w-weather__temp {
+    font-size: 56px;
+  }
+  .w-status__text {
+    font-size: 17px;
+  }
+  .w-visits__num {
+    font-size: 40px;
+  }
+  .w-note {
+    font-size: 16px;
+  }
+}
+
+/* ---- LARGE square (3x3): center single-value widgets, enlarge counters. */
+@container tile (min-width: 300px) and (min-height: 300px) {
+  .w-visits {
+    align-items: center;
+    text-align: center;
+  }
+  .w-visits__num {
+    font-size: 52px;
+  }
+  .w-cd__cell b {
+    font-size: 26px;
+  }
+  .w-social__glyph {
+    width: 34%;
+    max-width: 64px;
+  }
 }
 
 /* ---------- reduced motion ---------- */

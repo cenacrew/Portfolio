@@ -28,6 +28,7 @@ export default function RealtimeRefresh() {
     const channel = supabase
       .channel("qrcode-public")
       .on("postgres_changes", { event: "*", schema: "public", table: "widgets" }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "site_settings" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "guestbook_messages" }, refresh)
       .on("postgres_changes", { event: "*", schema: "public", table: "poll_votes" }, refresh)
       .subscribe();

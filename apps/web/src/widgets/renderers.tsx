@@ -8,6 +8,7 @@ import GuestbookRenderer from "./guestbook/Renderer";
 import SpotifyEmbedRenderer from "./spotify-embed/Renderer";
 import NowPlayingRenderer from "./spotify-now-playing/Renderer";
 import PhotoRenderer from "./photo/Renderer";
+import VideoRenderer from "./video/Renderer";
 import GithubStatsRenderer from "./github-stats/Renderer";
 import StatusRenderer from "./status/Renderer";
 import WeatherRenderer from "./weather/Renderer";
@@ -28,6 +29,7 @@ export const renderers: Record<WidgetType, WidgetRenderer<unknown>> = {
   "spotify-embed": SpotifyEmbedRenderer as WidgetRenderer<unknown>,
   "spotify-now-playing": NowPlayingRenderer as WidgetRenderer<unknown>,
   photo: PhotoRenderer as WidgetRenderer<unknown>,
+  video: VideoRenderer as WidgetRenderer<unknown>,
   "github-stats": GithubStatsRenderer as WidgetRenderer<unknown>,
   status: StatusRenderer as WidgetRenderer<unknown>,
   weather: WeatherRenderer as WidgetRenderer<unknown>,

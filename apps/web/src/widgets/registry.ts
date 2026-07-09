@@ -1,4 +1,5 @@
 import type { WidgetSize } from "@portfolio/shared";
+import { UNIVERSAL_SIZES } from "@portfolio/shared";
 import type { WidgetType } from "@portfolio/shared";
 import { defineWidget, type RegistryEntry } from "./types";
 
@@ -9,6 +10,7 @@ import * as guestbook from "./guestbook/schema";
 import * as spotifyEmbed from "./spotify-embed/schema";
 import * as nowPlaying from "./spotify-now-playing/schema";
 import * as photo from "./photo/schema";
+import * as video from "./video/schema";
 import * as githubStats from "./github-stats/schema";
 import * as status from "./status/schema";
 import * as weather from "./weather/schema";
@@ -25,6 +27,7 @@ import GuestbookEditor from "./guestbook/Editor";
 import SpotifyEmbedEditor from "./spotify-embed/Editor";
 import NowPlayingEditor from "./spotify-now-playing/Editor";
 import PhotoEditor from "./photo/Editor";
+import VideoEditor from "./video/Editor";
 import GithubStatsEditor from "./github-stats/Editor";
 import StatusEditor from "./status/Editor";
 import WeatherEditor from "./weather/Editor";
@@ -40,6 +43,9 @@ const s = (w: number, h: number): WidgetSize => ({ w, h });
 // each widget type. NO Renderer here (renderers are server components and live
 // in renderers.tsx) so this module is importable from client components.
 //
+// Phase 4.5: every type offers the 9 universal sizes; `defaultSize` is the
+// sensible starting size for a fresh widget. Each Renderer adapts per format.
+//
 // Add a widget type = one folder (schema + Renderer + Editor) + one entry here.
 export const registry: Record<WidgetType, RegistryEntry> = {
   "social-link": defineWidget({
@@ -47,7 +53,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: socialLink.socialLinkDefault,
     label: socialLink.socialLinkLabel,
     description: "Lien vers un réseau social, icône de marque.",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
     Editor: SocialLinkEditor,
   }),
   note: defineWidget({
@@ -55,7 +62,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: note.noteDefault,
     label: note.noteLabel,
     description: "Un mot libre, style post-it.",
-    sizes: [s(1, 1), s(2, 1), s(1, 2), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: NoteEditor,
   }),
   "location-map": defineWidget({
@@ -64,7 +72,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     label: locationMap.locationMapLabel,
     description: "Carte de ta ville.",
     bleed: true,
-    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: LocationMapEditor,
   }),
   guestbook: defineWidget({
@@ -72,7 +81,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: guestbook.guestbookDefault,
     label: guestbook.guestbookLabel,
     description: "Les visiteurs laissent un mot.",
-    sizes: [s(3, 2), s(2, 2), s(2, 3)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(3, 2),
     Editor: GuestbookEditor,
   }),
   "spotify-embed": defineWidget({
@@ -81,7 +91,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     label: spotifyEmbed.spotifyEmbedLabel,
     description: "Playlist ou album Spotify intégré.",
     bleed: true,
-    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: SpotifyEmbedEditor,
   }),
   "spotify-now-playing": defineWidget({
@@ -89,7 +100,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: nowPlaying.nowPlayingDefault,
     label: nowPlaying.nowPlayingLabel,
     description: "Le titre en cours d'écoute (live).",
-    sizes: [s(2, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
     Editor: NowPlayingEditor,
   }),
   photo: defineWidget({
@@ -98,15 +110,27 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     label: photo.photoLabel,
     description: "Une photo ou un mini-carrousel.",
     bleed: true,
-    sizes: [s(2, 2), s(1, 1), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: PhotoEditor,
+  }),
+  video: defineWidget({
+    schema: video.videoSchema,
+    defaultConfig: video.videoDefault,
+    label: video.videoLabel,
+    description: "Une vidéo en lecture auto, muette et en boucle.",
+    bleed: true,
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
+    Editor: VideoEditor,
   }),
   "github-stats": defineWidget({
     schema: githubStats.githubStatsSchema,
     defaultConfig: githubStats.githubStatsDefault,
     label: githubStats.githubStatsLabel,
     description: "Graphe de contributions GitHub.",
-    sizes: [s(3, 2), s(2, 2), s(4, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(3, 2),
     Editor: GithubStatsEditor,
   }),
   status: defineWidget({
@@ -114,7 +138,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: status.statusDefault,
     label: status.statusLabel,
     description: "Ton statut / humeur du moment.",
-    sizes: [s(2, 1), s(3, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
     Editor: StatusEditor,
   }),
   weather: defineWidget({
@@ -122,7 +147,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: weather.weatherDefault,
     label: weather.weatherLabel,
     description: "Météo locale (Open-Meteo).",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
     Editor: WeatherEditor,
   }),
   countdown: defineWidget({
@@ -130,7 +156,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: countdown.countdownDefault,
     label: countdown.countdownLabel,
     description: "Compte à rebours vers une date.",
-    sizes: [s(1, 1), s(2, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
     Editor: CountdownEditor,
   }),
   watchlist: defineWidget({
@@ -138,7 +165,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: watchlist.watchlistDefault,
     label: watchlist.watchlistLabel,
     description: "Films / séries en cours.",
-    sizes: [s(2, 2), s(2, 3), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: WatchlistEditor,
   }),
   "visitor-counter": defineWidget({
@@ -146,7 +174,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: visitorCounter.visitorCounterDefault,
     label: visitorCounter.visitorCounterLabel,
     description: "Compteur de visites (live).",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
     Editor: VisitorCounterEditor,
   }),
   poll: defineWidget({
@@ -154,7 +183,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: poll.pollDefault,
     label: poll.pollLabel,
     description: "Un sondage, les visiteurs votent.",
-    sizes: [s(1, 2), s(2, 2), s(2, 3)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
     Editor: PollEditor,
   }),
   "free-link": defineWidget({
@@ -162,7 +192,8 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     defaultConfig: freeLink.freeLinkDefault,
     label: freeLink.freeLinkLabel,
     description: "N'importe quelle URL (titre + visuel).",
-    sizes: [s(2, 1), s(1, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
     Editor: FreeLinkEditor,
   }),
 };
