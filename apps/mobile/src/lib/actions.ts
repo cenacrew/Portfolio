@@ -14,7 +14,7 @@ function nextPosition(widgets: WidgetRow[]): number {
 // clamped to the column count. Mirrors the web admin so the grid stays valid.
 export async function addWidget(type: WidgetType, widgets: WidgetRow[]): Promise<WidgetRow> {
   const def = meta(type);
-  const size = def.sizes[0];
+  const size = def.defaultSize;
   const bottom = (b: Breakpoint) => widgets.reduce((max, w) => Math.max(max, w.layout[b].y + w.layout[b].h), 0);
   const sized = (b: Breakpoint) => ({ x: 0, y: bottom(b), w: Math.min(size.w, GRID[b].columns), h: size.h });
   const layout: WidgetBreakpointLayout = { mobile: sized("mobile"), desktop: sized("desktop") };
@@ -84,6 +84,29 @@ export async function uploadImage(base64: string, mime = "image/jpeg"): Promise<
   const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
   const path = `mobile/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, base64ToBytes(base64), {
+    contentType: mime,
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return data.publicUrl;
+}
+
+// Max upload size for videos (~50 MB). Supabase free tier Storage is 1 GB.
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+
+// Uploads a picked video (by local file URI) to the widget-media bucket and
+// returns its public URL. Reads the file as an ArrayBuffer rather than base64
+// so large clips don't blow up memory. Compatible with Expo Go.
+export async function uploadVideo(uri: string, mime = "video/mp4"): Promise<string> {
+  const res = await fetch(uri);
+  const buffer = await res.arrayBuffer();
+  if (buffer.byteLength > MAX_VIDEO_BYTES) {
+    throw new Error("Vidéo trop lourde (max 50 Mo). Choisis un clip plus court.");
+  }
+  const ext = mime.includes("quicktime") || mime.includes("mov") ? "mov" : mime.includes("webm") ? "webm" : "mp4";
+  const path = `mobile/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, buffer, {
     contentType: mime,
     upsert: false,
   });

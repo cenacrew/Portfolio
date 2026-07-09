@@ -1,13 +1,13 @@
 import type { WidgetRow } from "@portfolio/shared";
 import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WidgetTile } from "../../components/WidgetPreview";
-import { Banner, Button, Card, Eyebrow, Muted, SectionTitle, Title, success, tap } from "../../components/ui";
-import { postPhoto, saveConfig, uploadImage } from "../../lib/actions";
+import { Banner, Button, Card, EmojiPickerRow, Eyebrow, Muted, SectionTitle, TextField, Title, success, tap } from "../../components/ui";
+import { saveConfig } from "../../lib/actions";
 import { useAuth } from "../../lib/auth";
+import { syncMaLocationOnce } from "../../lib/maLoc";
 import { radius, space, useTheme } from "../../lib/theme";
 import { useWidgets } from "../../lib/widgets";
 
@@ -27,21 +27,36 @@ export default function Dashboard() {
   const router = useRouter();
   const { signOut } = useAuth();
   const { widgets, loading, refreshing, error, refresh } = useWidgets();
-  const [busyPhoto, setBusyPhoto] = useState(false);
+
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customEmoji, setCustomEmoji] = useState("🌙");
+  const [customText, setCustomText] = useState("");
 
   const width = Dimensions.get("window").width;
   const unit = Math.floor((width - space.lg * 2 - GAP * 2) / 3);
 
   const statusWidget = widgets.find((w) => w.type === "status");
 
-  const setMood = async (m: { emoji: string; text: string }) => {
+  // "Ma loc": refresh location-map widgets from the device once per app launch.
+  useEffect(() => {
+    syncMaLocationOnce()
+      .then(() => refresh())
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyStatus = async (emoji: string, text: string) => {
     if (!statusWidget) {
       Alert.alert("Aucun widget statut", "Ajoute d'abord un widget « Statut / humeur ».");
       return;
     }
+    if (!text.trim()) {
+      Alert.alert("Statut vide", "Écris un statut avant de l'appliquer.");
+      return;
+    }
     const cfg = (statusWidget.config && typeof statusWidget.config === "object" ? statusWidget.config : {}) as Record<string, unknown>;
     try {
-      await saveConfig(statusWidget.id, { ...cfg, emoji: m.emoji, text: m.text });
+      await saveConfig(statusWidget.id, { ...cfg, emoji, text });
       success();
       refresh();
     } catch (e) {
@@ -49,38 +64,10 @@ export default function Dashboard() {
     }
   };
 
-  const pickAndPost = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Accès refusé", "Autorise l'accès aux photos pour en publier une.");
-      return;
-    }
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.8,
-      base64: true,
-    });
-    if (res.canceled || !res.assets[0]?.base64) return;
-    setBusyPhoto(true);
-    try {
-      const asset = res.assets[0];
-      const mime = asset.mimeType ?? "image/jpeg";
-      const url = await uploadImage(asset.base64!, mime);
-      await postPhoto(url, widgets);
-      success();
-      refresh();
-      Alert.alert("Photo publiée", "Elle apparaît maintenant sur ton dashboard.");
-    } catch (e) {
-      Alert.alert("Échec de l'envoi", e instanceof Error ? e.message : "Réessaie.");
-    } finally {
-      setBusyPhoto(false);
-    }
-  };
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.bg }} edges={["top"]}>
       <ScrollView
-        contentContainerStyle={{ padding: space.lg, paddingBottom: space.xl * 2, gap: space.lg }}
+        contentContainerStyle={{ padding: space.lg, paddingBottom: space.xl * 3, gap: space.lg }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={t.brand} />}
       >
         {/* Header */}
@@ -124,7 +111,7 @@ export default function Dashboard() {
                   key={m.text}
                   onPress={() => {
                     tap();
-                    setMood(m);
+                    applyStatus(m.emoji, m.text);
                   }}
                   style={{ borderWidth: 1.5, borderColor: t.border, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 12, flexDirection: "row", gap: 6, alignItems: "center" }}
                 >
@@ -133,10 +120,25 @@ export default function Dashboard() {
                 </Pressable>
               ))}
             </ScrollView>
+
+            <Pressable onPress={() => { tap(); setCustomOpen((v) => !v); }} style={{ marginTop: 12 }}>
+              <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>{customOpen ? "− Statut personnalisé" : "+ Statut personnalisé"}</Text>
+            </Pressable>
+            {customOpen ? (
+              <View style={{ marginTop: 10, gap: space.sm }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontSize: 26 }}>{customEmoji}</Text>
+                  <Text style={{ color: t.textMuted, flex: 1 }}>{customText || "Ton statut libre…"}</Text>
+                </View>
+                <EmojiPickerRow label="Emoji" value={customEmoji} onChange={setCustomEmoji} />
+                <TextField label="Statut" value={customText} onChange={setCustomText} placeholder="Ex : Day off" />
+                <Button label="Appliquer ce statut" onPress={() => applyStatus(customEmoji, customText)} variant="accent" />
+              </View>
+            ) : null}
           </Card>
 
           <View style={{ flexDirection: "row", gap: space.sm }}>
-            <Button label={busyPhoto ? "Envoi…" : "📷 Poster une photo"} onPress={pickAndPost} variant="accent" loading={busyPhoto} style={{ flex: 1 }} />
+            <Button label="🪧 En-tête" onPress={() => router.push("/(admin)/header")} variant="ghost" style={{ flex: 1 }} />
             <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
           </View>
         </View>
@@ -145,12 +147,12 @@ export default function Dashboard() {
         <View style={{ gap: space.md }}>
           <SectionTitle
             right={
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <Pressable onPress={() => { tap(); router.push("/(admin)/reorder"); }}>
-                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>Réorganiser</Text>
+              <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+                <Pressable onPress={() => { tap(); router.push("/(admin)/preview"); }} hitSlop={8}>
+                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>👁 Rendu réel</Text>
                 </Pressable>
-                <Pressable onPress={() => { tap(); router.push("/(admin)/new"); }}>
-                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>+ Ajouter</Text>
+                <Pressable onPress={() => { tap(); router.push("/(admin)/reorder"); }} hitSlop={8}>
+                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>Réorganiser</Text>
                 </Pressable>
               </View>
             }
@@ -162,7 +164,7 @@ export default function Dashboard() {
             <Muted>Chargement…</Muted>
           ) : widgets.length === 0 ? (
             <Card>
-              <Muted>Aucun widget. Touche « + Ajouter » pour commencer.</Muted>
+              <Muted>Aucun widget. Touche le bouton « + » pour commencer.</Muted>
             </Card>
           ) : (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: GAP }}>
@@ -173,6 +175,36 @@ export default function Dashboard() {
           )}
         </View>
       </ScrollView>
+
+      {/* FAB — add a widget */}
+      <Pressable
+        onPress={() => {
+          tap();
+          router.push("/(admin)/new");
+        }}
+        accessibilityLabel="Ajouter un widget"
+        style={({ pressed }) => [
+          {
+            position: "absolute",
+            right: space.lg,
+            bottom: space.lg + 8,
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: t.brand,
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#000",
+            shadowOpacity: 0.25,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6,
+          },
+          pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
+        ]}
+      >
+        <Text style={{ color: t.onBrand, fontSize: 32, lineHeight: 34, fontWeight: "700", marginTop: -2 }}>+</Text>
+      </Pressable>
     </SafeAreaView>
   );
 }

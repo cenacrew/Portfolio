@@ -1,8 +1,83 @@
 import type { WidgetType } from "@portfolio/shared";
 import { SOCIAL_PLATFORMS } from "@portfolio/shared";
-import { Pressable, Text, View } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { uploadImage, uploadVideo } from "../lib/actions";
 import { radius, space, useTheme } from "../lib/theme";
-import { Field, NumberFieldRow, SelectRow, TextField, ToggleRow, tap } from "./ui";
+import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, TextField, ToggleRow, tap } from "./ui";
+
+// Pick an image from the library and upload it to widget-media, returning the
+// public URL through onDone. Used by the photo editor now that the top-bar
+// "post a photo" shortcut is gone (tap a tile to manage its media).
+function PickImageButton({ onDone }: { onDone: (url: string) => void }) {
+  const t = useTheme();
+  const [busy, setBusy] = useState(false);
+  const pick = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Accès refusé", "Autorise l'accès aux photos pour en importer une.");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8, base64: true });
+    if (res.canceled || !res.assets[0]?.base64) return;
+    setBusy(true);
+    try {
+      const asset = res.assets[0];
+      const url = await uploadImage(asset.base64!, asset.mimeType ?? "image/jpeg");
+      onDone(url);
+      tap();
+    } catch (e) {
+      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Pressable
+      onPress={pick}
+      disabled={busy}
+      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
+    >
+      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>📷 Importer une image</Text>}
+    </Pressable>
+  );
+}
+
+// Pick a video from the library and upload it. ~50 Mo limit enforced in uploadVideo.
+function PickVideoButton({ onDone }: { onDone: (url: string) => void }) {
+  const t = useTheme();
+  const [busy, setBusy] = useState(false);
+  const pick = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert("Accès refusé", "Autorise l'accès à ta galerie pour importer une vidéo.");
+      return;
+    }
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], quality: 1 });
+    if (res.canceled || !res.assets[0]?.uri) return;
+    setBusy(true);
+    try {
+      const asset = res.assets[0];
+      const url = await uploadVideo(asset.uri, asset.mimeType ?? "video/mp4");
+      onDone(url);
+      tap();
+    } catch (e) {
+      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Pressable
+      onPress={pick}
+      disabled={busy}
+      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
+    >
+      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>🎞️ Importer une vidéo</Text>}
+    </Pressable>
+  );
+}
 
 // Per-type edit forms for the mobile admin. Each mirrors the web Editor but is
 // implemented in React Native. The parent screen validates the resulting config
@@ -103,7 +178,8 @@ function NoteEditor({ config, onChange }: EProps) {
 function StatusEditor({ config, onChange }: EProps) {
   return (
     <>
-      <TextField label="Emoji" value={config.emoji} onChange={(emoji) => onChange({ ...config, emoji })} />
+      <EmojiPickerRow label="Emoji" value={config.emoji} onChange={(emoji) => onChange({ ...config, emoji })} />
+      <TextField label="Emoji personnalisé" value={config.emoji} onChange={(emoji) => onChange({ ...config, emoji })} hint="Ou colle n'importe quel emoji ici." />
       <TextField label="Statut" value={config.text} onChange={(text) => onChange({ ...config, text })} multiline />
       <TextField label="Mention (optionnel)" value={config.updated ?? ""} onChange={(updated) => onChange({ ...config, updated: updated || undefined })} placeholder="Mis à jour aujourd'hui" />
     </>
@@ -111,13 +187,40 @@ function StatusEditor({ config, onChange }: EProps) {
 }
 
 function LocationOrWeatherEditor({ config, onChange, withZoom }: EProps & { withZoom?: boolean }) {
+  const maLoc = config.mode === "ma-loc";
   return (
     <>
+      {withZoom ? (
+        <ToggleRow
+          label="Utiliser « Ma loc »"
+          value={maLoc}
+          onChange={(on) => onChange({ ...config, mode: on ? "ma-loc" : "fixed" })}
+          hint="La carte se cale sur la position de ce téléphone à chaque ouverture de l'app (autorisation requise)."
+        />
+      ) : null}
       <TextField label="Ville" value={config.city} onChange={(city) => onChange({ ...config, city })} />
       <NumberFieldRow label="Latitude" value={config.lat} onChange={(lat) => onChange({ ...config, lat })} />
       <NumberFieldRow label="Longitude" value={config.lng} onChange={(lng) => onChange({ ...config, lng })} />
       {withZoom ? <NumberFieldRow label="Zoom (1–19)" value={config.zoom ?? 12} onChange={(zoom) => onChange({ ...config, zoom })} /> : null}
       {withZoom ? <TextField label="Légende (optionnel)" value={config.caption ?? ""} onChange={(caption) => onChange({ ...config, caption: caption || undefined })} /> : null}
+    </>
+  );
+}
+
+function VideoEditor({ config, onChange }: EProps) {
+  const t = useTheme();
+  return (
+    <>
+      <PickVideoButton onDone={(src) => onChange({ ...config, src })} />
+      {config.src ? (
+        <Text style={{ color: t.textMuted, fontSize: 12 }} numberOfLines={1}>
+          Vidéo actuelle : {config.src}
+        </Text>
+      ) : (
+        <Text style={{ color: t.textFaint, fontSize: 12 }}>Aucune vidéo pour l'instant. Lecture auto muette en boucle sur le dashboard.</Text>
+      )}
+      <TextField label="URL vidéo (optionnel)" value={config.src} onChange={(src) => onChange({ ...config, src })} keyboardType="url" autoCapitalize="none" hint="Rempli automatiquement à l'import." />
+      <TextField label="Légende (optionnel)" value={config.caption ?? ""} onChange={(caption) => onChange({ ...config, caption: caption || undefined })} />
     </>
   );
 }
@@ -251,7 +354,8 @@ function PhotoEditor({ config, onChange }: EProps) {
       onChange={(images) => onChange({ ...config, images })}
       renderItem={(item: any, update) => (
         <>
-          <TextField label="Source (URL)" value={item.src} onChange={(src) => update({ src })} keyboardType="url" autoCapitalize="none" hint="Astuce : utilise le raccourci « Poster une photo » du dashboard." />
+          <PickImageButton onDone={(src) => update({ src })} />
+          <TextField label="Source (URL)" value={item.src} onChange={(src) => update({ src })} keyboardType="url" autoCapitalize="none" hint="Importe depuis le téléphone, ou colle une URL." />
           <TextField label="Description (alt)" value={item.alt ?? ""} onChange={(alt) => update({ alt })} />
         </>
       )}
@@ -291,6 +395,8 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <WatchlistEditor config={config} onChange={onChange} />;
     case "photo":
       return <PhotoEditor config={config} onChange={onChange} />;
+    case "video":
+      return <VideoEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

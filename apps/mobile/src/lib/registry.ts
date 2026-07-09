@@ -1,5 +1,9 @@
 import type { WidgetSize, WidgetType } from "@portfolio/shared";
 import {
+  UNIVERSAL_SIZES,
+  videoDefault,
+  videoLabel,
+  videoSchema,
   countdownDefault,
   countdownLabel,
   countdownSchema,
@@ -62,8 +66,12 @@ export type MobileWidgetMeta = {
   description: string;
   emoji: string;
   sizes: readonly WidgetSize[];
+  // Starting size for a fresh widget (defaults to sizes[0] if omitted).
+  defaultSize: WidgetSize;
 };
 
+// Phase 4.5: every type offers the 9 universal sizes; `defaultSize` is the
+// sensible starting size for a fresh widget. Mirrors apps/web/src/widgets/registry.ts.
 export const registry: Record<WidgetType, MobileWidgetMeta> = {
   "social-link": {
     schema: socialLinkSchema,
@@ -71,7 +79,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: socialLinkLabel,
     description: "Lien vers un réseau social.",
     emoji: "🔗",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
   },
   note: {
     schema: noteSchema,
@@ -79,7 +88,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: noteLabel,
     description: "Un mot libre, style post-it.",
     emoji: "📝",
-    sizes: [s(1, 1), s(2, 1), s(1, 2), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   "location-map": {
     schema: locationMapSchema,
@@ -87,7 +97,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: locationMapLabel,
     description: "Carte de ta ville.",
     emoji: "📍",
-    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   guestbook: {
     schema: guestbookSchema,
@@ -95,7 +106,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: guestbookLabel,
     description: "Les visiteurs laissent un mot.",
     emoji: "💌",
-    sizes: [s(3, 2), s(2, 2), s(2, 3)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(3, 2),
   },
   "spotify-embed": {
     schema: spotifyEmbedSchema,
@@ -103,7 +115,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: spotifyEmbedLabel,
     description: "Playlist ou album Spotify.",
     emoji: "🎧",
-    sizes: [s(2, 2), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   "spotify-now-playing": {
     schema: nowPlayingSchema,
@@ -111,7 +124,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: nowPlayingLabel,
     description: "Le titre en cours d'écoute.",
     emoji: "🎵",
-    sizes: [s(2, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
   },
   photo: {
     schema: photoSchema,
@@ -119,7 +133,17 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: photoLabel,
     description: "Une photo ou un mini-carrousel.",
     emoji: "🖼️",
-    sizes: [s(2, 2), s(1, 1), s(2, 1), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
+  },
+  video: {
+    schema: videoSchema,
+    defaultConfig: videoDefault,
+    label: videoLabel,
+    description: "Une vidéo en lecture auto, muette et en boucle.",
+    emoji: "🎞️",
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   "github-stats": {
     schema: githubStatsSchema,
@@ -127,7 +151,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: githubStatsLabel,
     description: "Graphe de contributions GitHub.",
     emoji: "🐙",
-    sizes: [s(3, 2), s(2, 2), s(4, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(3, 2),
   },
   status: {
     schema: statusSchema,
@@ -135,7 +160,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: statusLabel,
     description: "Ton statut / humeur du moment.",
     emoji: "💬",
-    sizes: [s(2, 1), s(3, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
   },
   weather: {
     schema: weatherSchema,
@@ -143,7 +169,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: weatherLabel,
     description: "Météo locale (Open-Meteo).",
     emoji: "⛅",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
   },
   countdown: {
     schema: countdownSchema,
@@ -151,7 +178,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: countdownLabel,
     description: "Compte à rebours vers une date.",
     emoji: "⏳",
-    sizes: [s(1, 1), s(2, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
   },
   watchlist: {
     schema: watchlistSchema,
@@ -159,7 +187,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: watchlistLabel,
     description: "Films / séries en cours.",
     emoji: "🎬",
-    sizes: [s(2, 2), s(2, 3), s(3, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   "visitor-counter": {
     schema: visitorCounterSchema,
@@ -167,7 +196,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: visitorCounterLabel,
     description: "Compteur de visites (live).",
     emoji: "👀",
-    sizes: [s(1, 1), s(2, 1)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(1, 1),
   },
   poll: {
     schema: pollSchema,
@@ -175,7 +205,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: pollLabel,
     description: "Un sondage, les visiteurs votent.",
     emoji: "📊",
-    sizes: [s(1, 2), s(2, 2), s(2, 3)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 2),
   },
   "free-link": {
     schema: freeLinkSchema,
@@ -183,7 +214,8 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     label: freeLinkLabel,
     description: "N'importe quelle URL.",
     emoji: "✨",
-    sizes: [s(2, 1), s(1, 1), s(2, 2)],
+    sizes: UNIVERSAL_SIZES,
+    defaultSize: s(2, 1),
   },
 };
 

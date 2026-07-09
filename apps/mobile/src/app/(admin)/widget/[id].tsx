@@ -1,14 +1,17 @@
-import type { WidgetRow } from "@portfolio/shared";
+import type { Breakpoint, WidgetRow, WidgetSize } from "@portfolio/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TypeEditor } from "../../../components/editors";
-import { Banner, Button, Eyebrow, ToggleRow, success } from "../../../components/ui";
-import { deleteW, saveConfig, setVisible } from "../../../lib/actions";
+import { Banner, Button, Chip, Eyebrow, Muted, SectionTitle, ToggleRow, success } from "../../../components/ui";
+import { deleteW, saveConfig, setSize, setVisible } from "../../../lib/actions";
 import { meta } from "../../../lib/registry";
 import { supabase } from "../../../lib/supabase";
 import { radius, space, useTheme } from "../../../lib/theme";
+
+const sizeLabel = (s: WidgetSize) => `${s.w}×${s.h}`;
+const eqSize = (a: WidgetSize, b: { w: number; h: number }) => a.w === b.w && a.h === b.h;
 
 export default function EditWidget() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,6 +21,7 @@ export default function EditWidget() {
   const [row, setRow] = useState<WidgetRow | null>(null);
   const [config, setConfig] = useState<any>(null);
   const [visible, setVis] = useState(true);
+  const [bp, setBp] = useState<Breakpoint>("mobile");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -74,6 +78,18 @@ export default function EditWidget() {
     }
   };
 
+  const changeSize = async (size: WidgetSize) => {
+    if (!row) return;
+    setError(null);
+    try {
+      const updated = await setSize(row, bp, size);
+      setRow(updated);
+      success();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Taille non enregistrée");
+    }
+  };
+
   const confirmDelete = () => {
     Alert.alert("Supprimer ce widget ?", "Il disparaîtra du dashboard public.", [
       { text: "Annuler", style: "cancel" },
@@ -113,6 +129,26 @@ export default function EditWidget() {
 
         <View style={{ backgroundColor: t.surface, borderRadius: radius.md, borderWidth: 1, borderColor: t.border, padding: space.md, gap: space.md }}>
           <TypeEditor type={row.type} config={config} onChange={setConfig} />
+        </View>
+
+        {/* Taille / format — appliqué aussitôt, par écran (mobile / desktop). */}
+        <View style={{ backgroundColor: t.surface, borderRadius: radius.md, borderWidth: 1, borderColor: t.border, padding: space.md, gap: space.md }}>
+          <SectionTitle
+            right={
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Chip label="📱 Mobile" active={bp === "mobile"} onPress={() => setBp("mobile")} />
+                <Chip label="🖥️ Desktop" active={bp === "desktop"} onPress={() => setBp("desktop")} />
+              </View>
+            }
+          >
+            Taille
+          </SectionTitle>
+          <Muted>Format sur l'écran {bp === "mobile" ? "mobile (3 colonnes)" : "desktop (4 colonnes)"}. Enregistré aussitôt.</Muted>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {def.sizes.map((s) => (
+              <Chip key={sizeLabel(s)} label={sizeLabel(s)} active={eqSize(s, row.layout[bp])} onPress={() => changeSize(s)} />
+            ))}
+          </View>
         </View>
 
         <View style={{ backgroundColor: t.surface, borderRadius: radius.md, borderWidth: 1, borderColor: t.border, padding: space.md }}>

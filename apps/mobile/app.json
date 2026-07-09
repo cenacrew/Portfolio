@@ -35,7 +35,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "QRCodeAdmin utilise tes photos pour publier une image sur le dashboard."
+          "photosPermission": "QRCodeAdmin utilise tes photos et vidéos pour les afficher sur le dashboard."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "QRCodeAdmin utilise ta position pour recentrer la carte « Ma loc » sur le dashboard."
         }
       ]
     ],
