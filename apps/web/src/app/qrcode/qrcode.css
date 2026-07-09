@@ -1133,3 +1133,22 @@ body.dark-mode .qr-page {
     scroll-behavior: auto;
   }
 }
+
+/* ---------- phase 3 additions ---------- */
+.w-guest__error {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d5473d;
+  margin-bottom: 6px;
+}
+.w-np--idle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+.w-np__idle-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--qr-ink-faint);
+}
