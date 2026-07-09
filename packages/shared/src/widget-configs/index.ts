@@ -9,6 +9,7 @@ export * from "./guestbook";
 export * from "./spotify-embed";
 export * from "./spotify-now-playing";
 export * from "./photo";
+export * from "./video";
 export * from "./github-stats";
 export * from "./status";
 export * from "./weather";

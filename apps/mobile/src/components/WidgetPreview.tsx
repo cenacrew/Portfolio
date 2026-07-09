@@ -65,6 +65,20 @@ function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
         </View>
       );
     }
+    case "video": {
+      const poster = c.poster as string | undefined;
+      return (
+        <View style={{ flex: 1, borderRadius: radius.sm, overflow: "hidden", backgroundColor: "#000", alignItems: "center", justifyContent: "center" }}>
+          {poster && /^https?:/.test(poster) ? (
+            <Image source={{ uri: poster }} style={{ position: "absolute", width: "100%", height: "100%" }} contentFit="cover" transition={150} />
+          ) : null}
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.85)", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 18, color: "#000", marginLeft: 3 }}>▶</Text>
+          </View>
+          {!c.src ? <Text style={{ position: "absolute", bottom: 8, color: "#fff", fontSize: 11 }}>Aucune vidéo</Text> : null}
+        </View>
+      );
+    }
     case "social-link":
       return (
         <View style={{ flex: 1, justifyContent: "center" }}>

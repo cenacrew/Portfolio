@@ -11,6 +11,7 @@ export const WIDGET_TYPES = [
   "spotify-embed",
   "spotify-now-playing",
   "photo",
+  "video",
   "github-stats",
   "status",
   "weather",

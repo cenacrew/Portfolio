@@ -6,6 +6,9 @@ export const locationMapSchema = z.object({
   lng: z.number(),
   zoom: z.number().min(1).max(19).default(12),
   caption: z.string().optional(),
+  // "fixed": lat/lng edited by hand. "ma-loc": the mobile admin overwrites
+  // lat/lng (and usually city) with the device's location at each app launch.
+  mode: z.enum(["fixed", "ma-loc"]).default("fixed"),
 });
 
 export type LocationMapConfig = z.infer<typeof locationMapSchema>;
@@ -15,6 +18,7 @@ export const locationMapDefault: LocationMapConfig = {
   lat: 44.8378,
   lng: -0.5792,
   zoom: 12,
+  mode: "fixed",
 };
 
 export const locationMapLabel = "Carte / localisation";

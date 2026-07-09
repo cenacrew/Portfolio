@@ -34,8 +34,11 @@ export interface WidgetMeta<TConfig> {
   description?: string;
   // Full-bleed widgets skip the tile padding (maps, embeds, photos).
   bleed?: boolean;
-  // Grid sizes the admin offers for this type (declared per widget).
+  // Grid sizes the admin offers for this type. Phase 4.5: every type offers the
+  // universal 9 formats; this stays overridable per type if ever needed.
   sizes: readonly WidgetSize[];
+  // Sensible starting size for a freshly created widget (defaults to sizes[0]).
+  defaultSize?: WidgetSize;
   // Admin edit form. Optional (a few widgets have no editable config).
   Editor?: WidgetEditor<TConfig>;
 }
@@ -48,6 +51,7 @@ export interface RegistryEntry {
   description?: string;
   bleed?: boolean;
   sizes: readonly WidgetSize[];
+  defaultSize?: WidgetSize;
   Editor?: WidgetEditor<unknown>;
 }
 

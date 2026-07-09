@@ -2,7 +2,15 @@
 // truth for reads/writes. Each takes a DbClient so the caller controls which
 // role/session runs the query (anon, authed cookie session, or service role).
 import type { DbClient } from "./client";
-import type { GuestbookRow, PollVoteRow, WidgetInsert, WidgetRow, WidgetUpdate } from "./types";
+import type {
+  GuestbookRow,
+  PollVoteRow,
+  SiteSettingsRow,
+  SiteSettingsUpdate,
+  WidgetInsert,
+  WidgetRow,
+  WidgetUpdate,
+} from "./types";
 
 // ---------- widgets --------------------------------------------------------
 
@@ -56,6 +64,28 @@ export async function reorderWidgets(
   );
   const failed = results.find((r) => r.error);
   if (failed?.error) throw failed.error;
+}
+
+// ---------- site settings (dashboard header) -------------------------------
+
+export async function getSiteSettings(client: DbClient): Promise<SiteSettingsRow | null> {
+  const { data, error } = await client.from("site_settings").select("*").eq("id", 1).maybeSingle();
+  if (error) throw error;
+  return (data as SiteSettingsRow | null) ?? null;
+}
+
+// Upserts the single header row (id = 1). Used by the mobile admin.
+export async function updateSiteSettings(
+  client: DbClient,
+  patch: SiteSettingsUpdate,
+): Promise<SiteSettingsRow> {
+  const { data, error } = await client
+    .from("site_settings")
+    .upsert({ id: 1, ...patch } as never, { onConflict: "id" })
+    .select()
+    .single();
+  if (error) throw error;
+  return data as SiteSettingsRow;
 }
 
 // ---------- guestbook ------------------------------------------------------

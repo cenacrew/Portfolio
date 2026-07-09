@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from "react-native";
 import { radius, space, useTheme, type Palette } from "../lib/theme";
@@ -181,7 +182,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
   );
 }
 
-function inputStyle(t: Palette): ViewStyle {
+function inputStyle(t: Palette): TextStyle {
   return {
     backgroundColor: t.surfaceAlt,
     borderRadius: radius.sm,
@@ -322,6 +323,54 @@ export function ToggleRow({
         <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.surface, ...shadow }} />
       </View>
     </Pressable>
+  );
+}
+
+// A small palette of emojis for the status widget's custom mood picker.
+export const EMOJI_CHOICES = [
+  "💻", "☕", "🎧", "🌙", "🚀", "📚", "🔥", "✨", "🎉", "😴",
+  "🏖️", "🍕", "🎮", "🧠", "💪", "🎨", "🐛", "📱", "🌱", "❤️",
+];
+
+export function EmojiPickerRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const t = useTheme();
+  return (
+    <Field label={label}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {EMOJI_CHOICES.map((e) => {
+          const active = e === value;
+          return (
+            <Pressable
+              key={e}
+              onPress={() => {
+                tap();
+                onChange(e);
+              }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: radius.sm,
+                borderWidth: 1.5,
+                borderColor: active ? t.accent : t.border,
+                backgroundColor: active ? t.accent + "22" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: 22 }}>{e}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </Field>
   );
 }
 
