@@ -49,6 +49,26 @@ export interface PollVoteRow {
   created_at: string;
 }
 
+// A free header chip beyond the built-in "available" and "location" ones.
+export interface SiteChip {
+  label: string;
+}
+
+// The single-row header settings that drive the /qrcode header.
+export interface SiteSettingsRow {
+  id: number;
+  name: string;
+  tagline: string;
+  available_text: string;
+  available_show: boolean;
+  location: string;
+  location_show: boolean;
+  chips: SiteChip[];
+  updated_at: string;
+}
+
+export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_at">>;
+
 export interface Database {
   public: {
     Tables: {
@@ -74,6 +94,12 @@ export interface Database {
         Row: { id: number; count: number };
         Insert: { id?: number; count?: number };
         Update: Partial<{ id: number; count: number }>;
+        Relationships: [];
+      };
+      site_settings: {
+        Row: SiteSettingsRow;
+        Insert: Partial<SiteSettingsRow> & { id?: number };
+        Update: SiteSettingsUpdate;
         Relationships: [];
       };
     };
