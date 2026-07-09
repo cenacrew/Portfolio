@@ -1,5 +1,6 @@
 // Shared code across web (and future mobile) apps.
-// Widget types, Zod schemas and the typed Supabase client will live here
-// starting in phase 2. Kept intentionally minimal for now.
+// Widget model, grid constants and Zod schemas. Per-type config schemas live
+// next to each widget in apps/web/src/widgets/<type>/schema.ts (registry).
 
-export {};
+export * from "./grid";
+export * from "./widget";

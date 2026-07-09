@@ -1,15 +1,20 @@
-import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import Link from "next/link";
+import QrHeader from "./QrHeader";
+import BentoGrid from "./BentoGrid";
 
-// Contenu provisoire (phase 1) : reprend le comportement de l'ancienne
-// pages/qrcode.html — une redirection vers le Bento actuel. La phase 2
-// remplacera cette route par le vrai dashboard bento.
-// L'URL publique cenacrew.com/qrcode doit rester fonctionnelle en permanence.
+// Public bento dashboard behind the printed QR codes (cenacrew.com/qrcode).
+// Rendered from a typed local config (packages/shared model); phase 3 swaps
+// the data source for Supabase without touching the widgets.
 
-export const metadata: Metadata = {
-  title: "Redirection",
-};
-
-export default function QrCodePage() {
-  redirect("https://bento.me/qrcode");
+export default function QrcodePage() {
+  return (
+    <main className="qr-main">
+      <QrHeader />
+      <BentoGrid />
+      <footer className="qr-foot">
+        <Link href="/">← Retour au portfolio</Link>
+        <span>© {new Date().getFullYear()} Valentin Sourdois Pajot</span>
+      </footer>
+    </main>
+  );
 }
