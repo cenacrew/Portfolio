@@ -10,7 +10,7 @@
 -- ============================================================
 
 insert into public.widgets (type, config, layout, visible, position, created_at)
-select v.type, v.config, v.layout, v.visible, v.position, v.created_at
+select v.type, v.config, v.layout, v.visible, v.position, v.created_at::timestamptz
 from (values
     ('status', '{"emoji":"🎧","text":"En alternance chez SQLI — je code ce dashboard bento en Next.js.","updated":"Mis à jour aujourd''hui"}'::jsonb, '{"mobile":{"x":0,"y":0,"w":2,"h":1},"desktop":{"x":0,"y":0,"w":2,"h":1}}'::jsonb, true, 0, '2026-07-01T09:00:00.000Z'),
     ('weather', '{"city":"Bordeaux","lat":44.8378,"lng":-0.5792}'::jsonb, '{"mobile":{"x":2,"y":0,"w":1,"h":1},"desktop":{"x":2,"y":0,"w":1,"h":1}}'::jsonb, true, 1, '2026-07-01T09:00:00.000Z'),
