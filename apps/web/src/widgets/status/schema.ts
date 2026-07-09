@@ -1,16 +1,4 @@
-import { z } from "zod";
-
-export const statusSchema = z.object({
-  emoji: z.string().default("💻"),
-  text: z.string().min(1),
-  updated: z.string().optional(),
-});
-
-export type StatusConfig = z.infer<typeof statusSchema>;
-
-export const statusDefault: StatusConfig = {
-  emoji: "💻",
-  text: "En train de coder",
-};
-
-export const statusLabel = "Statut / humeur";
+// Config schema moved to @portfolio/shared/widget-configs so the mobile admin
+// can reuse it. Re-exported here to keep the web widget registry architecture
+// (one folder per type) intact.
+export * from "@portfolio/shared/widget-configs/status";

@@ -5,3 +5,4 @@
 export * from "./grid";
 export * from "./widget";
 export * from "./supabase";
+export * from "./widget-configs";

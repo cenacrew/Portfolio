@@ -1,19 +1,4 @@
-import { z } from "zod";
-
-export const freeLinkSchema = z.object({
-  title: z.string().min(1),
-  url: z.string().url(),
-  description: z.string().optional(),
-  image: z.string().optional(),
-  accent: z.string().optional(),
-  emoji: z.string().optional(),
-});
-
-export type FreeLinkConfig = z.infer<typeof freeLinkSchema>;
-
-export const freeLinkDefault: FreeLinkConfig = {
-  title: "Mon lien",
-  url: "https://example.com",
-};
-
-export const freeLinkLabel = "Lien libre";
+// Config schema moved to @portfolio/shared/widget-configs so the mobile admin
+// can reuse it. Re-exported here to keep the web widget registry architecture
+// (one folder per type) intact.
+export * from "@portfolio/shared/widget-configs/free-link";
