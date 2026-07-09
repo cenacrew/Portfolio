@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { WidgetRendererProps } from "../types";
-import type { NowPlayingConfig } from "./schema";
 
 function fmt(ms: number): string {
   const s = Math.floor(ms / 1000);
@@ -20,7 +18,7 @@ type Track = {
 
 // Live widget: polls /api/spotify every 30s. `null` (nothing playing / Spotify
 // not configured) renders a calm idle state instead of breaking.
-export default function NowPlayingRenderer(_: WidgetRendererProps<NowPlayingConfig>) {
+export default function NowPlayingRenderer() {
   const [data, setData] = useState<Track | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [progress, setProgress] = useState(0);

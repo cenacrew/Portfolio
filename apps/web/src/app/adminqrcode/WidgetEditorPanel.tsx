@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import type { Breakpoint, Widget, WidgetSize } from "@portfolio/shared";
 import { registry } from "@/widgets/registry";
 
@@ -30,12 +30,11 @@ export default function WidgetEditorPanel({
   const def = registry[widget.type];
   const Editor = def.Editor;
   const current = widget.layout[bp];
-  const [error, setError] = useState<string | null>(null);
 
   // Validate config live so Save can be blocked on invalid input.
-  useEffect(() => {
+  const error = useMemo<string | null>(() => {
     const res = def.schema.safeParse(widget.config);
-    setError(res.success ? null : (res.error.issues[0]?.message ?? "Configuration invalide."));
+    return res.success ? null : (res.error.issues[0]?.message ?? "Configuration invalide.");
   }, [widget.config, def]);
 
   return (

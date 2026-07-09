@@ -1,11 +1,8 @@
 "use client";
 
-import type { WidgetEditorProps } from "../types";
-import type { NowPlayingConfig } from "./schema";
-
 // Live widget: data comes from /api/spotify (refresh token in env). Nothing to
 // configure here — it shows an idle state until Spotify is connected.
-export default function NowPlayingEditor(_: WidgetEditorProps<NowPlayingConfig>) {
+export default function NowPlayingEditor() {
   return (
     <p className="ed-note">
       Ce widget affiche automatiquement ton titre Spotify en cours d’écoute. Rien à régler :
