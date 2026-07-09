@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/qrcode", "destination": "/pages/qrcode.html" }
-  ]
-}
