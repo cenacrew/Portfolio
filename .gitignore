@@ -1,0 +1,33 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# builds
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# env files
+.env
+.env.*
+!.env.example
+
+# vercel
+.vercel
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local docs (not committed)
+CLAUDE.md
+PLAN.md
+
+# misc
+.DS_Store
+*.pem
