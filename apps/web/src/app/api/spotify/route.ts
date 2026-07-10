@@ -3,10 +3,13 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Shape consumed by the spotify-now-playing widget. `null` = nothing playing /
-// not configured, which the widget renders as a calm idle state.
+// Shape consumed by the spotify-now-playing widget. `null` = nothing playing
+// AND no recent history / not configured, rendered as a calm idle state.
+// `isLast: true` means nothing is playing right now and this is the LAST track
+// listened to (phase 4.8 B7) — the widget labels it "dernier son écouté".
 interface NowPlaying {
   isPlaying: boolean;
+  isLast?: boolean;
   track: string;
   artist: string;
   albumArt?: string;
@@ -39,6 +42,25 @@ async function getAccessToken(): Promise<string | null> {
   return json.access_token ?? null;
 }
 
+type Track = {
+  name?: string;
+  duration_ms?: number;
+  artists?: { name?: string }[];
+  album?: { images?: { url?: string }[] };
+};
+
+function fromTrack(item: Track, extra: Partial<NowPlaying>): NowPlaying {
+  return {
+    isPlaying: false,
+    track: item.name ?? "—",
+    artist: (item.artists ?? []).map((a) => a.name).filter(Boolean).join(", ") || "—",
+    albumArt: item.album?.images?.[0]?.url,
+    progressMs: 0,
+    durationMs: item.duration_ms ?? 1,
+    ...extra,
+  };
+}
+
 async function fetchNowPlaying(): Promise<NowPlaying | null> {
   const token = await getAccessToken();
   if (!token) return null;
@@ -47,29 +69,29 @@ async function fetchNowPlaying(): Promise<NowPlaying | null> {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
-  // 204 = nothing playing; anything non-2xx = treat as idle.
-  if (res.status === 204 || !res.ok) return null;
 
-  const data = (await res.json()) as {
-    is_playing?: boolean;
-    progress_ms?: number;
-    item?: {
-      name?: string;
-      duration_ms?: number;
-      artists?: { name?: string }[];
-      album?: { images?: { url?: string }[] };
-    };
-  };
-  if (!data.item?.name) return null;
+  // 200 with a track → live playback.
+  if (res.ok && res.status !== 204) {
+    const data = (await res.json()) as { is_playing?: boolean; progress_ms?: number; item?: Track };
+    if (data.item?.name) {
+      return fromTrack(data.item, {
+        isPlaying: Boolean(data.is_playing),
+        progressMs: data.progress_ms ?? 0,
+      });
+    }
+  }
 
-  return {
-    isPlaying: Boolean(data.is_playing),
-    track: data.item.name,
-    artist: (data.item.artists ?? []).map((a) => a.name).filter(Boolean).join(", ") || "—",
-    albumArt: data.item.album?.images?.[0]?.url,
-    progressMs: data.progress_ms ?? 0,
-    durationMs: data.item.duration_ms ?? 1,
-  };
+  // Nothing playing (204 / paused / empty) → fall back to the last played track
+  // (phase 4.8 B7), flagged so the widget shows "dernier son écouté".
+  const recent = await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!recent.ok) return null;
+  const rjson = (await recent.json()) as { items?: { track?: Track }[] };
+  const last = rjson.items?.[0]?.track;
+  if (!last?.name) return null;
+  return fromTrack(last, { isPlaying: false, isLast: true });
 }
 
 export async function GET() {

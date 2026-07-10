@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import HeaderControls from "./HeaderControls";
+import HeaderClock from "./HeaderClock";
 import { loadHeaderSettings } from "./settings";
 
 export default async function QrHeader() {
@@ -10,13 +11,22 @@ export default async function QrHeader() {
       <div className="qr-header__top">
         <span className="qr-avatar">
           <img src="/files/img/pp.png" alt={s.name} />
-          <span className="qr-avatar__ring" aria-hidden />
         </span>
-        <HeaderControls />
+        <div className="qr-header__side">
+          <HeaderClock tz={s.tz} />
+          <HeaderControls />
+        </div>
       </div>
 
       <h1 className="qr-name">{s.name}</h1>
       <p className="qr-tag">{s.tagline}</p>
+
+      {/* Status/mood block (phase 4.8 B2): moved out of the grid into the header,
+          keeping its "blocky" look. */}
+      <div className="qr-status" aria-label="Statut du moment">
+        <span className="qr-status__emoji" aria-hidden>{s.status_emoji}</span>
+        <span className="qr-status__text">{s.status_text}</span>
+      </div>
 
       <div className="qr-chips">
         {s.available_show && s.available_text && (

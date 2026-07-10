@@ -9,6 +9,7 @@ function fmt(ms: number): string {
 
 type Track = {
   isPlaying: boolean;
+  isLast?: boolean;
   track: string;
   artist: string;
   albumArt?: string;
@@ -85,7 +86,7 @@ export default function NowPlayingRenderer() {
             <i />
             <i />
           </span>
-          {data?.isPlaying ? "En écoute" : "Dernier titre"}
+          {data?.isPlaying ? "En écoute" : "Dernier son écouté"}
         </span>
       </div>
 
@@ -104,13 +105,17 @@ export default function NowPlayingRenderer() {
         </div>
       </div>
 
-      <div className="w-np__bar">
-        <span style={{ width: `${pct}%` }} />
-      </div>
-      <div className="w-np__time">
-        <span>{fmt(progress)}</span>
-        <span>{fmt(data?.durationMs ?? 0)}</span>
-      </div>
+      {data?.isPlaying ? (
+        <>
+          <div className="w-np__bar">
+            <span style={{ width: `${pct}%` }} />
+          </div>
+          <div className="w-np__time">
+            <span>{fmt(progress)}</span>
+            <span>{fmt(data?.durationMs ?? 0)}</span>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

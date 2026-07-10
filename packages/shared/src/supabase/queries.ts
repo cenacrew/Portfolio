@@ -179,6 +179,24 @@ export async function insertVote(
   if (error && error.code !== "23505") throw error;
 }
 
+// Casts or CHANGES a visitor's vote (phase 4.8 B8): updates the existing row's
+// option when the visitor already voted, otherwise inserts. The unique
+// (widget_id, voter_hash) constraint still guarantees one row per visitor.
+export async function changeVote(
+  client: DbClient,
+  input: { widgetId: string; option: string; voterHash: string },
+): Promise<void> {
+  const { data, error } = await client
+    .from("poll_votes")
+    .update({ option: input.option } as never)
+    .eq("widget_id", input.widgetId)
+    .eq("voter_hash", input.voterHash)
+    .select("id");
+  if (error) throw error;
+  if (data && data.length > 0) return; // updated an existing vote
+  await insertVote(client, input);
+}
+
 // ---------- visits ---------------------------------------------------------
 
 export async function incrementVisits(client: DbClient): Promise<number> {

@@ -101,25 +101,54 @@ body.dark-mode .qr-page {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 12px;
 }
+.qr-header__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+/* Avatar (phase 4.8 B3): larger, a full solid circle hugging the round photo
+   crop — same proportions as the cenacrew.com home avatar. */
 .qr-avatar {
   position: relative;
   display: inline-flex;
-  width: 78px;
-  height: 78px;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--qr-ink);
+  padding: 3px;
+  box-shadow: var(--qr-shadow);
 }
 .qr-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 26px;
+  border-radius: 50%;
   background: var(--qr-ink);
 }
-.qr-avatar__ring {
-  position: absolute;
-  inset: -4px;
-  border-radius: 30px;
-  border: 1.5px solid var(--qr-line-strong);
+/* Live clock + date in the admin's timezone (phase 4.8 A4). */
+.qr-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1;
+  min-height: 34px;
+}
+.qr-clock__time {
+  font-family: var(--font-bricolage), "Raleway", sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.qr-clock__date {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--qr-ink-soft);
 }
 .qr-theme {
   display: inline-flex;
@@ -168,8 +197,36 @@ body.dark-mode .qr-page {
 .qr-tag {
   margin-top: 8px;
   font-size: 15px;
-  color: var(--qr-ink-soft);
+  /* Full opacity (phase 4.8 B4). */
+  color: var(--qr-ink);
   font-weight: 500;
+}
+/* Status/mood block in the header (phase 4.8 B2) — keeps its "blocky" look. */
+.qr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 9px 14px 9px 11px;
+  border-radius: 15px;
+  background: var(--qr-tile);
+  border: 1px solid var(--qr-line);
+  box-shadow: var(--qr-shadow);
+  max-width: 100%;
+}
+.qr-status__emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex: none;
+}
+.qr-status__text {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--qr-ink);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .qr-chips {
   display: flex;

@@ -1,9 +1,29 @@
 import "server-only";
-import type { Breakpoint, Widget, WidgetRow } from "@portfolio/shared";
-import { GRID, getWidgets, resolveCollisions } from "@portfolio/shared";
+import type { Breakpoint, SiteSettingsRow, Widget, WidgetRow } from "@portfolio/shared";
+import { GRID, getSiteSettings, getWidgets, resolveCollisions } from "@portfolio/shared";
 import { widgets as localWidgets } from "@/config/widgets.config";
 import { getPublicServerSupabase, getServerSupabase } from "@/lib/supabase/server";
 import { registry } from "./registry";
+
+// Presence (phase 4.8 C1): when the admin's device reported a location, the
+// weather widget and any "ma-loc" map follow it live. Their own config stays as
+// the fallback when presence is absent. Applied at load so client renderers stay
+// unchanged and only ever see a plain config.
+function applyPresence(widgets: Widget[], presence: SiteSettingsRow | null): Widget[] {
+  const lat = presence?.lat;
+  const lng = presence?.lng;
+  if (presence == null || typeof lat !== "number" || typeof lng !== "number") return widgets;
+  const city = presence.city || undefined;
+  return widgets.map((w) => {
+    if (w.type === "weather") {
+      return { ...w, config: { ...(w.config as object), lat, lng, ...(city ? { city } : {}) } };
+    }
+    if (w.type === "location-map" && (w.config as { mode?: string }).mode === "ma-loc") {
+      return { ...w, config: { ...(w.config as object), lat, lng, ...(city ? { city } : {}) } };
+    }
+    return w;
+  });
+}
 
 // Defensive anti-overlap (phase 4.6): whatever the DB holds, never render two
 // tiles on top of each other. We re-pack each breakpoint deterministically
@@ -72,12 +92,17 @@ export async function loadPublicWidgets(): Promise<Widget[]> {
   try {
     const rows = await getWidgets(client, { includeHidden: false });
     if (rows.length === 0) return deoverlap(loadLocalWidgets());
-    return deoverlap(
-      rows
-        .sort((a, b) => a.position - b.position)
-        .map((r) => parseWidget(fromRow(r)))
-        .filter((w): w is Widget => w !== null),
-    );
+    let presence: SiteSettingsRow | null = null;
+    try {
+      presence = await getSiteSettings(client);
+    } catch {
+      presence = null;
+    }
+    const parsed = rows
+      .sort((a, b) => a.position - b.position)
+      .map((r) => parseWidget(fromRow(r)))
+      .filter((w): w is Widget => w !== null);
+    return deoverlap(applyPresence(parsed, presence));
   } catch {
     return deoverlap(loadLocalWidgets());
   }
