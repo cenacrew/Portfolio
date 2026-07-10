@@ -530,9 +530,24 @@ body.dark-mode .qr-page {
 }
 
 /* ---------- spotify embed ---------- */
+/* The iframe fills the whole tile. Spotify's embed renders a compact player at
+   short heights and a full square player when tall; a per-format min-height
+   pushes it into the right variant so no tile is left half-empty (a 2x2 tile
+   was showing the ~152px compact player floating in a taller iframe). */
 .w-spotify-embed {
   border: 0;
   display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 152px;
+}
+/* Tiles two rows tall or more (2x2, 3x2, 1x2, 3x3…): give the embed Spotify's
+   full 352px player so it fills the available vertical space. Overflow on the
+   tile crops any excess cleanly. */
+@container tile (min-height: 200px) {
+  .w-spotify-embed {
+    min-height: 352px;
+  }
 }
 
 /* ---------- now playing ---------- */

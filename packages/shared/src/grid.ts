@@ -54,6 +54,23 @@ function overlaps(a: CellRect, b: CellRect): boolean {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
 
+// Compaction (phase 4.7): pull the board up over any row that is ENTIRELY empty.
+// Only fully empty rows collapse — an isolated empty cell inside a row that some
+// other tile occupies is left untouched (gaps within a row stay permitted).
+// Rects are mutated in place; shifting whole empty rows preserves non-overlap.
+function compactEmptyRows(rects: CellRect[]): void {
+  let maxRow = 0;
+  for (const r of rects) maxRow = Math.max(maxRow, r.y + r.h);
+  for (let row = 0; row < maxRow; row++) {
+    const occupied = rects.some((r) => r.y <= row && row < r.y + r.h);
+    if (occupied) continue;
+    // Row is empty: everything below moves up one, then re-check this index.
+    for (const r of rects) if (r.y > row) r.y -= 1;
+    row -= 1;
+    maxRow -= 1;
+  }
+}
+
 // Resolve a set of rectangles so none overlap, pushing conflicts down. Returns a
 // NEW array (same order as input) with corrected x/y; w/h are clamped to fit the
 // column count. Pure and deterministic: same input → same output.
@@ -88,6 +105,11 @@ export function resolveCollisions<T extends CellRect>(
     placed.push(rect);
     resolved.set(i, rect);
   }
+
+  // Compact fully empty rows, but only when nothing is pinned: during a live
+  // drag the pinned tile must stay under the finger (its exact cell wins), so we
+  // skip compaction until the drag settles with a plain, unpinned repack.
+  if (pinnedId == null) compactEmptyRows(placed);
 
   // Re-emit in the original order with corrected coordinates.
   return items.map((item, i) => {
