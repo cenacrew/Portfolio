@@ -14,14 +14,17 @@ const sizeLabel = (s: WidgetSize) => `${s.w}×${s.h}`;
 const eqSize = (a: WidgetSize, b: { w: number; h: number }) => a.w === b.w && a.h === b.h;
 
 export default function EditWidget() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, bp: bpParam } = useLocalSearchParams<{ id: string; bp?: string }>();
   const t = useTheme();
   const router = useRouter();
+
+  // The breakpoint is chosen on the main board (its mobile/desktop toggle) and
+  // passed in — the size picker here applies to THAT breakpoint only (phase 4.6).
+  const bp: Breakpoint = bpParam === "desktop" ? "desktop" : "mobile";
 
   const [row, setRow] = useState<WidgetRow | null>(null);
   const [config, setConfig] = useState<any>(null);
   const [visible, setVis] = useState(true);
-  const [bp, setBp] = useState<Breakpoint>("mobile");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -131,19 +134,18 @@ export default function EditWidget() {
           <TypeEditor type={row.type} config={config} onChange={setConfig} />
         </View>
 
-        {/* Taille / format — appliqué aussitôt, par écran (mobile / desktop). */}
+        {/* Taille / format — appliqué au breakpoint choisi sur la page principale. */}
         <View style={{ backgroundColor: t.surface, borderRadius: radius.md, borderWidth: 1, borderColor: t.border, padding: space.md, gap: space.md }}>
           <SectionTitle
             right={
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                <Chip label="📱 Mobile" active={bp === "mobile"} onPress={() => setBp("mobile")} />
-                <Chip label="🖥️ Desktop" active={bp === "desktop"} onPress={() => setBp("desktop")} />
+              <View style={{ borderWidth: 1, borderColor: t.border, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ color: t.textMuted, fontWeight: "700", fontSize: 12 }}>{bp === "mobile" ? "📱 Mobile" : "🖥️ Desktop"}</Text>
               </View>
             }
           >
             Taille
           </SectionTitle>
-          <Muted>Format sur l'écran {bp === "mobile" ? "mobile (3 colonnes)" : "desktop (4 colonnes)"}. Enregistré aussitôt.</Muted>
+          <Muted>Format sur l'écran {bp === "mobile" ? "mobile (3 colonnes)" : "desktop (5 colonnes)"}. Enregistré aussitôt.</Muted>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {def.sizes.map((s) => (
               <Chip key={sizeLabel(s)} label={sizeLabel(s)} active={eqSize(s, row.layout[bp])} onPress={() => changeSize(s)} />

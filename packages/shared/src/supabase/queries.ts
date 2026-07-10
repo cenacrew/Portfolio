@@ -66,6 +66,22 @@ export async function reorderWidgets(
   if (failed?.error) throw failed.error;
 }
 
+// Persist new layouts for several widgets in one batch (phase 4.6 drag grid).
+// One UPDATE per widget, all in parallel — callers pass only the widgets that
+// actually moved so a "Save" writes the minimum.
+export async function updateLayouts(
+  client: DbClient,
+  changes: { id: string; layout: import("../widget").WidgetBreakpointLayout }[],
+): Promise<void> {
+  const results = await Promise.all(
+    changes.map(({ id, layout }) =>
+      client.from("widgets").update({ layout } as never).eq("id", id),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) throw failed.error;
+}
+
 // ---------- site settings (dashboard header) -------------------------------
 
 export async function getSiteSettings(client: DbClient): Promise<SiteSettingsRow | null> {

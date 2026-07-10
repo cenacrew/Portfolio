@@ -1,11 +1,12 @@
-import type { WidgetRow } from "@portfolio/shared";
+import type { Breakpoint, Mood, WidgetBreakpointLayout, WidgetRow } from "@portfolio/shared";
+import { DEFAULT_MOODS } from "@portfolio/shared";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { WidgetTile } from "../../components/WidgetPreview";
-import { Banner, Button, Card, EmojiPickerRow, Eyebrow, Muted, SectionTitle, TextField, Title, success, tap } from "../../components/ui";
-import { saveConfig } from "../../lib/actions";
+import { DragGrid } from "../../components/DragGrid";
+import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, TextField, Title, success, tap } from "../../components/ui";
+import { persistLayouts, saveConfig } from "../../lib/actions";
 import { useAuth } from "../../lib/auth";
 import { syncMaLocationOnce } from "../../lib/maLoc";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -13,29 +14,28 @@ import { useWidgets } from "../../lib/widgets";
 
 const GAP = 10;
 
-const MOODS: { emoji: string; text: string }[] = [
-  { emoji: "💻", text: "En train de coder" },
-  { emoji: "☕", text: "Pause café" },
-  { emoji: "🎧", text: "Focus, musique à fond" },
-  { emoji: "🌙", text: "Off pour aujourd'hui" },
-  { emoji: "🚀", text: "Sur un nouveau projet" },
-  { emoji: "📚", text: "En train d'apprendre" },
-];
-
 export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const { signOut } = useAuth();
   const { widgets, loading, refreshing, error, refresh } = useWidgets();
 
-  const [customOpen, setCustomOpen] = useState(false);
-  const [customEmoji, setCustomEmoji] = useState("🌙");
-  const [customText, setCustomText] = useState("");
+  const [bp, setBp] = useState<Breakpoint>("mobile");
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const getCellsRef = useRef<(() => Record<string, { x: number; y: number; w: number; h: number }>) | null>(null);
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [newEmoji, setNewEmoji] = useState("");
+  const [newText, setNewText] = useState("");
 
   const width = Dimensions.get("window").width;
-  const unit = Math.floor((width - space.lg * 2 - GAP * 2) / 3);
+  const boardWidth = width - space.lg * 2;
 
   const statusWidget = widgets.find((w) => w.type === "status");
+  const statusCfg = (statusWidget?.config && typeof statusWidget.config === "object" ? statusWidget.config : {}) as Record<string, unknown>;
+  const extraMoods = (Array.isArray(statusCfg.extraMoods) ? statusCfg.extraMoods : []) as Mood[];
+  const moods = useMemo(() => [...DEFAULT_MOODS, ...extraMoods], [extraMoods]);
 
   // "Ma loc": refresh location-map widgets from the device once per app launch.
   useEffect(() => {
@@ -54,13 +54,65 @@ export default function Dashboard() {
       Alert.alert("Statut vide", "Écris un statut avant de l'appliquer.");
       return;
     }
-    const cfg = (statusWidget.config && typeof statusWidget.config === "object" ? statusWidget.config : {}) as Record<string, unknown>;
     try {
-      await saveConfig(statusWidget.id, { ...cfg, emoji, text });
+      await saveConfig(statusWidget.id, { ...statusCfg, emoji, text });
       success();
       refresh();
     } catch (e) {
       Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de mettre à jour");
+    }
+  };
+
+  const addMood = async () => {
+    if (!statusWidget) {
+      Alert.alert("Aucun widget statut", "Ajoute d'abord un widget « Statut / humeur » pour créer des humeurs.");
+      return;
+    }
+    const emoji = newEmoji.trim();
+    if (!emoji) {
+      Alert.alert("Emoji manquant", "Choisis un emoji au clavier avant d'ajouter l'humeur.");
+      return;
+    }
+    const mood: Mood = { emoji, text: newText.trim() || emoji };
+    try {
+      await saveConfig(statusWidget.id, { ...statusCfg, extraMoods: [...extraMoods, mood] });
+      success();
+      setNewEmoji("");
+      setNewText("");
+      setAddOpen(false);
+      refresh();
+    } catch (e) {
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible d'ajouter l'humeur");
+    }
+  };
+
+  const saveLayout = async () => {
+    const getCells = getCellsRef.current;
+    if (!getCells) return;
+    const cells = getCells();
+    const changes: { id: string; layout: WidgetBreakpointLayout }[] = [];
+    for (const w of widgets) {
+      const c = cells[w.id];
+      if (!c) continue;
+      const cur = w.layout[bp];
+      if (cur.x !== c.x || cur.y !== c.y || cur.w !== c.w || cur.h !== c.h) {
+        changes.push({ id: w.id, layout: { ...w.layout, [bp]: c } });
+      }
+    }
+    if (changes.length === 0) {
+      setDirty(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      await persistLayouts(changes);
+      success();
+      setDirty(false);
+      refresh();
+    } catch (e) {
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Sauvegarde impossible");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -93,22 +145,22 @@ export default function Dashboard() {
 
         {error ? <Banner text={error} /> : null}
 
-        {/* Quick actions */}
+        {/* Quick status */}
         <View style={{ gap: space.md }}>
-          <SectionTitle>Raccourcis</SectionTitle>
+          <SectionTitle>Statut du moment</SectionTitle>
 
           <Card>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <Text style={{ fontSize: 18 }}>{statusWidget ? (statusWidget.config as any)?.emoji ?? "💬" : "💬"}</Text>
+              <Text style={{ fontSize: 18 }}>{(statusCfg.emoji as string) ?? "💬"}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontWeight: "800" }}>Statut du moment</Text>
-                <Muted>{statusWidget ? (statusWidget.config as any)?.text ?? "—" : "Aucun widget statut"}</Muted>
+                <Text style={{ color: t.text, fontWeight: "800" }}>Humeur</Text>
+                <Muted>{statusWidget ? ((statusCfg.text as string) ?? "—") : "Aucun widget statut"}</Muted>
               </View>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {MOODS.map((m) => (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: "center" }}>
+              {moods.map((m, i) => (
                 <Pressable
-                  key={m.text}
+                  key={`${m.emoji}-${m.text}-${i}`}
                   onPress={() => {
                     tap();
                     applyStatus(m.emoji, m.text);
@@ -119,20 +171,37 @@ export default function Dashboard() {
                   <Text style={{ color: t.textMuted, fontWeight: "700", fontSize: 12 }}>{m.text}</Text>
                 </Pressable>
               ))}
+              {/* "+" — add a custom mood (emoji keyboard) to the list. */}
+              <Pressable
+                onPress={() => {
+                  tap();
+                  setAddOpen((v) => !v);
+                }}
+                style={{ width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1.5, borderColor: t.accent, alignItems: "center", justifyContent: "center" }}
+              >
+                <Text style={{ color: t.accent, fontSize: 22, fontWeight: "700", marginTop: -2 }}>+</Text>
+              </Pressable>
             </ScrollView>
 
-            <Pressable onPress={() => { tap(); setCustomOpen((v) => !v); }} style={{ marginTop: 12 }}>
-              <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>{customOpen ? "− Statut personnalisé" : "+ Statut personnalisé"}</Text>
-            </Pressable>
-            {customOpen ? (
-              <View style={{ marginTop: 10, gap: space.sm }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <Text style={{ fontSize: 26 }}>{customEmoji}</Text>
-                  <Text style={{ color: t.textMuted, flex: 1 }}>{customText || "Ton statut libre…"}</Text>
+            {addOpen ? (
+              <View style={{ marginTop: 12, gap: space.sm }}>
+                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end" }}>
+                  <View style={{ width: 70 }}>
+                    <Text style={{ color: t.text, fontWeight: "700", fontSize: 14, marginBottom: 6 }}>Emoji</Text>
+                    <TextInput
+                      value={newEmoji}
+                      onChangeText={(v) => setNewEmoji(v.slice(0, 4))}
+                      autoFocus
+                      placeholder="🌙"
+                      placeholderTextColor={t.textFaint}
+                      style={{ backgroundColor: t.surfaceAlt, borderRadius: radius.sm, borderWidth: 1, borderColor: t.border, paddingHorizontal: 14, paddingVertical: 12, color: t.text, fontSize: 22, textAlign: "center" }}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <TextField label="Texte (optionnel)" value={newText} onChange={setNewText} placeholder="Ex : Day off" />
+                  </View>
                 </View>
-                <EmojiPickerRow label="Emoji" value={customEmoji} onChange={setCustomEmoji} />
-                <TextField label="Statut" value={customText} onChange={setCustomText} placeholder="Ex : Day off" />
-                <Button label="Appliquer ce statut" onPress={() => applyStatus(customEmoji, customText)} variant="accent" />
+                <Button label="Ajouter à mes humeurs" onPress={addMood} variant="accent" />
               </View>
             ) : null}
           </Card>
@@ -143,22 +212,28 @@ export default function Dashboard() {
           </View>
         </View>
 
-        {/* Bento preview */}
+        {/* Live board — drag to arrange, tap to manage */}
         <View style={{ gap: space.md }}>
           <SectionTitle
             right={
-              <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
-                <Pressable onPress={() => { tap(); router.push("/(admin)/preview"); }} hitSlop={8}>
-                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>👁 Rendu réel</Text>
-                </Pressable>
-                <Pressable onPress={() => { tap(); router.push("/(admin)/reorder"); }} hitSlop={8}>
-                  <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>Réorganiser</Text>
-                </Pressable>
+              <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+                <Chip label="📱 Mobile" active={bp === "mobile"} onPress={() => setBp("mobile")} />
+                <Chip label="🖥️ Desktop" active={bp === "desktop"} onPress={() => setBp("desktop")} />
               </View>
             }
           >
-            Aperçu
+            Disposition
           </SectionTitle>
+
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Muted style={{ flex: 1 }}>
+              Appui long pour déplacer une tuile, tape pour la gérer.
+              {bp === "desktop" ? " Vue desktop 5 colonnes (dézoomée)." : ""}
+            </Muted>
+            <Pressable onPress={() => { tap(); router.push("/(admin)/preview"); }} hitSlop={8}>
+              <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>👁 Rendu réel</Text>
+            </Pressable>
+          </View>
 
           {loading ? (
             <Muted>Chargement…</Muted>
@@ -167,12 +242,22 @@ export default function Dashboard() {
               <Muted>Aucun widget. Touche le bouton « + » pour commencer.</Muted>
             </Card>
           ) : (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: GAP }}>
-              {widgets.map((w: WidgetRow) => (
-                <WidgetTile key={w.id} row={w} unit={unit} gap={GAP} onPress={() => router.push(`/(admin)/widget/${w.id}`)} />
-              ))}
-            </View>
+            <DragGrid
+              widgets={widgets}
+              breakpoint={bp}
+              boardWidth={boardWidth}
+              gap={GAP}
+              onTapTile={(id) => router.push(`/(admin)/widget/${id}?bp=${bp}`)}
+              onDirtyChange={setDirty}
+              registerGetCells={(getter) => {
+                getCellsRef.current = getter;
+              }}
+            />
           )}
+
+          {dirty ? (
+            <Button label="Sauvegarder la disposition" onPress={saveLayout} loading={saving} />
+          ) : null}
         </View>
       </ScrollView>
 

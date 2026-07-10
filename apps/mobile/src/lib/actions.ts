@@ -1,5 +1,6 @@
 import type { Breakpoint, WidgetBreakpointLayout, WidgetRow, WidgetSize, WidgetType } from "@portfolio/shared";
-import { deleteWidget, GRID, reorderWidgets, updateWidget, upsertWidget } from "@portfolio/shared";
+import { deleteWidget, GRID, reorderWidgets, updateLayouts, updateWidget, upsertWidget } from "@portfolio/shared";
+import { File } from "expo-file-system";
 import { meta } from "./registry";
 import { STORAGE_BUCKET, supabase } from "./supabase";
 
@@ -54,36 +55,55 @@ export async function persistOrder(order: { id: string; position: number }[]): P
   return reorderWidgets(supabase, order);
 }
 
+// Batch-write new layouts for the widgets moved on the drag grid (phase 4.6).
+// Only the widgets that actually changed are passed, in a single pass.
+export async function persistLayouts(changes: { id: string; layout: WidgetBreakpointLayout }[]): Promise<void> {
+  return updateLayouts(supabase, changes);
+}
+
 function id(row: WidgetRow) {
   return row.id;
 }
 
-// ---- photo upload ----------------------------------------------------------
+// ---- media upload ----------------------------------------------------------
 
-const B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-function base64ToBytes(b64: string): Uint8Array {
-  const clean = b64.replace(/[^A-Za-z0-9+/]/g, "");
-  const len = clean.length;
-  const out = new Uint8Array(Math.floor((len * 3) / 4));
-  let p = 0;
-  for (let i = 0; i < len; i += 4) {
-    const c0 = B64.indexOf(clean[i]);
-    const c1 = B64.indexOf(clean[i + 1]);
-    const c2 = i + 2 < len ? B64.indexOf(clean[i + 2]) : -1;
-    const c3 = i + 3 < len ? B64.indexOf(clean[i + 3]) : -1;
-    out[p++] = (c0 << 2) | (c1 >> 4);
-    if (c2 !== -1) out[p++] = ((c1 & 15) << 4) | (c2 >> 2);
-    if (c3 !== -1) out[p++] = ((c2 & 3) << 6) | c3;
-  }
-  return out.subarray(0, p);
+// Reads a picked local file (file:// URI) into bytes with expo-file-system.
+//
+// THE BUG (phase 4.6): RN's `fetch(uri).arrayBuffer()` returns a truncated
+// 14-byte body for local file:// URIs in Expo Go, so uploaded videos landed in
+// the bucket corrupted. expo-file-system reads the real bytes off disk. Returns
+// the on-disk size too so callers can sanity-check the read.
+async function readLocalFile(uri: string): Promise<{ bytes: Uint8Array; size: number }> {
+  const file = new File(uri);
+  const bytes = await file.bytes();
+  const size = typeof file.size === "number" ? file.size : bytes.byteLength;
+  return { bytes, size };
 }
 
-// Uploads a picked image (base64) to the widget-media bucket and returns its
-// public URL.
-export async function uploadImage(base64: string, mime = "image/jpeg"): Promise<string> {
+// Guard: the number of bytes we actually read must be plausible and, when the
+// picker told us the file size, must match it. Anything off → throw a clear
+// message and DO NOT upload (no more silent 14-byte corruption).
+function assertReadOk(read: number, expectedSize: number | undefined, kind: "image" | "vidéo"): void {
+  if (read < 64) {
+    throw new Error(`La ${kind} n'a pas pu être lue (fichier vide). Réessaie ou choisis-en une autre.`);
+  }
+  if (expectedSize && expectedSize > 0) {
+    const drift = Math.abs(read - expectedSize);
+    // Allow a tiny tolerance for metadata rounding; anything larger is a bad read.
+    if (drift > Math.max(1024, expectedSize * 0.02)) {
+      throw new Error(`La ${kind} lue ne correspond pas au fichier choisi (${read} / ${expectedSize} octets). Import annulé.`);
+    }
+  }
+}
+
+// Uploads a picked image (local URI) to the widget-media bucket and returns its
+// public URL. Same read path as video so a truncated read is impossible.
+export async function uploadImage(uri: string, mime = "image/jpeg", expectedSize?: number): Promise<string> {
+  const { bytes, size } = await readLocalFile(uri);
+  assertReadOk(bytes.byteLength, expectedSize ?? size, "image");
   const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp" : "jpg";
   const path = `mobile/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, base64ToBytes(base64), {
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, bytes, {
     contentType: mime,
     upsert: false,
   });
@@ -95,18 +115,18 @@ export async function uploadImage(base64: string, mime = "image/jpeg"): Promise<
 // Max upload size for videos (~50 MB). Supabase free tier Storage is 1 GB.
 export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
-// Uploads a picked video (by local file URI) to the widget-media bucket and
-// returns its public URL. Reads the file as an ArrayBuffer rather than base64
-// so large clips don't blow up memory. Compatible with Expo Go.
-export async function uploadVideo(uri: string, mime = "video/mp4"): Promise<string> {
-  const res = await fetch(uri);
-  const buffer = await res.arrayBuffer();
-  if (buffer.byteLength > MAX_VIDEO_BYTES) {
+// Uploads a picked video (local file URI) to the widget-media bucket and returns
+// its public URL. Reads real bytes with expo-file-system (see readLocalFile) and
+// refuses to upload a read that doesn't match the picked file's size.
+export async function uploadVideo(uri: string, mime = "video/mp4", expectedSize?: number): Promise<string> {
+  const { bytes, size } = await readLocalFile(uri);
+  assertReadOk(bytes.byteLength, expectedSize ?? size, "vidéo");
+  if (bytes.byteLength > MAX_VIDEO_BYTES) {
     throw new Error("Vidéo trop lourde (max 50 Mo). Choisis un clip plus court.");
   }
   const ext = mime.includes("quicktime") || mime.includes("mov") ? "mov" : mime.includes("webm") ? "webm" : "mp4";
   const path = `mobile/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, buffer, {
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, bytes, {
     contentType: mime,
     upsert: false,
   });

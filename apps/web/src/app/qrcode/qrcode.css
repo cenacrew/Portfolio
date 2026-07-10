@@ -75,10 +75,12 @@ body.dark-mode .qr-page {
 
 @media (min-width: 768px) {
   .qr-page {
-    --qr-cols: 4;
+    /* Desktop = 5 columns (phase 4.6). maxw widened so cells keep a comfortable
+       ~160px unit; existing 4-col-wide layouts (x+w ≤ 4) stay valid. */
+    --qr-cols: 5;
     --qr-gap: 14px;
     --qr-pad: 24px;
-    --qr-maxw: 748px;
+    --qr-maxw: 900px;
     --wp: 15px;
   }
 }

@@ -1,9 +1,28 @@
 import "server-only";
-import type { Widget, WidgetRow } from "@portfolio/shared";
-import { getWidgets } from "@portfolio/shared";
+import type { Breakpoint, Widget, WidgetRow } from "@portfolio/shared";
+import { GRID, getWidgets, resolveCollisions } from "@portfolio/shared";
 import { widgets as localWidgets } from "@/config/widgets.config";
 import { getPublicServerSupabase, getServerSupabase } from "@/lib/supabase/server";
 import { registry } from "./registry";
+
+// Defensive anti-overlap (phase 4.6): whatever the DB holds, never render two
+// tiles on top of each other. We re-pack each breakpoint deterministically
+// (tiles keep their spot unless forced to move, conflicts pushed down) so a bad
+// row can't reproduce the weather-over-status overlap from the user's report.
+function deoverlap(widgets: Widget[]): Widget[] {
+  const bps: Breakpoint[] = ["mobile", "desktop"];
+  const fixed = new Map<string, Widget["layout"]>();
+  for (const w of widgets) fixed.set(w.id, { ...w.layout });
+  for (const bp of bps) {
+    const rects = widgets.map((w) => ({ id: w.id, ...w.layout[bp] }));
+    const packed = resolveCollisions(rects, GRID[bp].columns);
+    for (const r of packed) {
+      const layout = fixed.get(r.id)!;
+      layout[bp] = { x: r.x, y: r.y, w: r.w, h: r.h };
+    }
+  }
+  return widgets.map((w) => ({ ...w, layout: fixed.get(w.id)! }));
+}
 
 // Validates a widget's config with its type schema; returns null if the type
 // is unknown or the config is invalid, so one bad DB row can't blank the page.
@@ -49,16 +68,18 @@ function loadLocalWidgets(includeHidden = false): Widget[] {
 // (not configured, network, migrations not run yet) falls back to local config.
 export async function loadPublicWidgets(): Promise<Widget[]> {
   const client = getPublicServerSupabase();
-  if (!client) return loadLocalWidgets();
+  if (!client) return deoverlap(loadLocalWidgets());
   try {
     const rows = await getWidgets(client, { includeHidden: false });
-    if (rows.length === 0) return loadLocalWidgets();
-    return rows
-      .sort((a, b) => a.position - b.position)
-      .map((r) => parseWidget(fromRow(r)))
-      .filter((w): w is Widget => w !== null);
+    if (rows.length === 0) return deoverlap(loadLocalWidgets());
+    return deoverlap(
+      rows
+        .sort((a, b) => a.position - b.position)
+        .map((r) => parseWidget(fromRow(r)))
+        .filter((w): w is Widget => w !== null),
+    );
   } catch {
-    return loadLocalWidgets();
+    return deoverlap(loadLocalWidgets());
   }
 }
 
