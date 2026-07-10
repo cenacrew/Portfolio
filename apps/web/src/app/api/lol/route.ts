@@ -26,7 +26,7 @@ let championMapCache: Cached<{ version: string; byKey: Record<string, string> }>
 // Shape consumed by the lol widget Renderer. `ok: false` → "Stats indisponibles".
 export interface LolResponse {
   ok: boolean;
-  mode: "rank-soloq" | "rank-flex" | "mastery";
+  mode: "rank-soloq" | "rank-flex" | "aram" | "mastery";
   // rank modes
   ranked?: boolean; // false → "Non classé"
   tier?: string; // e.g. "SILVER"
@@ -41,6 +41,10 @@ export interface LolResponse {
   championIconUrl?: string;
   level?: number;
   points?: number;
+  // aram mode — challenges-v1 id 101307 "Triomphe en ARAM": cumulative ARAM
+  // WINS (not games played). `challengeTier` is the challenge rank (MASTER…).
+  aramWins?: number;
+  challengeTier?: string;
 }
 
 function riotHeaders(key: string) {
@@ -133,6 +137,32 @@ async function fetchRank(
   };
 }
 
+// ARAM total wins via lol-challenges-v1. NOTE: the working path has NO
+// /by-puuid segment (player-data/{puuid}); the /by-puuid variant 403s.
+// Challenge 101307 "Triomphe en ARAM" = "Gagnez des parties d'ARAM", a
+// cumulative win counter — honest, no match-v5 pagination involved.
+const ARAM_WINS_CHALLENGE_ID = 101307;
+
+async function fetchAram(puuid: string, key: string): Promise<LolResponse> {
+  const res = await fetch(`${PLATFORM}/lol/challenges/v1/player-data/${puuid}`, {
+    headers: riotHeaders(key),
+    cache: "no-store",
+  });
+  if (!res.ok) return { ok: false, mode: "aram" };
+  const json = (await res.json()) as {
+    challenges?: { challengeId: number; value: number; level?: string }[];
+  };
+  const c = json.challenges?.find((x) => x.challengeId === ARAM_WINS_CHALLENGE_ID);
+  if (!c || typeof c.value !== "number") return { ok: false, mode: "aram" };
+
+  return {
+    ok: true,
+    mode: "aram",
+    aramWins: Math.round(c.value),
+    challengeTier: c.level,
+  };
+}
+
 async function fetchMastery(puuid: string, key: string): Promise<LolResponse> {
   const res = await fetch(
     `${PLATFORM}/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=1`,
@@ -166,7 +196,9 @@ export async function GET(req: NextRequest) {
   const riotId = searchParams.get("riotId") || "cenacrew#EUW";
   const modeParam = searchParams.get("mode") || "rank-soloq";
   const mode: LolResponse["mode"] =
-    modeParam === "rank-flex" || modeParam === "mastery" ? modeParam : "rank-soloq";
+    modeParam === "rank-flex" || modeParam === "mastery" || modeParam === "aram"
+      ? modeParam
+      : "rank-soloq";
 
   const cacheKey = `${riotId}::${mode}`;
   const hit = statsCache.get(cacheKey);
@@ -183,6 +215,7 @@ export async function GET(req: NextRequest) {
 
     let data: LolResponse;
     if (mode === "mastery") data = await fetchMastery(puuid, key);
+    else if (mode === "aram") data = await fetchAram(puuid, key);
     else if (mode === "rank-flex") data = await fetchRank(puuid, key, "RANKED_FLEX_SR", "rank-flex");
     else data = await fetchRank(puuid, key, "RANKED_SOLO_5x5", "rank-soloq");
 

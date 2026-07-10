@@ -1986,6 +1986,39 @@ body.dark-mode .qr-page {
   color: var(--qr-ink-soft);
 }
 
+/* --- aram (challenge 101307 "Triomphe en ARAM" = total ARAM wins) --- */
+.w-lol__body--aram {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+.w-lol__big {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--qr-ink);
+  font-variant-numeric: tabular-nums;
+}
+.w-lol--aram .w-lol__queue {
+  font-size: 12px;
+}
+.w-lol__chip {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--tier) 72%, var(--qr-ink));
+  background: color-mix(in srgb, var(--tier) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tier) 32%, transparent);
+  white-space: nowrap;
+}
+
 /* --- idle / degraded --- */
 .w-lol--idle {
   justify-content: flex-start;
@@ -2006,9 +2039,13 @@ body.dark-mode .qr-page {
 @container tile (max-width: 200px) {
   .w-lol__head .w-eyebrow { display: none; }
   .w-lol__queue { display: none; }
+  /* The aram label IS the meaning of the number — never hide it. */
+  .w-lol--aram .w-lol__queue { display: block; font-size: 10.5px; }
   .w-lol__body { gap: 9px; }
   .w-lol__tier,
   .w-lol__name { font-size: 15px; }
+  .w-lol__big { font-size: 26px; }
+  .w-lol__chip { display: none; }
   .w-lol__emblem-img,
   .w-lol__champ { max-height: 52px; }
 }
@@ -2022,4 +2059,5 @@ body.dark-mode .qr-page {
   .w-lol__champ { max-height: 96px; }
   .w-lol__tier,
   .w-lol__name { font-size: 22px; }
+  .w-lol__big { font-size: 46px; }
 }

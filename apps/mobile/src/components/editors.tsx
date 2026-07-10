@@ -481,7 +481,6 @@ function LolEditor({ config, onChange }: EProps) {
         options={modeOptions}
         onChange={(mode) => onChange({ ...config, mode })}
       />
-      <Text style={{ color: "#999", fontSize: 12 }}>Le mode ARAM arrive bientôt (donnée Riot non exploitable pour l'instant).</Text>
     </>
   );
 }

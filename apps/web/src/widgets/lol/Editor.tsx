@@ -23,7 +23,7 @@ export default function LolEditor({ config, onChange }: WidgetEditorProps<LolCon
         value={config.mode}
         options={MODE_OPTIONS}
         onChange={(mode) => onChange({ ...config, mode })}
-        hint="Le mode ARAM arrive bientôt (donnée Riot non exploitable pour l'instant)."
+        hint="Rang, victoires ARAM ou champion le plus maîtrisé."
       />
     </>
   );

@@ -9,7 +9,7 @@ import type { LolConfig } from "./schema";
 // widget only reads the already-shaped stats.
 interface LolData {
   ok: boolean;
-  mode: "rank-soloq" | "rank-flex" | "mastery";
+  mode: "rank-soloq" | "rank-flex" | "aram" | "mastery";
   ranked?: boolean;
   tier?: string;
   rank?: string;
@@ -22,6 +22,9 @@ interface LolData {
   championIconUrl?: string;
   level?: number;
   points?: number;
+  // aram: challenges-v1 101307 "Triomphe en ARAM" — cumulative ARAM WINS.
+  aramWins?: number;
+  challengeTier?: string;
 }
 
 function titleTier(tier?: string): string {
@@ -111,6 +114,26 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
               {(data.points ?? 0).toLocaleString("fr-FR")}
               <small> pts</small>
             </span>
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  if (data.mode === "aram") {
+    // Honest label: challenge 101307 counts WINS, not games played. The
+    // challenge tier (Master…) recolours the tile via data-tier.
+    const tier = data.challengeTier ? data.challengeTier.toLowerCase() : "unranked";
+    return (
+      <div className="w-lol w-lol--aram" data-tier={tier}>
+        {head}
+        <div className="w-lol__body w-lol__body--aram">
+          <span className="w-lol__big">{(data.aramWins ?? 0).toLocaleString("fr-FR")}</span>
+          <span className="w-lol__info">
+            <span className="w-lol__queue">victoires ARAM</span>
+            {data.challengeTier ? (
+              <span className="w-lol__chip">Défi {titleTier(data.challengeTier)}</span>
+            ) : null}
           </span>
         </div>
       </div>
