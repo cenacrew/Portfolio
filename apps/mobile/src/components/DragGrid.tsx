@@ -23,12 +23,16 @@ import { PreviewBody } from "./WidgetPreview";
 type Cell = { x: number; y: number; w: number; h: number };
 type Cells = Record<string, Cell>;
 
-function cellsFrom(widgets: WidgetRow[], bp: Breakpoint): Cells {
-  const out: Cells = {};
-  for (const w of widgets) {
+function cellsFrom(widgets: WidgetRow[], bp: Breakpoint, columns: number): Cells {
+  const rects = widgets.map((w) => {
     const l = w.layout[bp];
-    out[w.id] = { x: l.x, y: l.y, w: l.w, h: l.h };
-  }
+    return { id: w.id, x: l.x, y: l.y, w: l.w, h: l.h };
+  });
+  // No-pin repack so the admin board mirrors the public render exactly:
+  // de-overlapped and with fully empty rows compacted away.
+  const packed = resolveCollisions(rects, columns);
+  const out: Cells = {};
+  for (const p of packed) out[p.id] = { x: p.x, y: p.y, w: p.w, h: p.h };
   return out;
 }
 
@@ -67,7 +71,7 @@ export function DragGrid({
   const unit = (boardWidth - gap * (columns - 1)) / columns;
   const stride = unit + gap;
 
-  const initial = useMemo(() => cellsFrom(widgets, breakpoint), [widgets, breakpoint]);
+  const initial = useMemo(() => cellsFrom(widgets, breakpoint, columns), [widgets, breakpoint, columns]);
   const [cells, setCells] = useState<Cells>(initial);
   const [dragId, setDragId] = useState<string | null>(null);
 
@@ -128,12 +132,18 @@ export function DragGrid({
 
   const end = (id: string) => {
     const target = targetRef.current;
-    setCells((cur) => {
-      const next = { ...cur };
-      if (target) next[id] = { ...next[id], x: target.x, y: target.y };
-      onDirtyChange(!sameCells(next, initial));
-      return next;
-    });
+    // Drop the tile at its target cell, then settle: a no-pin repack de-overlaps
+    // and compacts any fully empty row the move may have left behind (mirrors
+    // the public render). Computed here from the current ref, not inside a state
+    // updater, so we never call the parent's setState during our own render.
+    const dropped = { ...cellsRef.current };
+    if (target) dropped[id] = { ...dropped[id], x: target.x, y: target.y };
+    const rects = Object.entries(dropped).map(([wid, c]) => ({ id: wid, ...c }));
+    const settled = resolveCollisions(rects, columns);
+    const next: Cells = {};
+    for (const p of settled) next[p.id] = { x: p.x, y: p.y, w: p.w, h: p.h };
+    setCells(next);
+    onDirtyChange(!sameCells(next, initial));
     setDragId(null);
     tx.value = 0;
     ty.value = 0;
