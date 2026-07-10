@@ -788,12 +788,26 @@ body.dark-mode .qr-page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Single-line progress: 0:00 —bar— x:xx (phase 4.11 A4). */
+.w-np__prog {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+}
+.w-np__t {
+  font-size: 10px;
+  color: var(--qr-ink-faint);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
 .w-np__bar {
+  flex: 1 1 auto;
+  min-width: 0;
   height: 4px;
   border-radius: 3px;
   background: var(--qr-line);
   overflow: hidden;
-  margin-top: auto;
 }
 .w-np__bar span {
   display: block;
@@ -801,13 +815,6 @@ body.dark-mode .qr-page {
   background: var(--qr-spotify);
   border-radius: 3px;
   transition: width 1s linear;
-}
-.w-np__time {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--qr-ink-faint);
-  font-variant-numeric: tabular-nums;
 }
 /* Deep-link CTA + listening device (phase 4.10 A5). */
 .w-np__foot {
@@ -1845,21 +1852,35 @@ body.dark-mode .qr-page {
 }
 .w-lbxd__stars { color: #00b020; font-weight: 700; letter-spacing: 0.5px; }
 .w-lbxd__empty { color: var(--qr-ink-faint); font-size: 13px; }
-/* Small formats: show posters as a compact row without meta; the rating badge
-   overlays each poster so notes stay visible in *x1 (phase 4.10 A15). */
+/* Small formats: posters in a compact row without meta; the rating badge
+   overlays each poster so notes stay visible in *x1 (phase 4.10 A15).
+   Phase 4.11 A9: an auto-fill grid of fixed-width columns only ever lays out
+   WHOLE posters — leftover width stays empty and any posters past what fits are
+   clipped at a row boundary, so no poster is ever sliced or overlapped. */
 @container tile (max-height: 150px) {
-  .w-lbxd__list { flex-direction: row; align-items: flex-start; overflow: hidden; }
+  .w-lbxd__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 34px);
+    grid-auto-rows: 51px;
+    justify-content: start;
+    align-content: start;
+    gap: 8px;
+    overflow: hidden;
+  }
   .w-lbxd__meta { display: none; }
   .w-lbxd__poster { width: 34px; height: 51px; }
   .w-lbxd__rate { display: flex; }
 }
-/* Wide tiles: lay films out as a poster wall so we show many without overlap. */
+/* Wide tiles: a poster wall — same auto-fill guarantee, plus meta under each. */
 @container tile (min-width: 300px) and (min-height: 220px) {
   .w-lbxd__list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 68px);
+    grid-auto-rows: min-content;
+    justify-content: start;
+    align-content: start;
     gap: 10px;
+    overflow: hidden;
   }
   .w-lbxd__film { flex-direction: column; align-items: flex-start; gap: 4px; width: 68px; }
   .w-lbxd__poster { width: 68px; height: 102px; }
