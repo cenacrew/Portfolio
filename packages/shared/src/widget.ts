@@ -20,6 +20,12 @@ export const WIDGET_TYPES = [
   "visitor-counter",
   "poll",
   "free-link",
+  // Phase 4.8 new widgets.
+  "youtube-embed",
+  "tech-stack",
+  "paypal",
+  "letterboxd",
+  "toile",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];

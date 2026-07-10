@@ -5,7 +5,10 @@
 
 export const GRID = {
   mobile: { columns: 3 },
-  desktop: { columns: 5 },
+  // Desktop went 5 → 9 columns (phase 4.8 B1): the side margins at 5 columns
+  // were too wide. Mobile stays at 3. The remap script (remap-desktop-9cols.mjs)
+  // rescales existing desktop layouts x/w by 9/5 so proportions are preserved.
+  desktop: { columns: 9 },
 } as const;
 
 export type Breakpoint = keyof typeof GRID;
@@ -27,8 +30,36 @@ export const UNIVERSAL_SIZES: readonly WidgetSize[] = [
   { w: 2, h: 3 },
 ] as const;
 
-// Back-compat alias (was the phase-3 resize list). Now the universal set.
-export const WIDGET_SIZES = UNIVERSAL_SIZES;
+// Desktop-only larger formats unlocked by the 9-column desktop grid (phase 4.8
+// B1). Widths of 4 are wider than the 3-column mobile grid, so a format picker
+// must hide them on mobile (see sizesForBreakpoint) — only the tall/narrow ones
+// (w ≤ 3) survive on mobile.
+export const DESKTOP_EXTRA_SIZES: readonly WidgetSize[] = [
+  { w: 4, h: 1 },
+  { w: 4, h: 2 },
+  { w: 4, h: 3 },
+  { w: 4, h: 4 },
+  { w: 1, h: 4 },
+  { w: 2, h: 4 },
+  { w: 3, h: 4 },
+] as const;
+
+// The full set every widget declares it supports. A picker narrows it per
+// breakpoint with sizesForBreakpoint (mobile drops anything wider than 3).
+export const ALL_SIZES: readonly WidgetSize[] = [...UNIVERSAL_SIZES, ...DESKTOP_EXTRA_SIZES];
+
+// Sizes a format picker should offer for a given breakpoint: everything the
+// widget supports, minus formats wider than that breakpoint's column count. So
+// the 3-column mobile picker never proposes a 4-wide tile, but still allows the
+// tall/narrow 1x4/2x4/3x4 formats (width ≤ 3).
+export function sizesForBreakpoint(bp: Breakpoint): readonly WidgetSize[] {
+  const cols = GRID[bp].columns;
+  return ALL_SIZES.filter((s) => s.w <= cols);
+}
+
+// Back-compat alias (was the phase-3 resize list). Now the full set so widgets
+// declare every format they support; pickers filter per breakpoint.
+export const WIDGET_SIZES = ALL_SIZES;
 
 // ---------------------------------------------------------------------------
 // Collision resolution (phase 4.6)
