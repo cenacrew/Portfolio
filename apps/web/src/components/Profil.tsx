@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { GithubIcon, LinkedinIcon, DownloadIcon } from "./icons";
 
 // Bloc central de l'accueil : profil, photo et bouton CV.
@@ -25,8 +26,15 @@ export default function Profil() {
       {/* Cercle central */}
       <div className="carousel">
         <div className="mid">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img id="photo" alt="ma photo" src="/files/img/pp.png" />
+          <Image
+            id="photo"
+            alt="ma photo"
+            src="/files/img/pp.png"
+            width={750}
+            height={750}
+            priority
+            style={{ height: "auto" }}
+          />
         </div>
         <div className="skill-icons"></div>
       </div>

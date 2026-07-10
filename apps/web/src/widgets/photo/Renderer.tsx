@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { WidgetRendererProps } from "../types";
 import type { PhotoConfig } from "./schema";
@@ -30,7 +30,14 @@ export default function PhotoRenderer({ config }: WidgetRendererProps<PhotoConfi
 
   return (
     <div className="w-photo">
-      <img className="w-photo__img" src={current.src} alt={current.alt} />
+      <Image
+        className="w-photo__img"
+        src={current.src}
+        alt={current.alt}
+        fill
+        sizes="(max-width: 640px) 45vw, 320px"
+        unoptimized={current.src.startsWith("data:")}
+      />
 
       {current.caption && <span className="w-photo__caption">{current.caption}</span>}
 
