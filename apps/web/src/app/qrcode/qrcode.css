@@ -2134,9 +2134,15 @@ body.dark-mode .qr-page {
 }
 .w-lol__logo {
   display: inline-flex;
-  width: 18px;
-  height: 18px;
+  width: clamp(18px, 7cqmin, 40px);
+  height: clamp(18px, 7cqmin, 40px);
   flex: none;
+}
+.w-lol__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 /* Head laid over splash art (mastery) → white, higher z. */
 .w-lol__head--over {
@@ -2437,15 +2443,20 @@ body.dark-mode .qr-page {
   .w-lol__meter { display: none; }
 }
 
-/* Roomy tiles: let the art breathe and the numbers grow. */
+/* Roomy tiles: let the art breathe and the numbers grow (phase 4.11 A2 — pushed
+   harder so the big formats no longer leave dead space). */
 @container tile (min-width: 300px) and (min-height: 200px) {
-  .w-lol__emblem { max-height: 130px; }
-  .w-lol__emblem-img { max-height: 130px; }
-  .w-lol__crest { max-height: 110px; }
-  .w-lol__aram-map { max-height: 110px; }
+  .w-lol__emblem { max-height: 42cqmin; }
+  .w-lol__emblem-img { max-height: 42cqmin; }
+  .w-lol__crest { max-height: 38cqmin; }
+  .w-lol__aram-map { max-height: 40cqmin; }
+  .w-lol__body { gap: 18px; }
+  .w-lol__head .w-eyebrow { font-size: clamp(11px, 3.4cqmin, 16px); }
   .w-lol__tier,
-  .w-lol__name { font-size: 24px; }
-  .w-lol__big { font-size: 52px; }
-  .w-lol__points--over { font-size: 20px; }
-  .w-lol__stats { font-size: 14px; }
+  .w-lol__name { font-size: clamp(24px, 8cqmin, 40px); }
+  .w-lol__queue { font-size: clamp(11px, 3cqmin, 15px); }
+  .w-lol__big { font-size: clamp(52px, 20cqmin, 96px); }
+  .w-lol__points--over { font-size: clamp(20px, 6cqmin, 32px); }
+  .w-lol__stats { font-size: clamp(14px, 3.4cqmin, 18px); }
+  .w-lol__lvl { font-size: clamp(11px, 3cqmin, 16px); min-width: 26px; }
 }

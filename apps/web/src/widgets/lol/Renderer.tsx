@@ -41,30 +41,12 @@ function winrate(wins?: number, losses?: number): number | null {
   return Math.round((w / total) * 100);
 }
 
-// Inline League of Legends hextech emblem (gold crest). Trademark-safe crafted
-// mark, no remote asset — always crisp at the small header size.
+// Official League of Legends mark, supplied by the user and committed locally
+// (phase 4.11 A2). Scales with the tile via CSS container units.
 function LolLogo() {
   return (
     <span className="w-lol__logo" aria-hidden>
-      <svg viewBox="0 0 24 24" width="18" height="18">
-        <defs>
-          <linearGradient id="lolg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#f4d78a" />
-            <stop offset="1" stopColor="#c8933a" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M12 1.4l8.6 4.9v11.4L12 22.6 3.4 17.7V6.3z"
-          fill="none"
-          stroke="url(#lolg)"
-          strokeWidth="1.4"
-        />
-        <path
-          d="M9 7v8.2h5.6v-1.7h-3.7V7z"
-          fill="url(#lolg)"
-        />
-        <path d="M12 3.4l1.1 1.9h-2.2z" fill="url(#lolg)" />
-      </svg>
+      <img src="/files/img/lol/lol-logo.png" alt="" />
     </span>
   );
 }
@@ -163,13 +145,8 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
         {head()}
         <div className="w-lol__body w-lol__body--aram">
           <span className="w-lol__aram-map">
-            {data.aramMapUrl ? (
-              <img src={data.aramMapUrl} alt="" />
-            ) : (
-              <span className="w-lol__aram-map--ph" aria-hidden>
-                ❄
-              </span>
-            )}
+            {/* User-provided ARAM (Howling Abyss) logo, committed locally (A2). */}
+            <img src="/files/img/lol/aram.png" alt="" />
           </span>
           <span className="w-lol__info">
             <span className="w-lol__big">{(data.aramWins ?? 0).toLocaleString("fr-FR")}</span>
