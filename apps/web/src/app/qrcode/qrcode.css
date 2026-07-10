@@ -82,7 +82,11 @@ body.dark-mode .qr-page {
     --qr-cols: 9;
     --qr-gap: 12px;
     --qr-pad: 20px;
-    --qr-maxw: 1180px;
+    /* Phase 4.11 A8: at 9 columns the old 1180px board made the desktop 1x1
+       (~116px) SMALLER than the mobile 1x1 (~118px) and left fat side margins.
+       Widened to 1360px so the desktop unit is ~136px (comfortably larger than
+       mobile) with thin-but-present ~40px margins on a 1440px screen. */
+    --qr-maxw: 1360px;
     --wp: 15px;
   }
 }
@@ -471,7 +475,8 @@ body.dark-mode .qr-page {
   --note-bg: #ffe0e6;
   --note-ink: #7a2a41;
 }
-/* Quotation-mark header (phase 4.10 A3): the note reads as a pinned quote. */
+/* Quotation-mark header (phase 4.10 A3). Phase 4.11 A3: pinned to the top-RIGHT
+   (align-self flips it to the cross-axis end of the column). */
 .w-note__quote {
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 700;
@@ -481,6 +486,8 @@ body.dark-mode .qr-page {
   color: var(--note-ink);
   opacity: 0.32;
   flex: none;
+  align-self: flex-end;
+  margin-right: 2px;
 }
 .w-note__text {
   margin: 2px 0 0;
@@ -1315,17 +1322,19 @@ body.dark-mode .qr-page {
 }
 /* Numbers scale with the tile itself (container units), so a 3x3 countdown
    reads as a hero and a 1x1 stays legible (phase 4.10 A8). */
+/* Phase 4.11 A6: scale the digits far more boldly so large formats read as a
+   hero instead of leaving a dead gap above small numbers. */
 .w-cd__cell b {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(18px, 13cqmin, 52px);
+  font-size: clamp(20px, 17cqmin, 78px);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
 .w-cd__cell i {
   font-style: normal;
-  font-size: clamp(8px, 3cqmin, 13px);
+  font-size: clamp(8px, 3.6cqmin, 16px);
   color: var(--qr-ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1333,10 +1342,10 @@ body.dark-mode .qr-page {
 .w-cd__done {
   margin-top: auto;
   font-weight: 800;
-  font-size: clamp(18px, 8cqmin, 34px);
+  font-size: clamp(20px, 11cqmin, 46px);
 }
 @container tile (max-height: 130px) {
-  .w-cd__cell b { font-size: clamp(15px, 9cqmin, 24px); }
+  .w-cd__cell b { font-size: clamp(15px, 10cqmin, 26px); }
 }
 
 /* ---------- watchlist ---------- */
@@ -1423,16 +1432,18 @@ body.dark-mode .qr-page {
   justify-content: center;
   gap: 3px;
 }
-/* Number + label scale with the tile (phase 4.10 A9). */
+/* Number + label scale with the tile (phase 4.10 A9; scaled up harder in 4.11
+   A6 so big formats don't leave the number marooned in empty space). */
 .w-visits__num {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(28px, 22cqmin, 92px);
-  line-height: 1;
+  font-size: clamp(30px, 27cqmin, 116px);
+  line-height: 0.98;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .w-visits__label {
-  font-size: clamp(11px, 4.5cqmin, 18px);
+  font-size: clamp(11px, 5cqmin, 20px);
   color: var(--qr-ink-soft);
 }
 
@@ -1998,7 +2009,10 @@ body.dark-mode .qr-page {
   display: block;
   image-rendering: auto;
 }
-/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13). */
+/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13).
+   On the blank white canvas the label's dark image-scrim would read as a grey
+   smudge and the faint pencil is barely visible, so the empty state gets
+   navy-ink text/icon on white instead of white-on-white (phase 4.11 A7). */
 .w-toile--empty { background: #fff; }
 .w-toile__blank {
   position: absolute;
@@ -2006,8 +2020,13 @@ body.dark-mode .qr-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c9ccd6;
+  color: color-mix(in srgb, var(--c2, #0d0c62) 34%, #fff);
 }
+.w-toile--empty .w-toile__label {
+  background: none;
+  color: var(--c2, #0d0c62);
+}
+.w-toile--empty .w-toile__sub { opacity: 0.6; }
 .w-toile__label {
   position: absolute;
   left: 0;
