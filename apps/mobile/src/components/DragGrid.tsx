@@ -25,7 +25,9 @@ type Cells = Record<string, Cell>;
 
 function cellsFrom(widgets: WidgetRow[], bp: Breakpoint, columns: number): Cells {
   const rects = widgets.map((w) => {
-    const l = w.layout[bp];
+    // Defensive (phase 4.8 C3): a row whose layout is missing this breakpoint
+    // (e.g. legacy data from before the column change) must not crash the board.
+    const l = w.layout?.[bp] ?? { x: 0, y: 0, w: 1, h: 1 };
     return { id: w.id, x: l.x, y: l.y, w: l.w, h: l.h };
   });
   // No-pin repack so the admin board mirrors the public render exactly:
@@ -158,7 +160,9 @@ export function DragGrid({
         <Tile
           key={w.id}
           row={w}
-          cell={cells[w.id]}
+          // Fall back to the freshly computed cell (or a 1x1) so a widget added
+          // this render — before the cells state catches up — never crashes.
+          cell={cells[w.id] ?? initial[w.id] ?? { x: 0, y: 0, w: 1, h: 1 }}
           px={px}
           dragging={dragId === w.id}
           tx={tx}

@@ -1,11 +1,12 @@
 import type { Breakpoint, WidgetRow, WidgetSize } from "@portfolio/shared";
+import { sizesForBreakpoint } from "@portfolio/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TypeEditor } from "../../../components/editors";
 import { Banner, Button, Chip, Eyebrow, Muted, SectionTitle, ToggleRow, success } from "../../../components/ui";
-import { deleteW, saveConfig, setSize, setVisible } from "../../../lib/actions";
+import { deleteW, resetToile, saveConfig, setSize, setVisible } from "../../../lib/actions";
 import { meta } from "../../../lib/registry";
 import { supabase } from "../../../lib/supabase";
 import { radius, space, useTheme } from "../../../lib/theme";
@@ -93,6 +94,25 @@ export default function EditWidget() {
     }
   };
 
+  const confirmReset = () => {
+    if (!row) return;
+    Alert.alert("Réinitialiser la toile ?", "La toile actuelle est archivée, puis remise à blanc.", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Réinitialiser",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await resetToile(row);
+            success();
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "Réinitialisation impossible");
+          }
+        },
+      },
+    ]);
+  };
+
   const confirmDelete = () => {
     Alert.alert("Supprimer ce widget ?", "Il disparaîtra du dashboard public.", [
       { text: "Annuler", style: "cancel" },
@@ -145,9 +165,9 @@ export default function EditWidget() {
           >
             Taille
           </SectionTitle>
-          <Muted>Format sur l'écran {bp === "mobile" ? "mobile (3 colonnes)" : "desktop (5 colonnes)"}. Enregistré aussitôt.</Muted>
+          <Muted>Format sur l'écran {bp === "mobile" ? "mobile (3 colonnes)" : "desktop (9 colonnes)"}. Enregistré aussitôt.</Muted>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {def.sizes.map((s) => (
+            {sizesForBreakpoint(bp).map((s) => (
               <Chip key={sizeLabel(s)} label={sizeLabel(s)} active={eqSize(s, row.layout[bp])} onPress={() => changeSize(s)} />
             ))}
           </View>
@@ -158,6 +178,7 @@ export default function EditWidget() {
         </View>
 
         <Button label="Enregistrer" onPress={save} loading={saving} />
+        {row.type === "toile" ? <Button label="🎨 Réinitialiser la toile" onPress={confirmReset} variant="ghost" /> : null}
         <Button label="Supprimer le widget" onPress={confirmDelete} variant="danger" />
       </ScrollView>
     </SafeAreaView>

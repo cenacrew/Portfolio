@@ -1,5 +1,5 @@
 import type { WidgetType } from "@portfolio/shared";
-import { SOCIAL_PLATFORMS } from "@portfolio/shared";
+import { SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
@@ -144,11 +144,33 @@ const opt = <T extends string>(values: readonly T[]): { value: T; label: string 
 
 // --- editors per type -------------------------------------------------------
 
+// URL templates per platform (phase 4.8 C4): picking a known platform pre-fills
+// the URL with a {pseudo} placeholder to replace. Empty for "generic"/"email".
+const SOCIAL_TEMPLATES: Record<string, string> = {
+  github: "https://github.com/{pseudo}",
+  linkedin: "https://linkedin.com/in/{pseudo}",
+  instagram: "https://instagram.com/{pseudo}",
+  x: "https://x.com/{pseudo}",
+  discord: "https://discord.gg/{pseudo}",
+  youtube: "https://youtube.com/@{pseudo}",
+  twitch: "https://twitch.tv/{pseudo}",
+  email: "mailto:{pseudo}",
+};
+const ALL_TEMPLATES = new Set(Object.values(SOCIAL_TEMPLATES));
+
 function SocialLinkEditor({ config, onChange }: EProps) {
+  const onPlatform = (platform: string) => {
+    const template = SOCIAL_TEMPLATES[platform];
+    // Only overwrite the URL when it's empty or still an untouched template, so
+    // a real URL the admin typed is never clobbered.
+    const url = config.url;
+    const replace = !url || ALL_TEMPLATES.has(url) || url === "https://example.com";
+    onChange({ ...config, platform, url: replace && template ? template : url });
+  };
   return (
     <>
-      <SelectRow label="Plateforme" value={config.platform} options={opt(SOCIAL_PLATFORMS)} onChange={(platform) => onChange({ ...config, platform })} />
-      <TextField label="URL" value={config.url} onChange={(url) => onChange({ ...config, url })} keyboardType="url" autoCapitalize="none" />
+      <SelectRow label="Plateforme" value={config.platform} options={opt(SOCIAL_PLATFORMS)} onChange={onPlatform} />
+      <TextField label="URL" value={config.url} onChange={(url) => onChange({ ...config, url })} keyboardType="url" autoCapitalize="none" hint="Remplace {pseudo} par ton identifiant." />
       <TextField label="Pseudo (optionnel)" value={config.handle ?? ""} onChange={(handle) => onChange({ ...config, handle: handle || undefined })} autoCapitalize="none" />
       <TextField label="Libellé (optionnel)" value={config.label ?? ""} onChange={(label) => onChange({ ...config, label: label || undefined })} />
     </>
@@ -372,6 +394,73 @@ function PhotoEditor({ config, onChange }: EProps) {
   );
 }
 
+function YoutubeEmbedEditor({ config, onChange }: EProps) {
+  return (
+    <>
+      <TextField label="URL de la vidéo" value={config.url} onChange={(url) => onChange({ ...config, url })} keyboardType="url" autoCapitalize="none" hint="youtube.com/watch?v=… ou youtu.be/…" />
+      <TextField label="Titre (optionnel)" value={config.title ?? ""} onChange={(title) => onChange({ ...config, title: title || undefined })} />
+    </>
+  );
+}
+
+function TechStackEditor({ config, onChange }: EProps) {
+  const t = useTheme();
+  const items: string[] = config.items ?? [];
+  const toggle = (key: string) => {
+    const on = items.includes(key);
+    onChange({ ...config, items: on ? items.filter((k) => k !== key) : [...items, key] });
+  };
+  return (
+    <>
+      <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
+      <Field label="Technologies affichées">
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {TECH_KEYS.map((key) => {
+            const on = items.includes(key);
+            return (
+              <Pressable
+                key={key}
+                onPress={() => {
+                  tap();
+                  toggle(key);
+                }}
+                style={{ borderWidth: 1.5, borderColor: on ? t.accent : t.border, backgroundColor: on ? t.accent : "transparent", borderRadius: radius.pill, paddingVertical: 7, paddingHorizontal: 12 }}
+              >
+                <Text style={{ color: on ? t.onBrand : t.textMuted, fontWeight: "700", fontSize: 12 }}>{key}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </Field>
+    </>
+  );
+}
+
+function PaypalEditor({ config, onChange }: EProps) {
+  return (
+    <>
+      <TextField label="Identifiant paypal.me" value={config.handle} onChange={(handle) => onChange({ ...config, handle })} autoCapitalize="none" hint="La partie après paypal.me/" />
+      <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
+      <TextField label="Sous-titre" value={config.subtitle} onChange={(subtitle) => onChange({ ...config, subtitle })} />
+    </>
+  );
+}
+
+function LetterboxdEditor({ config, onChange }: EProps) {
+  return (
+    <TextField label="Utilisateur Letterboxd" value={config.username} onChange={(username) => onChange({ ...config, username })} autoCapitalize="none" hint="Le flux letterboxd.com/<pseudo>/rss/ alimente le widget." />
+  );
+}
+
+function ToileEditor({ config, onChange }: EProps) {
+  return (
+    <>
+      <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
+      <TextField label="Sous-titre" value={config.subtitle} onChange={(subtitle) => onChange({ ...config, subtitle })} />
+    </>
+  );
+}
+
 export function TypeEditor({ type, config, onChange }: { type: WidgetType; config: any; onChange: (next: any) => void }) {
   switch (type) {
     case "social-link":
@@ -406,6 +495,16 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <PhotoEditor config={config} onChange={onChange} />;
     case "video":
       return <VideoEditor config={config} onChange={onChange} />;
+    case "youtube-embed":
+      return <YoutubeEmbedEditor config={config} onChange={onChange} />;
+    case "tech-stack":
+      return <TechStackEditor config={config} onChange={onChange} />;
+    case "paypal":
+      return <PaypalEditor config={config} onChange={onChange} />;
+    case "letterboxd":
+      return <LetterboxdEditor config={config} onChange={onChange} />;
+    case "toile":
+      return <ToileEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

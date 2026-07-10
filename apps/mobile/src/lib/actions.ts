@@ -1,8 +1,19 @@
 import type { Breakpoint, WidgetBreakpointLayout, WidgetRow, WidgetSize, WidgetType } from "@portfolio/shared";
-import { deleteWidget, GRID, reorderWidgets, updateLayouts, updateWidget, upsertWidget } from "@portfolio/shared";
+import {
+  deleteWidget,
+  GRID,
+  reorderWidgets,
+  toileArchivePath,
+  toilePath,
+  toilePublicUrl,
+  toileSchema,
+  updateLayouts,
+  updateWidget,
+  upsertWidget,
+} from "@portfolio/shared";
 import { File } from "expo-file-system";
 import { meta } from "./registry";
-import { STORAGE_BUCKET, supabase } from "./supabase";
+import { STORAGE_BUCKET, SUPABASE_URL, supabase } from "./supabase";
 
 // All writes run through the authenticated user session (supabase client) and
 // are enforced by RLS. No service-role key is ever present in the app.
@@ -16,7 +27,13 @@ function nextPosition(widgets: WidgetRow[]): number {
 export async function addWidget(type: WidgetType, widgets: WidgetRow[]): Promise<WidgetRow> {
   const def = meta(type);
   const size = def.defaultSize;
-  const bottom = (b: Breakpoint) => widgets.reduce((max, w) => Math.max(max, w.layout[b].y + w.layout[b].h), 0);
+  // Guard legacy rows missing a breakpoint layout so adding never throws
+  // "Cannot read property 'x'/'y' of undefined" (phase 4.8 C3).
+  const bottom = (b: Breakpoint) =>
+    widgets.reduce((max, w) => {
+      const l = w.layout?.[b];
+      return l ? Math.max(max, l.y + l.h) : max;
+    }, 0);
   const sized = (b: Breakpoint) => ({ x: 0, y: bottom(b), w: Math.min(size.w, GRID[b].columns), h: size.h });
   const layout: WidgetBreakpointLayout = { mobile: sized("mobile"), desktop: sized("desktop") };
   return upsertWidget(supabase, {
@@ -133,6 +150,48 @@ export async function uploadVideo(uri: string, mime = "video/mp4", expectedSize?
   if (error) throw error;
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
+}
+
+// A tiny opaque-white PNG. Uploaded to the toile bucket on reset; the tile and
+// modal scale it to fill, so the canvas reads as a blank white sheet.
+const BLANK_PNG_B64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAIAAAD91JpzAAAADklEQVR4nGP4DwYMEAoAU7oL9ZisIGcAAAAASUVORK5CYII=";
+
+function b64ToBytes(b64: string): Uint8Array {
+  // atob is a global in Hermes (RN 0.74+ / Expo SDK 57).
+  const bin = globalThis.atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+// Reset the collaborative canvas (phase 4.8 A7, admin). Archives the current
+// PNG to toile/archive/ first, then overwrites the toile with a blank sheet and
+// bumps the widget's config.version so the public tile refreshes.
+export async function resetToile(row: WidgetRow): Promise<void> {
+  // 1) Archive the current image (best-effort — skip if it doesn't exist yet).
+  try {
+    const res = await fetch(toilePublicUrl(SUPABASE_URL, row.id, Date.now()), { cache: "no-store" as RequestCache });
+    if (res.ok) {
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.byteLength > 8) {
+        await supabase.storage.from(STORAGE_BUCKET).upload(toileArchivePath(row.id), buf, { contentType: "image/png", upsert: false });
+      }
+    }
+  } catch {
+    // No existing image to archive; carry on.
+  }
+  // 2) Overwrite with a blank sheet.
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(toilePath(row.id), b64ToBytes(BLANK_PNG_B64), {
+    contentType: "image/png",
+    upsert: true,
+  });
+  if (error) throw error;
+  // 3) Bump version so the public <img> cache-busts.
+  const cfg = toileSchema.safeParse(row.config);
+  const version = (cfg.success ? cfg.data.version : 0) + 1;
+  const next = cfg.success ? { ...cfg.data, version } : { title: "La toile", subtitle: "Laisse ta trace", version };
+  await updateWidget(supabase, row.id, { config: next });
 }
 
 // Posts an image: appends to the first photo widget if one exists, otherwise

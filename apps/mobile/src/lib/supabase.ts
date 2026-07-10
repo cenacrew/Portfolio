@@ -30,3 +30,4 @@ export const supabase = createClient<Database>(url, anonKey, {
 });
 
 export const STORAGE_BUCKET = "widget-media";
+export const SUPABASE_URL = url;

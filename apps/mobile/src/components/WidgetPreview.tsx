@@ -1,7 +1,9 @@
 import type { WidgetRow } from "@portfolio/shared";
+import { toilePublicUrl } from "@portfolio/shared";
 import { Image } from "expo-image";
 import { Pressable, Text, View, type ViewStyle } from "react-native";
 import { meta } from "../lib/registry";
+import { SUPABASE_URL } from "../lib/supabase";
 import { NOTE_TONES, radius, useTheme, type Palette } from "../lib/theme";
 import { tap } from "./ui";
 
@@ -152,6 +154,49 @@ export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
           {sub(c.url || "")}
         </View>
       );
+    case "youtube-embed":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 24 }}>▶️</Text>
+          {title(c.title || "Vidéo YouTube")}
+          {sub(c.url || "")}
+        </View>
+      );
+    case "tech-stack":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 22 }}>🧩</Text>
+          {title(c.title || "Stack")}
+          {sub(`${c.items?.length ?? 0} technos`)}
+        </View>
+      );
+    case "paypal":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 24 }}>☕</Text>
+          {title(c.title || "Don PayPal")}
+          {sub(`paypal.me/${c.handle || ""}`)}
+        </View>
+      );
+    case "letterboxd":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 22 }}>🎞️</Text>
+          {title("Letterboxd")}
+          {sub(`@${c.username || "cenacrew"}`)}
+        </View>
+      );
+    case "toile": {
+      const uri = toilePublicUrl(SUPABASE_URL, row.id, c.version ?? 0);
+      return (
+        <View style={{ flex: 1, borderRadius: radius.sm, overflow: "hidden", backgroundColor: "#fff" }}>
+          <Image source={{ uri }} style={{ flex: 1 }} contentFit="cover" transition={150} />
+          <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 6, backgroundColor: "rgba(0,0,0,0.4)" }}>
+            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "800" }}>{c.title || "La toile"}</Text>
+          </View>
+        </View>
+      );
+    }
     default: {
       const m = meta(row.type);
       return (
