@@ -10,10 +10,24 @@ type Film = {
   link: string;
 };
 
+// Decode the handful of XML/HTML entities that show up in feed text (film
+// titles like "Mr. &amp; Mrs. Smith").
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&#x27;/gi, "'");
+}
+
 function pick(block: string, tag: string): string | undefined {
   const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "i"));
   if (!m) return undefined;
-  return m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/i, "$1").trim() || undefined;
+  const raw = m[1].replace(/<!\[CDATA\[([\s\S]*?)\]\]>/i, "$1").trim();
+  return raw ? decodeEntities(raw) : undefined;
 }
 
 // Parse a Letterboxd member RSS feed into its most recent diary entries.
