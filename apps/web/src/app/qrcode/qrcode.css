@@ -949,38 +949,207 @@ body.dark-mode .qr-page {
   color: var(--qr-ink-faint);
 }
 
-/* ---------- weather ---------- */
+/* ---------- weather (illustrated, phase 4.10 A7) ---------- */
 .w-weather {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  /* Per-scene sky gradient. Text is white with a soft shadow for legibility. */
+  --sky-1: #8a97a6;
+  --sky-2: #b9c3cd;
+  background: linear-gradient(160deg, var(--sky-1), var(--sky-2));
+}
+.w-weather--clear { --sky-1: #58a6e8; --sky-2: #a9d6f5; }
+.w-weather--partly { --sky-1: #5c9fd6; --sky-2: #bcd3e6; }
+.w-weather--cloudy { --sky-1: #8a97a6; --sky-2: #b9c3cd; }
+.w-weather--fog { --sky-1: #9aa2a8; --sky-2: #cdd2d5; }
+.w-weather--rain { --sky-1: #4a5b70; --sky-2: #7d8da0; }
+.w-weather--snow { --sky-1: #8fa2b6; --sky-2: #d7e2ec; }
+.w-weather--storm { --sky-1: #33384a; --sky-2: #5a6072; }
+.w-weather--night { --sky-1: #10193a; --sky-2: #2a3566; color: #eef2ff; }
+.w-weather--night.w-weather--rain { --sky-1: #10152a; --sky-2: #2b3550; }
+.w-weather--night.w-weather--storm { --sky-1: #0a0c1c; --sky-2: #262b40; }
+
+.w-weather__content {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  height: 100%;
+  padding: var(--wp);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
 }
-.w-weather__top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.w-weather__emoji {
-  font-size: 22px;
-}
+.w-weather__top { display: flex; align-items: center; gap: 6px; }
 .w-weather__city {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--qr-ink-soft);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 .w-weather__temp {
   font-family: var(--font-bricolage), sans-serif;
-  font-weight: 700;
-  font-size: clamp(34px, 13vw, 46px);
+  font-weight: 800;
+  font-size: clamp(38px, 26cqmin, 92px);
   line-height: 1;
   margin-top: auto;
 }
-.w-weather__temp span {
-  color: var(--qr-ink-faint);
-}
+.w-weather__temp span { opacity: 0.75; }
 .w-weather__desc {
-  font-size: 11.5px;
-  color: var(--qr-ink-soft);
+  font-size: clamp(11.5px, 5cqmin, 20px);
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+/* --- scene art layer --- */
+.w-wx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.w-wx__sun {
+  position: absolute;
+  top: 12%;
+  right: 12%;
+  width: 34cqmin;
+  height: 34cqmin;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff3b0, #ffd83d 55%, #ffbe1a 72%);
+  box-shadow: 0 0 32px 10px rgba(255, 216, 61, 0.55);
+}
+.w-wx__sun--sm { width: 24cqmin; height: 24cqmin; top: 14%; right: 10%; }
+.w-wx__moon {
+  position: absolute;
+  top: 13%;
+  right: 14%;
+  width: 26cqmin;
+  height: 26cqmin;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 62% 38%, #fdfbe8, #d9def0 70%);
+  box-shadow: inset -6px -4px 0 -2px rgba(0, 0, 0, 0.18), 0 0 26px 4px rgba(220, 228, 255, 0.4);
+}
+.w-wx__moon--sm { width: 18cqmin; height: 18cqmin; }
+.w-wx__stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.4px 1.4px at 20% 25%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 62% 15%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 82% 42%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 35% 55%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 12% 62%, #fff, transparent);
+  opacity: 0.85;
+}
+.w-wx__cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff, #e7edf3);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+.w-wx__cloud::before,
+.w-wx__cloud::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  background: inherit;
+}
+.w-wx__cloud--a {
+  right: 12%;
+  top: 30%;
+  width: 52cqmin;
+  height: 20cqmin;
+  min-width: 66px;
+  min-height: 26px;
+}
+.w-wx__cloud--a::before { left: 14%; width: 44%; height: 150%; }
+.w-wx__cloud--a::after { right: 12%; width: 56%; height: 190%; }
+.w-wx__cloud--b {
+  left: 8%;
+  top: 52%;
+  width: 40cqmin;
+  height: 15cqmin;
+  min-width: 50px;
+  min-height: 20px;
+  opacity: 0.82;
+}
+.w-wx__cloud--b::before { left: 16%; width: 42%; height: 150%; }
+.w-wx__cloud--b::after { right: 14%; width: 52%; height: 180%; }
+.w-wx__cloud--dark { background: linear-gradient(180deg, #b8beca, #8b93a2); }
+.w-wx__precip {
+  position: absolute;
+  inset: 40% 8% 0 12%;
+}
+.w-wx__precip i {
+  position: absolute;
+  top: calc(var(--n) * 3%);
+  left: calc(8% + var(--n) * 10%);
+  width: 2px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(220, 235, 255, 0.85);
+  animation: w-rain 0.9s linear infinite;
+  animation-delay: calc(var(--n) * -0.12s);
+}
+@keyframes w-rain {
+  0% { transform: translateY(-10%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(340%); opacity: 0; }
+}
+.w-wx__precip--snow i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: w-snow 2.4s linear infinite;
+}
+@keyframes w-snow {
+  0% { transform: translateY(-10%) translateX(0); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(360%) translateX(8px); opacity: 0; }
+}
+.w-wx__fog {
+  position: absolute;
+  inset: 22% 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 0 10%;
+}
+.w-wx__fog i {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.w-wx__fog i:nth-child(2) { width: 82%; }
+.w-wx__fog i:nth-child(3) { width: 68%; margin-left: 12%; }
+.w-wx__fog i:nth-child(4) { width: 90%; }
+.w-wx__bolt {
+  position: absolute;
+  top: 44%;
+  right: 30%;
+  width: 16px;
+  height: 30px;
+  background: linear-gradient(180deg, #ffe680, #ffcf33);
+  clip-path: polygon(52% 0, 12% 58%, 46% 58%, 30% 100%, 88% 40%, 54% 40%);
+  filter: drop-shadow(0 0 6px rgba(255, 214, 51, 0.7));
+  animation: w-flash 3.2s steps(1) infinite;
+}
+@keyframes w-flash {
+  0%, 92%, 100% { opacity: 0.25; }
+  94%, 98% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .w-wx__precip i,
+  .w-wx__precip--snow i,
+  .w-wx__bolt { animation: none; }
 }
 
 /* ---------- countdown ---------- */
@@ -1360,9 +1529,6 @@ body.dark-mode .qr-page {
 
 /* ---- WIDE + TALL tiles (≈ 3x2 and up): let hero widgets breathe. */
 @container tile (min-width: 300px) and (min-height: 220px) {
-  .w-weather__temp {
-    font-size: 56px;
-  }
   .w-status__text {
     font-size: 17px;
   }
