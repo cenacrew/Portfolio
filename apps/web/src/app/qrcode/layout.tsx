@@ -10,10 +10,28 @@ const bricolage = Bricolage_Grotesque({
   variable: "--font-bricolage",
 });
 
+const DESCRIPTION =
+  "Le petit coin du web de Valentin Sourdois Pajot — liens, projets, humeur, musique et plus, en un scan.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://cenacrew.com"),
   title: "Valentin · Dashboard",
-  description:
-    "Le petit coin du web de Valentin Sourdois Pajot — liens, projets, humeur, musique et plus, en un scan.",
+  description: DESCRIPTION,
+  alternates: { canonical: "/qrcode" },
+  // og image is provided by the sibling opengraph-image.tsx (auto-detected).
+  openGraph: {
+    type: "website",
+    url: "https://cenacrew.com/qrcode",
+    siteName: "cenacrew.com",
+    title: "Valentin · Dashboard bento",
+    description: DESCRIPTION,
+    locale: "fr_FR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Valentin · Dashboard bento",
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
