@@ -1,10 +1,21 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 // Shared large modal used by the toile and the guestbook (phase 4.10 A6/A13).
-// Takes ~90% of a phone screen and a comfortable large panel on desktop; closes
-// on the X, on a click outside the panel, and on Escape; locks body scroll.
+//
+// Phase 4.11 A1 — real pop-up over the whole dashboard. The tiles use
+// `container-type: size` (for container queries), which makes each `.qr-tile`
+// a containing block for `position: fixed` descendants — so a modal rendered
+// inside a widget was pinned INSIDE its tile (inputs clipped, unusable). Fix:
+// render the overlay through a React portal, OUT of the tile's DOM subtree.
+//
+// Target = the `.qr-page` root, not `document.body`: `.qr-page` carries the
+// palette variables (--c1/--c2, live palette-button overrides), the dark-mode
+// scope and the --font-bricolage face, and it is NOT a containing block for
+// fixed (no transform/filter/contain), so `position: fixed` still resolves to
+// the viewport and covers the whole board. Falls back to body if not found.
 export default function GreatModal({
   title,
   onClose,
@@ -18,6 +29,13 @@ export default function GreatModal({
   className?: string;
   labelledBy?: string;
 }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+
+  // Resolve the portal target on mount (client only).
+  useEffect(() => {
+    setTarget(document.querySelector<HTMLElement>(".qr-page") ?? document.body);
+  }, []);
+
   // Escape to close.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -36,7 +54,9 @@ export default function GreatModal({
     };
   }, []);
 
-  return (
+  if (!target) return null;
+
+  return createPortal(
     <div
       className="gmodal"
       role="dialog"
@@ -58,6 +78,7 @@ export default function GreatModal({
         </div>
         <div className="gmodal__body">{children}</div>
       </div>
-    </div>
+    </div>,
+    target,
   );
 }

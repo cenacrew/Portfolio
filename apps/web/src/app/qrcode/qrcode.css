@@ -82,7 +82,11 @@ body.dark-mode .qr-page {
     --qr-cols: 9;
     --qr-gap: 12px;
     --qr-pad: 20px;
-    --qr-maxw: 1180px;
+    /* Phase 4.11 A8: at 9 columns the old 1180px board made the desktop 1x1
+       (~116px) SMALLER than the mobile 1x1 (~118px) and left fat side margins.
+       Widened to 1360px so the desktop unit is ~136px (comfortably larger than
+       mobile) with thin-but-present ~40px margins on a 1440px screen. */
+    --qr-maxw: 1360px;
     --wp: 15px;
   }
 }
@@ -471,7 +475,8 @@ body.dark-mode .qr-page {
   --note-bg: #ffe0e6;
   --note-ink: #7a2a41;
 }
-/* Quotation-mark header (phase 4.10 A3): the note reads as a pinned quote. */
+/* Quotation-mark header (phase 4.10 A3). Phase 4.11 A3: pinned to the top-RIGHT
+   (align-self flips it to the cross-axis end of the column). */
 .w-note__quote {
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 700;
@@ -481,6 +486,8 @@ body.dark-mode .qr-page {
   color: var(--note-ink);
   opacity: 0.32;
   flex: none;
+  align-self: flex-end;
+  margin-right: 2px;
 }
 .w-note__text {
   margin: 2px 0 0;
@@ -781,12 +788,26 @@ body.dark-mode .qr-page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Single-line progress: 0:00 —bar— x:xx (phase 4.11 A4). */
+.w-np__prog {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+}
+.w-np__t {
+  font-size: 10px;
+  color: var(--qr-ink-faint);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
 .w-np__bar {
+  flex: 1 1 auto;
+  min-width: 0;
   height: 4px;
   border-radius: 3px;
   background: var(--qr-line);
   overflow: hidden;
-  margin-top: auto;
 }
 .w-np__bar span {
   display: block;
@@ -794,13 +815,6 @@ body.dark-mode .qr-page {
   background: var(--qr-spotify);
   border-radius: 3px;
   transition: width 1s linear;
-}
-.w-np__time {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  color: var(--qr-ink-faint);
-  font-variant-numeric: tabular-nums;
 }
 /* Deep-link CTA + listening device (phase 4.10 A5). */
 .w-np__foot {
@@ -1136,154 +1150,31 @@ body.dark-mode .qr-page {
   opacity: 0.95;
 }
 
-/* --- scene art layer --- */
-.w-wx {
+/* --- animated Meteocons layer (phase 4.11 A5) --- */
+/* One animated SVG per condition, sitting top-right and scaling with the tile
+   (container units) so large formats are filled by a big lively icon instead of
+   dead space; text overlays it at z-index 2. */
+.w-weather__icon {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  right: 2%;
+  transform: translateY(-50%);
   z-index: 1;
-  overflow: hidden;
+  width: clamp(72px, 62cqmin, 260px);
+  height: clamp(72px, 62cqmin, 260px);
   pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.22));
 }
-.w-wx__sun {
-  position: absolute;
-  top: 12%;
-  right: 12%;
-  width: 34cqmin;
-  height: 34cqmin;
-  min-width: 44px;
-  min-height: 44px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #fff3b0, #ffd83d 55%, #ffbe1a 72%);
-  box-shadow: 0 0 32px 10px rgba(255, 216, 61, 0.55);
+.w-weather__icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
 }
-.w-wx__sun--sm { width: 24cqmin; height: 24cqmin; top: 14%; right: 10%; }
-.w-wx__moon {
-  position: absolute;
-  top: 13%;
-  right: 14%;
-  width: 26cqmin;
-  height: 26cqmin;
-  min-width: 34px;
-  min-height: 34px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 62% 38%, #fdfbe8, #d9def0 70%);
-  box-shadow: inset -6px -4px 0 -2px rgba(0, 0, 0, 0.18), 0 0 26px 4px rgba(220, 228, 255, 0.4);
-}
-.w-wx__moon--sm { width: 18cqmin; height: 18cqmin; }
-.w-wx__stars {
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(1.4px 1.4px at 20% 25%, #fff, transparent),
-    radial-gradient(1.4px 1.4px at 62% 15%, #fff, transparent),
-    radial-gradient(1.2px 1.2px at 82% 42%, #fff, transparent),
-    radial-gradient(1.2px 1.2px at 35% 55%, #fff, transparent),
-    radial-gradient(1.6px 1.6px at 12% 62%, #fff, transparent);
-  opacity: 0.85;
-}
-.w-wx__cloud {
-  position: absolute;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ffffff, #e7edf3);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-}
-.w-wx__cloud::before,
-.w-wx__cloud::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  border-radius: 50%;
-  background: inherit;
-}
-.w-wx__cloud--a {
-  right: 12%;
-  top: 30%;
-  width: 52cqmin;
-  height: 20cqmin;
-  min-width: 66px;
-  min-height: 26px;
-}
-.w-wx__cloud--a::before { left: 14%; width: 44%; height: 150%; }
-.w-wx__cloud--a::after { right: 12%; width: 56%; height: 190%; }
-.w-wx__cloud--b {
-  left: 8%;
-  top: 52%;
-  width: 40cqmin;
-  height: 15cqmin;
-  min-width: 50px;
-  min-height: 20px;
-  opacity: 0.82;
-}
-.w-wx__cloud--b::before { left: 16%; width: 42%; height: 150%; }
-.w-wx__cloud--b::after { right: 14%; width: 52%; height: 180%; }
-.w-wx__cloud--dark { background: linear-gradient(180deg, #b8beca, #8b93a2); }
-.w-wx__precip {
-  position: absolute;
-  inset: 40% 8% 0 12%;
-}
-.w-wx__precip i {
-  position: absolute;
-  top: calc(var(--n) * 3%);
-  left: calc(8% + var(--n) * 10%);
-  width: 2px;
-  height: 12px;
-  border-radius: 2px;
-  background: rgba(220, 235, 255, 0.85);
-  animation: w-rain 0.9s linear infinite;
-  animation-delay: calc(var(--n) * -0.12s);
-}
-@keyframes w-rain {
-  0% { transform: translateY(-10%); opacity: 0; }
-  30% { opacity: 1; }
-  100% { transform: translateY(340%); opacity: 0; }
-}
-.w-wx__precip--snow i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fff;
-  animation: w-snow 2.4s linear infinite;
-}
-@keyframes w-snow {
-  0% { transform: translateY(-10%) translateX(0); opacity: 0; }
-  25% { opacity: 1; }
-  100% { transform: translateY(360%) translateX(8px); opacity: 0; }
-}
-.w-wx__fog {
-  position: absolute;
-  inset: 22% 0 0 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  padding: 0 10%;
-}
-.w-wx__fog i {
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
-}
-.w-wx__fog i:nth-child(2) { width: 82%; }
-.w-wx__fog i:nth-child(3) { width: 68%; margin-left: 12%; }
-.w-wx__fog i:nth-child(4) { width: 90%; }
-.w-wx__bolt {
-  position: absolute;
-  top: 44%;
-  right: 30%;
-  width: 16px;
-  height: 30px;
-  background: linear-gradient(180deg, #ffe680, #ffcf33);
-  clip-path: polygon(52% 0, 12% 58%, 46% 58%, 30% 100%, 88% 40%, 54% 40%);
-  filter: drop-shadow(0 0 6px rgba(255, 214, 51, 0.7));
-  animation: w-flash 3.2s steps(1) infinite;
-}
-@keyframes w-flash {
-  0%, 92%, 100% { opacity: 0.25; }
-  94%, 98% { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .w-wx__precip i,
-  .w-wx__precip--snow i,
-  .w-wx__bolt { animation: none; }
+/* On short/wide formats the icon hugs the right edge; on tall/square ones it
+   floats a touch higher so the temperature keeps the bottom-left corner. */
+@container tile (min-aspect-ratio: 3/2) {
+  .w-weather__icon { right: 0; }
 }
 
 /* ---------- countdown ---------- */
@@ -1315,17 +1206,19 @@ body.dark-mode .qr-page {
 }
 /* Numbers scale with the tile itself (container units), so a 3x3 countdown
    reads as a hero and a 1x1 stays legible (phase 4.10 A8). */
+/* Phase 4.11 A6: scale the digits far more boldly so large formats read as a
+   hero instead of leaving a dead gap above small numbers. */
 .w-cd__cell b {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(18px, 13cqmin, 52px);
+  font-size: clamp(20px, 17cqmin, 78px);
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
 .w-cd__cell i {
   font-style: normal;
-  font-size: clamp(8px, 3cqmin, 13px);
+  font-size: clamp(8px, 3.6cqmin, 16px);
   color: var(--qr-ink-faint);
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -1333,10 +1226,10 @@ body.dark-mode .qr-page {
 .w-cd__done {
   margin-top: auto;
   font-weight: 800;
-  font-size: clamp(18px, 8cqmin, 34px);
+  font-size: clamp(20px, 11cqmin, 46px);
 }
 @container tile (max-height: 130px) {
-  .w-cd__cell b { font-size: clamp(15px, 9cqmin, 24px); }
+  .w-cd__cell b { font-size: clamp(15px, 10cqmin, 26px); }
 }
 
 /* ---------- watchlist ---------- */
@@ -1423,16 +1316,18 @@ body.dark-mode .qr-page {
   justify-content: center;
   gap: 3px;
 }
-/* Number + label scale with the tile (phase 4.10 A9). */
+/* Number + label scale with the tile (phase 4.10 A9; scaled up harder in 4.11
+   A6 so big formats don't leave the number marooned in empty space). */
 .w-visits__num {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(28px, 22cqmin, 92px);
-  line-height: 1;
+  font-size: clamp(30px, 27cqmin, 116px);
+  line-height: 0.98;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 .w-visits__label {
-  font-size: clamp(11px, 4.5cqmin, 18px);
+  font-size: clamp(11px, 5cqmin, 20px);
   color: var(--qr-ink-soft);
 }
 
@@ -1957,21 +1852,35 @@ body.dark-mode .qr-page {
 }
 .w-lbxd__stars { color: #00b020; font-weight: 700; letter-spacing: 0.5px; }
 .w-lbxd__empty { color: var(--qr-ink-faint); font-size: 13px; }
-/* Small formats: show posters as a compact row without meta; the rating badge
-   overlays each poster so notes stay visible in *x1 (phase 4.10 A15). */
+/* Small formats: posters in a compact row without meta; the rating badge
+   overlays each poster so notes stay visible in *x1 (phase 4.10 A15).
+   Phase 4.11 A9: an auto-fill grid of fixed-width columns only ever lays out
+   WHOLE posters — leftover width stays empty and any posters past what fits are
+   clipped at a row boundary, so no poster is ever sliced or overlapped. */
 @container tile (max-height: 150px) {
-  .w-lbxd__list { flex-direction: row; align-items: flex-start; overflow: hidden; }
+  .w-lbxd__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 34px);
+    grid-auto-rows: 51px;
+    justify-content: start;
+    align-content: start;
+    gap: 8px;
+    overflow: hidden;
+  }
   .w-lbxd__meta { display: none; }
   .w-lbxd__poster { width: 34px; height: 51px; }
   .w-lbxd__rate { display: flex; }
 }
-/* Wide tiles: lay films out as a poster wall so we show many without overlap. */
+/* Wide tiles: a poster wall — same auto-fill guarantee, plus meta under each. */
 @container tile (min-width: 300px) and (min-height: 220px) {
   .w-lbxd__list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 68px);
+    grid-auto-rows: min-content;
+    justify-content: start;
+    align-content: start;
     gap: 10px;
+    overflow: hidden;
   }
   .w-lbxd__film { flex-direction: column; align-items: flex-start; gap: 4px; width: 68px; }
   .w-lbxd__poster { width: 68px; height: 102px; }
@@ -1998,7 +1907,10 @@ body.dark-mode .qr-page {
   display: block;
   image-rendering: auto;
 }
-/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13). */
+/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13).
+   On the blank white canvas the label's dark image-scrim would read as a grey
+   smudge and the faint pencil is barely visible, so the empty state gets
+   navy-ink text/icon on white instead of white-on-white (phase 4.11 A7). */
 .w-toile--empty { background: #fff; }
 .w-toile__blank {
   position: absolute;
@@ -2006,8 +1918,13 @@ body.dark-mode .qr-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c9ccd6;
+  color: color-mix(in srgb, var(--c2, #0d0c62) 34%, #fff);
 }
+.w-toile--empty .w-toile__label {
+  background: none;
+  color: var(--c2, #0d0c62);
+}
+.w-toile--empty .w-toile__sub { opacity: 0.6; }
 .w-toile__label {
   position: absolute;
   left: 0;
@@ -2238,9 +2155,15 @@ body.dark-mode .qr-page {
 }
 .w-lol__logo {
   display: inline-flex;
-  width: 18px;
-  height: 18px;
+  width: clamp(18px, 7cqmin, 40px);
+  height: clamp(18px, 7cqmin, 40px);
   flex: none;
+}
+.w-lol__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 /* Head laid over splash art (mastery) → white, higher z. */
 .w-lol__head--over {
@@ -2541,15 +2464,20 @@ body.dark-mode .qr-page {
   .w-lol__meter { display: none; }
 }
 
-/* Roomy tiles: let the art breathe and the numbers grow. */
+/* Roomy tiles: let the art breathe and the numbers grow (phase 4.11 A2 — pushed
+   harder so the big formats no longer leave dead space). */
 @container tile (min-width: 300px) and (min-height: 200px) {
-  .w-lol__emblem { max-height: 130px; }
-  .w-lol__emblem-img { max-height: 130px; }
-  .w-lol__crest { max-height: 110px; }
-  .w-lol__aram-map { max-height: 110px; }
+  .w-lol__emblem { max-height: 42cqmin; }
+  .w-lol__emblem-img { max-height: 42cqmin; }
+  .w-lol__crest { max-height: 38cqmin; }
+  .w-lol__aram-map { max-height: 40cqmin; }
+  .w-lol__body { gap: 18px; }
+  .w-lol__head .w-eyebrow { font-size: clamp(11px, 3.4cqmin, 16px); }
   .w-lol__tier,
-  .w-lol__name { font-size: 24px; }
-  .w-lol__big { font-size: 52px; }
-  .w-lol__points--over { font-size: 20px; }
-  .w-lol__stats { font-size: 14px; }
+  .w-lol__name { font-size: clamp(24px, 8cqmin, 40px); }
+  .w-lol__queue { font-size: clamp(11px, 3cqmin, 15px); }
+  .w-lol__big { font-size: clamp(52px, 20cqmin, 96px); }
+  .w-lol__points--over { font-size: clamp(20px, 6cqmin, 32px); }
+  .w-lol__stats { font-size: clamp(14px, 3.4cqmin, 18px); }
+  .w-lol__lvl { font-size: clamp(11px, 3cqmin, 16px); min-width: 26px; }
 }

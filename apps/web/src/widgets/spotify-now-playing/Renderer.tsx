@@ -119,15 +119,16 @@ export default function NowPlayingRenderer() {
       </div>
 
       {data?.isPlaying ? (
-        <>
-          <div className="w-np__bar">
+        // Phase 4.11 A4: single-line player — 0:00 —bar— x:xx — so the bar never
+        // needs its own row above the counters (which got clipped on short/narrow
+        // formats). The bar flexes to fill whatever width is left between them.
+        <div className="w-np__prog">
+          <span className="w-np__t">{fmt(progress)}</span>
+          <span className="w-np__bar">
             <span style={{ width: `${pct}%` }} />
-          </div>
-          <div className="w-np__time">
-            <span>{fmt(progress)}</span>
-            <span>{fmt(data?.durationMs ?? 0)}</span>
-          </div>
-        </>
+          </span>
+          <span className="w-np__t">{fmt(data?.durationMs ?? 0)}</span>
+        </div>
       ) : null}
 
       {data?.url ? (

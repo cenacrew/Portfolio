@@ -1,4 +1,5 @@
 import type { Breakpoint, WidgetBreakpointLayout } from "@portfolio/shared";
+import { GRID, resolveCollisions } from "@portfolio/shared";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -72,14 +73,38 @@ export default function Dashboard() {
   const saveLayout = async () => {
     const getCells = getCellsRef.current;
     if (!getCells) return;
+    // Cells for the edited breakpoint come straight from the drag grid, already
+    // de-overlapped by resolveCollisions. Phase 4.11 B1: the previous save only
+    // wrote the ACTIVE breakpoint, so the other breakpoint kept whatever was in
+    // the DB — including the slight overlaps that survived the 9-col remap, which
+    // then reappeared on toggle/refresh. Re-resolve the OTHER breakpoint from its
+    // stored layout here too, so every save persists clean, non-overlapping
+    // layouts for BOTH breakpoints.
     const cells = getCells();
+    const other: Breakpoint = bp === "mobile" ? "desktop" : "mobile";
+    const otherCols = GRID[other].columns;
+    const otherRects = widgets.map((w) => {
+      const l = w.layout?.[other] ?? { x: 0, y: 0, w: 1, h: 1 };
+      return { id: w.id, x: l.x, y: l.y, w: l.w, h: l.h };
+    });
+    const otherResolved = new Map(
+      resolveCollisions(otherRects, otherCols).map((r) => [r.id, r]),
+    );
+
     const changes: { id: string; layout: WidgetBreakpointLayout }[] = [];
     for (const w of widgets) {
-      const c = cells[w.id];
-      if (!c) continue;
-      const cur = w.layout[bp];
-      if (cur.x !== c.x || cur.y !== c.y || cur.w !== c.w || cur.h !== c.h) {
-        changes.push({ id: w.id, layout: { ...w.layout, [bp]: c } });
+      const active = cells[w.id] ?? w.layout[bp];
+      const o = otherResolved.get(w.id);
+      const nextOther = o ? { x: o.x, y: o.y, w: o.w, h: o.h } : w.layout[other];
+      const nextLayout = { ...w.layout, [bp]: active, [other]: nextOther };
+      const curActive = w.layout[bp];
+      const curOther = w.layout[other];
+      const activeChanged =
+        curActive.x !== active.x || curActive.y !== active.y || curActive.w !== active.w || curActive.h !== active.h;
+      const otherChanged =
+        curOther.x !== nextOther.x || curOther.y !== nextOther.y || curOther.w !== nextOther.w || curOther.h !== nextOther.h;
+      if (activeChanged || otherChanged) {
+        changes.push({ id: w.id, layout: nextLayout });
       }
     }
     if (changes.length === 0) {
