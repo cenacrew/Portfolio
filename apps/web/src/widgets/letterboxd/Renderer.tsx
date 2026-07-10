@@ -12,7 +12,13 @@ type Film = {
 
 // Decode the handful of XML/HTML entities that show up in feed text (film
 // titles like "Mr. &amp; Mrs. Smith").
+// The feed double-encodes some titles ("Mr. &amp;amp; Mrs. Smith"), so one
+// substitution pass still leaves "&amp;" behind — decode in two passes.
 function decodeEntities(s: string): string {
+  return decodeEntitiesOnce(decodeEntitiesOnce(s));
+}
+
+function decodeEntitiesOnce(s: string): string {
   return s
     .replace(/&amp;/g, "&")
     .replace(/&lt;/g, "<")
