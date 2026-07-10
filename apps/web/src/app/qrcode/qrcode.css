@@ -2120,6 +2120,7 @@ body.dark-mode .qr-page {
 
 /* ---------- lol (League of Legends) — phase 4.9 ---------- */
 .w-lol {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2148,27 +2149,19 @@ body.dark-mode .qr-page {
   flex: none;
 }
 .w-lol__logo {
-  position: relative;
-  display: inline-block;
-  width: 13px;
-  height: 13px;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
   flex: none;
 }
-.w-lol__logo b {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  transform: rotate(45deg);
-  border-radius: 2px;
+/* Head laid over splash art (mastery) → white, higher z. */
+.w-lol__head--over {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
-.w-lol__logo b:first-child {
-  border: 1.6px solid #c8a24a;
-}
-.w-lol__logo b:last-child {
-  width: 4px;
-  height: 4px;
-  background: #c8a24a;
-}
+.w-lol__head--over .w-eyebrow { color: rgba(255, 255, 255, 0.82); }
 
 .w-lol__body {
   display: flex;
@@ -2252,35 +2245,61 @@ body.dark-mode .qr-page {
   font-weight: 600;
 }
 
-/* --- mastery --- */
-.w-lol__champ {
+/* --- mastery (splash-art hero, phase 4.10 A16) --- */
+.w-lol--mastery { --tier: #c8a24a; }
+.w-lol__splash {
+  position: absolute;
+  inset: calc(-1 * var(--wp));
+  z-index: 0;
+  background-size: cover;
+  /* Splash art is 1215x717; frame the champion's face (upper-centre). */
+  background-position: 50% 22%;
+}
+.w-lol__splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Overlay for text legibility over any splash. */
+  background: linear-gradient(
+    180deg,
+    rgba(6, 8, 20, 0.35) 0%,
+    rgba(6, 8, 20, 0.15) 40%,
+    rgba(6, 8, 20, 0.78) 100%
+  );
+}
+.w-lol__body--mastery {
+  position: relative;
+  z-index: 2;
+  align-items: flex-end;
+  margin-top: auto;
+}
+.w-lol__crest {
   position: relative;
   flex: none;
-  display: inline-block;
-  height: 100%;
-  max-height: 72px;
-  aspect-ratio: 1;
-}
-.w-lol__champ-img {
-  width: 100%;
-  height: 100%;
-  max-height: 72px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1.5px solid color-mix(in srgb, var(--tier) 55%, transparent);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--tier) 30%, transparent);
-}
-.w-lol__champ-img--ph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--qr-tile-2);
-  font-size: 24px;
+  height: 100%;
+  max-height: 78px;
+  aspect-ratio: 1;
+}
+.w-lol__crest-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+}
+.w-lol__crest-img--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #fff;
 }
 .w-lol__lvl {
   position: absolute;
   left: 50%;
-  bottom: 3px;
+  bottom: -2px;
   transform: translateX(-50%);
   min-width: 22px;
   padding: 1px 6px;
@@ -2290,7 +2309,7 @@ body.dark-mode .qr-page {
   font-weight: 800;
   font-size: 11px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 .w-lol__name {
   font-family: var(--font-bricolage), sans-serif;
@@ -2302,6 +2321,8 @@ body.dark-mode .qr-page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.w-lol__name--over { color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+.w-lol__queue--over { color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
 .w-lol__points {
   margin-top: 5px;
   font-weight: 800;
@@ -2312,18 +2333,61 @@ body.dark-mode .qr-page {
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.w-lol__points--over { color: #f4d78a; text-shadow: 0 1px 5px rgba(0, 0, 0, 0.7); }
 .w-lol__points small {
   font-weight: 600;
   font-size: 11px;
-  color: var(--qr-ink-soft);
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* --- rank winrate meter (phase 4.10 A16) --- */
+.w-lol__wr { color: color-mix(in srgb, var(--tier) 78%, var(--qr-ink)); font-weight: 700; }
+.w-lol__meter {
+  display: block;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--qr-line);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.w-lol__meter span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tier) 70%, var(--qr-ink));
+}
+
+/* --- aram map icon (phase 4.10 A16) --- */
+.w-lol__aram-map {
+  flex: none;
+  display: inline-flex;
+  height: 100%;
+  max-height: 72px;
+  aspect-ratio: 1;
+}
+.w-lol__aram-map img,
+.w-lol__aram-map--ph {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--tier) 55%, transparent);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--tier) 30%, transparent);
+}
+.w-lol__aram-map--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--qr-tile-2);
+  font-size: 26px;
 }
 
 /* --- aram (challenge 101307 "Triomphe en ARAM" = total ARAM wins) --- */
 .w-lol__body--aram {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
 }
 .w-lol__big {
   font-family: var(--font-bricolage), sans-serif;
@@ -2379,17 +2443,25 @@ body.dark-mode .qr-page {
   .w-lol__big { font-size: 26px; }
   .w-lol__chip { display: none; }
   .w-lol__emblem-img,
-  .w-lol__champ { max-height: 52px; }
+  .w-lol__crest,
+  .w-lol__aram-map { max-height: 52px; }
+  .w-lol__meter { display: none; }
+  .w-lol__wr { display: none; }
 }
 @container tile (max-height: 130px) {
   .w-lol__stats { margin-top: 2px; }
+  .w-lol__meter { display: none; }
 }
 
-/* Roomy tiles: let the art breathe. */
+/* Roomy tiles: let the art breathe and the numbers grow. */
 @container tile (min-width: 300px) and (min-height: 200px) {
-  .w-lol__emblem-img,
-  .w-lol__champ { max-height: 96px; }
+  .w-lol__emblem { max-height: 130px; }
+  .w-lol__emblem-img { max-height: 130px; }
+  .w-lol__crest { max-height: 110px; }
+  .w-lol__aram-map { max-height: 110px; }
   .w-lol__tier,
-  .w-lol__name { font-size: 22px; }
-  .w-lol__big { font-size: 46px; }
+  .w-lol__name { font-size: 24px; }
+  .w-lol__big { font-size: 52px; }
+  .w-lol__points--over { font-size: 20px; }
+  .w-lol__stats { font-size: 14px; }
 }
