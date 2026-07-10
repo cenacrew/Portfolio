@@ -94,20 +94,38 @@ body.dark-mode .qr-page {
 }
 
 /* ---------- header ---------- */
+/* Mobile: avatar + aside on the first row, identity spanning below. Desktop:
+   avatar | identity (fills) | aside, so the row no longer bunches on the left
+   (phase 4.10 A1). */
 .qr-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "avatar side"
+    "id id";
+  align-items: start;
+  column-gap: 14px;
   padding: 30px 4px 22px;
 }
-.qr-header__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
+.qr-avatar { grid-area: avatar; }
+.qr-header__id { grid-area: id; margin-top: 12px; }
 .qr-header__side {
+  grid-area: side;
+  justify-self: end;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
+}
+@media (min-width: 768px) {
+  .qr-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "avatar id side";
+    align-items: center;
+    column-gap: 28px;
+  }
+  .qr-header__id { margin-top: 0; }
+  .qr-header__side { align-self: start; }
 }
 /* Avatar (phase 4.8 B3): larger, a full solid circle hugging the round photo
    crop — same proportions as the cenacrew.com home avatar. */
@@ -150,13 +168,14 @@ body.dark-mode .qr-page {
   text-transform: capitalize;
   color: var(--qr-ink-soft);
 }
+/* Palette + dark-mode controls, a touch bigger (phase 4.10 A1). */
 .qr-theme {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
   border: 1px solid var(--qr-line);
   background: var(--qr-tile);
   color: var(--qr-ink);
@@ -164,12 +183,13 @@ body.dark-mode .qr-page {
   box-shadow: var(--qr-shadow);
   transition: transform 0.2s;
 }
+.qr-theme svg { width: 21px; height: 21px; }
 .qr-theme:hover {
   transform: translateY(-2px);
 }
 .qr-controls {
   display: inline-flex;
-  gap: 8px;
+  gap: 9px;
 }
 .qr-palette svg {
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -192,7 +212,7 @@ body.dark-mode .qr-page {
   font-size: clamp(30px, 8.5vw, 40px);
   line-height: 1.03;
   letter-spacing: -0.02em;
-  margin-top: 18px;
+  margin-top: 0;
 }
 .qr-tag {
   margin-top: 8px;
@@ -451,18 +471,19 @@ body.dark-mode .qr-page {
   --note-bg: #ffe0e6;
   --note-ink: #7a2a41;
 }
-.w-note__pin {
-  position: absolute;
-  top: 9px;
-  right: 12px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.22);
-  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.2);
+/* Quotation-mark header (phase 4.10 A3): the note reads as a pinned quote. */
+.w-note__quote {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 0.6;
+  height: 20px;
+  color: var(--note-ink);
+  opacity: 0.32;
+  flex: none;
 }
 .w-note__text {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   overflow: hidden;
 }
 .w-note__text strong {
@@ -536,6 +557,30 @@ body.dark-mode .qr-page {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  /* The whole tile is now a button that opens the modal (phase 4.10 A6). */
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+.w-guest__list--preview { overflow: hidden; }
+.w-guest__add {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--qr-ink);
+  color: var(--qr-tile);
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: none;
 }
 .w-guest__head {
   display: flex;
@@ -593,6 +638,11 @@ body.dark-mode .qr-page {
    short heights and a full square player when tall; a per-format min-height
    pushes it into the right variant so no tile is left half-empty (a 2x2 tile
    was showing the ~152px compact player floating in a taller iframe). */
+.w-spe {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 .w-spotify-embed {
   border: 0;
   display: block;
@@ -608,12 +658,44 @@ body.dark-mode .qr-page {
     min-height: 352px;
   }
 }
+/* Compact link card shown only on narrow 1-column tiles (phase 4.10 A4). */
+.w-spe__compact { display: none; }
+@container tile (max-width: 200px) {
+  .w-spotify-embed { display: none; }
+  .w-spe__compact {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    height: 100%;
+    padding: var(--wp);
+    text-decoration: none;
+    color: var(--qr-ink);
+  }
+}
+.w-spe__logo { color: var(--qr-spotify); flex: none; display: inline-flex; }
+.w-spe__meta { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.w-spe__title {
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.w-spe__cta { font-size: 11px; font-weight: 600; color: var(--qr-spotify); }
+/* Very short 1x1: drop the CTA line, keep logo + title. */
+@container tile (max-width: 200px) and (max-height: 130px) {
+  .w-spe__cta { display: none; }
+}
 
 /* ---------- now playing ---------- */
 .w-np {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  height: 100%;
 }
 .w-np__badge {
   display: inline-flex;
@@ -668,6 +750,10 @@ body.dark-mode .qr-page {
   object-fit: cover;
   flex: none;
 }
+/* Album art grows on square/tall tiles so verticals aren't mostly empty. */
+@container tile (min-height: 200px) {
+  .w-np__art { width: 30cqmin; height: 30cqmin; max-width: 130px; max-height: 130px; }
+}
 .w-np__art--ph {
   display: flex;
   align-items: center;
@@ -715,6 +801,55 @@ body.dark-mode .qr-page {
   font-size: 10px;
   color: var(--qr-ink-faint);
   font-variant-numeric: tabular-nums;
+}
+/* Deep-link CTA + listening device (phase 4.10 A5). */
+.w-np__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-width: 0;
+}
+.w-np__listen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--qr-spotify);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+  flex: none;
+  transition: transform 0.15s;
+}
+.w-np__listen:hover { transform: translateY(-1px); }
+.w-np__listen-ic { font-size: 14px; line-height: 1; }
+.w-np__device {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qr-ink-soft);
+}
+.w-np__device-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Small formats: the CTA collapses to a tappable headphone, device hidden. */
+@container tile (max-width: 200px) {
+  .w-np__listen-tx { display: none; }
+  .w-np__listen { padding: 7px 9px; }
+  .w-np__device { display: none; }
+}
+@container tile (max-height: 120px) {
+  .w-np__foot { margin-top: 6px; }
+  .w-np__device { display: none; }
 }
 
 /* ---------- photo ---------- */
@@ -948,38 +1083,207 @@ body.dark-mode .qr-page {
   color: var(--qr-ink-faint);
 }
 
-/* ---------- weather ---------- */
+/* ---------- weather (illustrated, phase 4.10 A7) ---------- */
 .w-weather {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  /* Per-scene sky gradient. Text is white with a soft shadow for legibility. */
+  --sky-1: #8a97a6;
+  --sky-2: #b9c3cd;
+  background: linear-gradient(160deg, var(--sky-1), var(--sky-2));
+}
+.w-weather--clear { --sky-1: #58a6e8; --sky-2: #a9d6f5; }
+.w-weather--partly { --sky-1: #5c9fd6; --sky-2: #bcd3e6; }
+.w-weather--cloudy { --sky-1: #8a97a6; --sky-2: #b9c3cd; }
+.w-weather--fog { --sky-1: #9aa2a8; --sky-2: #cdd2d5; }
+.w-weather--rain { --sky-1: #4a5b70; --sky-2: #7d8da0; }
+.w-weather--snow { --sky-1: #8fa2b6; --sky-2: #d7e2ec; }
+.w-weather--storm { --sky-1: #33384a; --sky-2: #5a6072; }
+.w-weather--night { --sky-1: #10193a; --sky-2: #2a3566; color: #eef2ff; }
+.w-weather--night.w-weather--rain { --sky-1: #10152a; --sky-2: #2b3550; }
+.w-weather--night.w-weather--storm { --sky-1: #0a0c1c; --sky-2: #262b40; }
+
+.w-weather__content {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  height: 100%;
+  padding: var(--wp);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.28);
 }
-.w-weather__top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.w-weather__emoji {
-  font-size: 22px;
-}
+.w-weather__top { display: flex; align-items: center; gap: 6px; }
 .w-weather__city {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--qr-ink-soft);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
 }
 .w-weather__temp {
   font-family: var(--font-bricolage), sans-serif;
-  font-weight: 700;
-  font-size: clamp(34px, 13vw, 46px);
+  font-weight: 800;
+  font-size: clamp(38px, 26cqmin, 92px);
   line-height: 1;
   margin-top: auto;
 }
-.w-weather__temp span {
-  color: var(--qr-ink-faint);
-}
+.w-weather__temp span { opacity: 0.75; }
 .w-weather__desc {
-  font-size: 11.5px;
-  color: var(--qr-ink-soft);
+  font-size: clamp(11.5px, 5cqmin, 20px);
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+/* --- scene art layer --- */
+.w-wx {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.w-wx__sun {
+  position: absolute;
+  top: 12%;
+  right: 12%;
+  width: 34cqmin;
+  height: 34cqmin;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, #fff3b0, #ffd83d 55%, #ffbe1a 72%);
+  box-shadow: 0 0 32px 10px rgba(255, 216, 61, 0.55);
+}
+.w-wx__sun--sm { width: 24cqmin; height: 24cqmin; top: 14%; right: 10%; }
+.w-wx__moon {
+  position: absolute;
+  top: 13%;
+  right: 14%;
+  width: 26cqmin;
+  height: 26cqmin;
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 62% 38%, #fdfbe8, #d9def0 70%);
+  box-shadow: inset -6px -4px 0 -2px rgba(0, 0, 0, 0.18), 0 0 26px 4px rgba(220, 228, 255, 0.4);
+}
+.w-wx__moon--sm { width: 18cqmin; height: 18cqmin; }
+.w-wx__stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1.4px 1.4px at 20% 25%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 62% 15%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 82% 42%, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 35% 55%, #fff, transparent),
+    radial-gradient(1.6px 1.6px at 12% 62%, #fff, transparent);
+  opacity: 0.85;
+}
+.w-wx__cloud {
+  position: absolute;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff, #e7edf3);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+.w-wx__cloud::before,
+.w-wx__cloud::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  background: inherit;
+}
+.w-wx__cloud--a {
+  right: 12%;
+  top: 30%;
+  width: 52cqmin;
+  height: 20cqmin;
+  min-width: 66px;
+  min-height: 26px;
+}
+.w-wx__cloud--a::before { left: 14%; width: 44%; height: 150%; }
+.w-wx__cloud--a::after { right: 12%; width: 56%; height: 190%; }
+.w-wx__cloud--b {
+  left: 8%;
+  top: 52%;
+  width: 40cqmin;
+  height: 15cqmin;
+  min-width: 50px;
+  min-height: 20px;
+  opacity: 0.82;
+}
+.w-wx__cloud--b::before { left: 16%; width: 42%; height: 150%; }
+.w-wx__cloud--b::after { right: 14%; width: 52%; height: 180%; }
+.w-wx__cloud--dark { background: linear-gradient(180deg, #b8beca, #8b93a2); }
+.w-wx__precip {
+  position: absolute;
+  inset: 40% 8% 0 12%;
+}
+.w-wx__precip i {
+  position: absolute;
+  top: calc(var(--n) * 3%);
+  left: calc(8% + var(--n) * 10%);
+  width: 2px;
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(220, 235, 255, 0.85);
+  animation: w-rain 0.9s linear infinite;
+  animation-delay: calc(var(--n) * -0.12s);
+}
+@keyframes w-rain {
+  0% { transform: translateY(-10%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { transform: translateY(340%); opacity: 0; }
+}
+.w-wx__precip--snow i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: w-snow 2.4s linear infinite;
+}
+@keyframes w-snow {
+  0% { transform: translateY(-10%) translateX(0); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translateY(360%) translateX(8px); opacity: 0; }
+}
+.w-wx__fog {
+  position: absolute;
+  inset: 22% 0 0 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 0 10%;
+}
+.w-wx__fog i {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.w-wx__fog i:nth-child(2) { width: 82%; }
+.w-wx__fog i:nth-child(3) { width: 68%; margin-left: 12%; }
+.w-wx__fog i:nth-child(4) { width: 90%; }
+.w-wx__bolt {
+  position: absolute;
+  top: 44%;
+  right: 30%;
+  width: 16px;
+  height: 30px;
+  background: linear-gradient(180deg, #ffe680, #ffcf33);
+  clip-path: polygon(52% 0, 12% 58%, 46% 58%, 30% 100%, 88% 40%, 54% 40%);
+  filter: drop-shadow(0 0 6px rgba(255, 214, 51, 0.7));
+  animation: w-flash 3.2s steps(1) infinite;
+}
+@keyframes w-flash {
+  0%, 92%, 100% { opacity: 0.25; }
+  94%, 98% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .w-wx__precip i,
+  .w-wx__precip--snow i,
+  .w-wx__bolt { animation: none; }
 }
 
 /* ---------- countdown ---------- */
@@ -998,34 +1302,41 @@ body.dark-mode .qr-page {
 }
 .w-cd__grid {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   margin-top: auto;
 }
 .w-cd__cell {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
+/* Numbers scale with the tile itself (container units), so a 3x3 countdown
+   reads as a hero and a 1x1 stays legible (phase 4.10 A8). */
 .w-cd__cell b {
   font-family: var(--font-bricolage), sans-serif;
-  font-weight: 700;
-  font-size: clamp(13px, 3.8vw, 21px);
+  font-weight: 800;
+  font-size: clamp(18px, 13cqmin, 52px);
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
 .w-cd__cell i {
   font-style: normal;
-  font-size: 9px;
+  font-size: clamp(8px, 3cqmin, 13px);
   color: var(--qr-ink-faint);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 .w-cd__done {
   margin-top: auto;
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: clamp(18px, 8cqmin, 34px);
+}
+@container tile (max-height: 130px) {
+  .w-cd__cell b { font-size: clamp(15px, 9cqmin, 24px); }
 }
 
 /* ---------- watchlist ---------- */
@@ -1112,15 +1423,16 @@ body.dark-mode .qr-page {
   justify-content: center;
   gap: 3px;
 }
+/* Number + label scale with the tile (phase 4.10 A9). */
 .w-visits__num {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(26px, 9vw, 34px);
+  font-size: clamp(28px, 22cqmin, 92px);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .w-visits__label {
-  font-size: 12px;
+  font-size: clamp(11px, 4.5cqmin, 18px);
   color: var(--qr-ink-soft);
 }
 
@@ -1270,14 +1582,15 @@ body.dark-mode .qr-page {
 
 /* ---- NARROW tiles (≈ 1 grid column): collapse dense widgets to a summary. */
 @container tile (max-width: 200px) {
-  /* guestbook → just the header + count */
-  .w-guest__list,
-  .w-guest__form {
-    display: none;
-  }
-  /* poll → question + total, no option bars */
-  .w-poll__opts {
-    display: none;
+  /* guestbook preview stays (as many words as fit + the add pill, A6); just
+     tighten the add label. */
+  .w-guest__add { padding: 5px 9px; font-size: 11px; }
+  /* poll → keep votable options but tighten them (phase 4.10 A10). Tall-narrow
+     tiles (1x2 / 1x3) have room; only genuinely tiny 1x1 collapses (below). */
+  .w-poll__opt {
+    padding: 6px 9px;
+    font-size: 11.5px;
+    border-radius: 9px;
   }
   .w-poll__q {
     font-size: 12.5px;
@@ -1324,6 +1637,12 @@ body.dark-mode .qr-page {
   }
 }
 
+/* Genuinely tiny tiles (1x1): a poll can't fit votable rows → question + total
+   only (phase 4.10 A10). Tall-narrow tiles keep their options. */
+@container tile (max-width: 200px) and (max-height: 200px) {
+  .w-poll__opts { display: none; }
+}
+
 /* ---- SHORT tiles (≈ 1 grid row): drop overlays/rows that need height. */
 @container tile (max-height: 150px) {
   .w-gh__repos {
@@ -1342,31 +1661,19 @@ body.dark-mode .qr-page {
 
 /* ---- WIDE + TALL tiles (≈ 3x2 and up): let hero widgets breathe. */
 @container tile (min-width: 300px) and (min-height: 220px) {
-  .w-weather__temp {
-    font-size: 56px;
-  }
   .w-status__text {
     font-size: 17px;
-  }
-  .w-visits__num {
-    font-size: 40px;
   }
   .w-note {
     font-size: 16px;
   }
 }
 
-/* ---- LARGE square (3x3): center single-value widgets, enlarge counters. */
+/* ---- LARGE square (3x3): center single-value widgets. */
 @container tile (min-width: 300px) and (min-height: 300px) {
   .w-visits {
     align-items: center;
     text-align: center;
-  }
-  .w-visits__num {
-    font-size: 52px;
-  }
-  .w-cd__cell b {
-    font-size: 26px;
   }
   .w-social__glyph {
     width: 34%;
@@ -1415,11 +1722,38 @@ body.dark-mode .qr-page {
    ============================================================ */
 
 /* ---------- youtube embed ---------- */
+.w-yt {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 .w-yt-embed {
   border: 0;
   display: block;
   width: 100%;
   height: 100%;
+}
+/* Optional title (phase 4.10 A11): a legible caption bar over the player,
+   pinned to the bottom so it never covers the video's centre. */
+.w-yt__title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 12px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent);
+  pointer-events: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@container tile (max-height: 130px) {
+  .w-yt__title { display: none; }
 }
 
 /* ---------- paypal (sober donation) ---------- */
@@ -1436,12 +1770,13 @@ body.dark-mode .qr-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--qr-ink) 8%, transparent);
-  color: var(--qr-ink);
+  background: #fff;
+  box-shadow: var(--qr-shadow);
 }
+.w-paypal__icon svg { width: 24px; height: 24px; }
 .w-paypal__title {
   display: block;
   font-family: var(--font-bricolage), "Raleway", sans-serif;
@@ -1501,10 +1836,12 @@ body.dark-mode .qr-page {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: -0.02em;
   box-shadow: var(--qr-shadow);
+}
+.w-tech__logo {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
 }
 .w-tech__name {
   font-size: 10.5px;
@@ -1560,6 +1897,8 @@ body.dark-mode .qr-page {
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 .w-lbxd__film {
   display: flex;
@@ -1567,6 +1906,26 @@ body.dark-mode .qr-page {
   gap: 9px;
   min-width: 0;
 }
+.w-lbxd__thumb {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+.w-lbxd__rate {
+  /* Hidden by default (the meta row carries the rating); revealed only in the
+     short compact-row layout where meta is hidden (phase 4.10 A15). */
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  padding: 2px 0 1px;
+  font-size: 8px;
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
+}
+.w-lbxd__rate .w-lbxd__stars { color: #52e072; letter-spacing: 0; }
 .w-lbxd__poster {
   width: 30px;
   height: 45px;
@@ -1598,11 +1957,26 @@ body.dark-mode .qr-page {
 }
 .w-lbxd__stars { color: #00b020; font-weight: 700; letter-spacing: 0.5px; }
 .w-lbxd__empty { color: var(--qr-ink-faint); font-size: 13px; }
-/* Small formats: show posters as a compact row without meta. */
+/* Small formats: show posters as a compact row without meta; the rating badge
+   overlays each poster so notes stay visible in *x1 (phase 4.10 A15). */
 @container tile (max-height: 150px) {
-  .w-lbxd__list { flex-direction: row; }
+  .w-lbxd__list { flex-direction: row; align-items: flex-start; overflow: hidden; }
   .w-lbxd__meta { display: none; }
   .w-lbxd__poster { width: 34px; height: 51px; }
+  .w-lbxd__rate { display: flex; }
+}
+/* Wide tiles: lay films out as a poster wall so we show many without overlap. */
+@container tile (min-width: 300px) and (min-height: 220px) {
+  .w-lbxd__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 10px;
+  }
+  .w-lbxd__film { flex-direction: column; align-items: flex-start; gap: 4px; width: 68px; }
+  .w-lbxd__poster { width: 68px; height: 102px; }
+  .w-lbxd__meta { max-width: 68px; }
+  .w-lbxd__title { font-size: 11.5px; white-space: normal; line-height: 1.15; }
 }
 
 /* ---------- toile (collaborative canvas) ---------- */
@@ -1624,13 +1998,15 @@ body.dark-mode .qr-page {
   display: block;
   image-rendering: auto;
 }
+/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13). */
+.w-toile--empty { background: #fff; }
 .w-toile__blank {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--qr-ink-faint);
+  color: #c9ccd6;
 }
 .w-toile__label {
   position: absolute;
@@ -1651,8 +2027,11 @@ body.dark-mode .qr-page {
   .w-toile__sub { display: none; }
 }
 
-/* ---------- toile drawing modal ---------- */
-.toile-modal {
+/* ============================================================
+   Shared large modal — toile + guestbook (phase 4.10 A6/A13)
+   Takes ~90% of a phone screen, a comfortable large panel on desktop.
+   ============================================================ */
+.gmodal {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -1660,40 +2039,81 @@ body.dark-mode .qr-page {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(6, 6, 24, 0.6);
+  background: rgba(6, 6, 24, 0.62);
   backdrop-filter: blur(4px);
 }
-.toile-modal__panel {
-  width: min(94vw, 460px);
-  max-height: 94dvh;
-  overflow: auto;
+.gmodal__panel {
+  width: min(92vw, 900px);
+  max-width: 92vw;
+  height: min(90dvh, 760px);
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 22px;
+  padding: 18px;
+  border-radius: 24px;
   background: var(--qr-bg);
   border: 1px solid var(--qr-line-strong);
   box-shadow: var(--qr-shadow-hover);
 }
-.toile-modal__bar {
+/* Toile panel hugs its square canvas + tools rather than stretching full width. */
+.gmodal--toile { width: min(92vw, 820px); height: auto; max-height: 90dvh; }
+.gmodal--guest { width: min(92vw, 560px); }
+.gmodal__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: none;
+  margin-bottom: 14px;
 }
-.toile-modal__title {
+.gmodal__title {
   font-family: var(--font-bricolage), "Raleway", sans-serif;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 20px;
+  letter-spacing: -0.01em;
 }
-.toile-modal__x {
-  border: 0;
-  background: transparent;
+.gmodal__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--qr-line);
+  border-radius: 12px;
+  background: var(--qr-tile);
   color: var(--qr-ink-soft);
-  font-size: 18px;
   cursor: pointer;
-  line-height: 1;
 }
+.gmodal__x:hover { color: var(--qr-ink); }
+.gmodal__body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* --- toile modal layout: canvas + tools, side-by-side on desktop --- */
+.toile-modal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+@media (min-width: 720px) {
+  .toile-modal__grid { flex-direction: row; align-items: flex-start; }
+  .toile-modal__grid .toile-modal__stage { flex: 0 0 min(58vh, 460px); width: min(58vh, 460px); }
+  .toile-modal__grid .toile-modal__tools { flex: 1; min-width: 220px; }
+}
+
+/* --- guestbook modal layout: scrollable list + pinned form --- */
+.guest-modal { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 12px; }
+.guest-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 2px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.guest-modal__form { flex: none; }
+
 .toile-modal__stage {
   position: relative;
   aspect-ratio: 1;
@@ -1788,6 +2208,7 @@ body.dark-mode .qr-page {
 
 /* ---------- lol (League of Legends) — phase 4.9 ---------- */
 .w-lol {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -1816,27 +2237,19 @@ body.dark-mode .qr-page {
   flex: none;
 }
 .w-lol__logo {
-  position: relative;
-  display: inline-block;
-  width: 13px;
-  height: 13px;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
   flex: none;
 }
-.w-lol__logo b {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  transform: rotate(45deg);
-  border-radius: 2px;
+/* Head laid over splash art (mastery) → white, higher z. */
+.w-lol__head--over {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
-.w-lol__logo b:first-child {
-  border: 1.6px solid #c8a24a;
-}
-.w-lol__logo b:last-child {
-  width: 4px;
-  height: 4px;
-  background: #c8a24a;
-}
+.w-lol__head--over .w-eyebrow { color: rgba(255, 255, 255, 0.82); }
 
 .w-lol__body {
   display: flex;
@@ -1920,35 +2333,61 @@ body.dark-mode .qr-page {
   font-weight: 600;
 }
 
-/* --- mastery --- */
-.w-lol__champ {
+/* --- mastery (splash-art hero, phase 4.10 A16) --- */
+.w-lol--mastery { --tier: #c8a24a; }
+.w-lol__splash {
+  position: absolute;
+  inset: calc(-1 * var(--wp));
+  z-index: 0;
+  background-size: cover;
+  /* Splash art is 1215x717; frame the champion's face (upper-centre). */
+  background-position: 50% 22%;
+}
+.w-lol__splash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Overlay for text legibility over any splash. */
+  background: linear-gradient(
+    180deg,
+    rgba(6, 8, 20, 0.35) 0%,
+    rgba(6, 8, 20, 0.15) 40%,
+    rgba(6, 8, 20, 0.78) 100%
+  );
+}
+.w-lol__body--mastery {
+  position: relative;
+  z-index: 2;
+  align-items: flex-end;
+  margin-top: auto;
+}
+.w-lol__crest {
   position: relative;
   flex: none;
-  display: inline-block;
-  height: 100%;
-  max-height: 72px;
-  aspect-ratio: 1;
-}
-.w-lol__champ-img {
-  width: 100%;
-  height: 100%;
-  max-height: 72px;
-  border-radius: 14px;
-  object-fit: cover;
-  border: 1.5px solid color-mix(in srgb, var(--tier) 55%, transparent);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--tier) 30%, transparent);
-}
-.w-lol__champ-img--ph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--qr-tile-2);
-  font-size: 24px;
+  height: 100%;
+  max-height: 78px;
+  aspect-ratio: 1;
+}
+.w-lol__crest-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.5));
+}
+.w-lol__crest-img--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #fff;
 }
 .w-lol__lvl {
   position: absolute;
   left: 50%;
-  bottom: 3px;
+  bottom: -2px;
   transform: translateX(-50%);
   min-width: 22px;
   padding: 1px 6px;
@@ -1958,7 +2397,7 @@ body.dark-mode .qr-page {
   font-weight: 800;
   font-size: 11px;
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 .w-lol__name {
   font-family: var(--font-bricolage), sans-serif;
@@ -1970,6 +2409,8 @@ body.dark-mode .qr-page {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.w-lol__name--over { color: #fff; text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6); }
+.w-lol__queue--over { color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6); }
 .w-lol__points {
   margin-top: 5px;
   font-weight: 800;
@@ -1980,18 +2421,61 @@ body.dark-mode .qr-page {
   text-overflow: ellipsis;
   max-width: 100%;
 }
+.w-lol__points--over { color: #f4d78a; text-shadow: 0 1px 5px rgba(0, 0, 0, 0.7); }
 .w-lol__points small {
   font-weight: 600;
   font-size: 11px;
-  color: var(--qr-ink-soft);
+  color: inherit;
+  opacity: 0.85;
+}
+
+/* --- rank winrate meter (phase 4.10 A16) --- */
+.w-lol__wr { color: color-mix(in srgb, var(--tier) 78%, var(--qr-ink)); font-weight: 700; }
+.w-lol__meter {
+  display: block;
+  height: 4px;
+  border-radius: 3px;
+  background: var(--qr-line);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.w-lol__meter span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tier) 70%, var(--qr-ink));
+}
+
+/* --- aram map icon (phase 4.10 A16) --- */
+.w-lol__aram-map {
+  flex: none;
+  display: inline-flex;
+  height: 100%;
+  max-height: 72px;
+  aspect-ratio: 1;
+}
+.w-lol__aram-map img,
+.w-lol__aram-map--ph {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1.5px solid color-mix(in srgb, var(--tier) 55%, transparent);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--tier) 30%, transparent);
+}
+.w-lol__aram-map--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--qr-tile-2);
+  font-size: 26px;
 }
 
 /* --- aram (challenge 101307 "Triomphe en ARAM" = total ARAM wins) --- */
 .w-lol__body--aram {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
 }
 .w-lol__big {
   font-family: var(--font-bricolage), sans-serif;
@@ -2047,17 +2531,25 @@ body.dark-mode .qr-page {
   .w-lol__big { font-size: 26px; }
   .w-lol__chip { display: none; }
   .w-lol__emblem-img,
-  .w-lol__champ { max-height: 52px; }
+  .w-lol__crest,
+  .w-lol__aram-map { max-height: 52px; }
+  .w-lol__meter { display: none; }
+  .w-lol__wr { display: none; }
 }
 @container tile (max-height: 130px) {
   .w-lol__stats { margin-top: 2px; }
+  .w-lol__meter { display: none; }
 }
 
-/* Roomy tiles: let the art breathe. */
+/* Roomy tiles: let the art breathe and the numbers grow. */
 @container tile (min-width: 300px) and (min-height: 200px) {
-  .w-lol__emblem-img,
-  .w-lol__champ { max-height: 96px; }
+  .w-lol__emblem { max-height: 130px; }
+  .w-lol__emblem-img { max-height: 130px; }
+  .w-lol__crest { max-height: 110px; }
+  .w-lol__aram-map { max-height: 110px; }
   .w-lol__tier,
-  .w-lol__name { font-size: 22px; }
-  .w-lol__big { font-size: 46px; }
+  .w-lol__name { font-size: 24px; }
+  .w-lol__big { font-size: 52px; }
+  .w-lol__points--over { font-size: 20px; }
+  .w-lol__stats { font-size: 14px; }
 }

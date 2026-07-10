@@ -12,13 +12,16 @@ export default function YoutubeEmbedRenderer({
   // Fill the tile at every format; the privacy-enhanced host avoids extra cookies.
   const src = `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1`;
   return (
-    <iframe
-      className="w-yt-embed"
-      src={src}
-      title={config.title ?? "YouTube"}
-      loading="lazy"
-      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    />
+    <div className="w-yt">
+      <iframe
+        className="w-yt-embed"
+        src={src}
+        title={config.title ?? "YouTube"}
+        loading="lazy"
+        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+      />
+      {config.title ? <span className="w-yt__title">{config.title}</span> : null}
+    </div>
   );
 }

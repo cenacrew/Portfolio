@@ -5,6 +5,7 @@
   "dependencies": {
     "@portfolio/shared": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "9.1.0",
     "@react-native-community/slider": "5.2.0",
     "@supabase/supabase-js": "^2.47.10",
     "expo": "~57.0.4",

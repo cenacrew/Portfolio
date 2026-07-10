@@ -39,8 +39,14 @@ export interface LolResponse {
   // mastery mode
   champion?: string;
   championIconUrl?: string;
+  // Full champion splash art for the mastery hero background (phase 4.10 A16).
+  splashUrl?: string;
+  // CommunityDragon mastery crest for the current level (phase 4.10 A16).
+  masteryEmblemUrl?: string;
   level?: number;
   points?: number;
+  // aram mode — Howling Abyss map icon (phase 4.10 A16).
+  aramMapUrl?: string;
   // aram mode — challenges-v1 id 101307 "Triomphe en ARAM": cumulative ARAM
   // WINS (not games played). `challengeTier` is the challenge rank (MASTER…).
   aramWins?: number;
@@ -155,11 +161,21 @@ async function fetchAram(puuid: string, key: string): Promise<LolResponse> {
   const c = json.challenges?.find((x) => x.challengeId === ARAM_WINS_CHALLENGE_ID);
   if (!c || typeof c.value !== "number") return { ok: false, mode: "aram" };
 
+  // Howling Abyss (ARAM map) icon from Data Dragon — official keyless art.
+  let aramMapUrl: string | undefined;
+  try {
+    const { version } = await championMap();
+    aramMapUrl = `https://ddragon.leagueoflegends.com/cdn/${version}/img/map/map12.png`;
+  } catch {
+    aramMapUrl = undefined;
+  }
+
   return {
     ok: true,
     mode: "aram",
     aramWins: Math.round(c.value),
     challengeTier: c.level,
+    aramMapUrl,
   };
 }
 
@@ -179,6 +195,9 @@ async function fetchMastery(puuid: string, key: string): Promise<LolResponse> {
 
   const { version, byKey } = await championMap();
   const slug = byKey[String(m.championId)];
+  // Mastery crest (CommunityDragon) — crests exist for levels 1..10; higher
+  // mastery levels reuse the level-10 crest.
+  const crestLevel = Math.min(10, Math.max(1, m.championLevel));
   return {
     ok: true,
     mode: "mastery",
@@ -186,6 +205,10 @@ async function fetchMastery(puuid: string, key: string): Promise<LolResponse> {
     championIconUrl: slug
       ? `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${slug}.png`
       : undefined,
+    splashUrl: slug
+      ? `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${slug}_0.jpg`
+      : undefined,
+    masteryEmblemUrl: `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/mastery-${crestLevel}.png`,
     level: m.championLevel,
     points: m.championPoints,
   };

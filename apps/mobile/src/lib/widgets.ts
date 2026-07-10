@@ -47,6 +47,10 @@ export function useWidgets() {
   }, [load]);
 
   const refresh = useCallback(() => load("refresh"), [load]);
+  // Silent re-fetch (no pull-spinner) — used on screen focus so a widget added
+  // or resized on another screen shows up immediately without a manual refresh
+  // even if Realtime doesn't deliver the admin's own change (phase 4.10 B2).
+  const reload = useCallback(() => load("initial"), [load]);
 
-  return { widgets, loading, refreshing, error, refresh };
+  return { widgets, loading, refreshing, error, refresh, reload };
 }

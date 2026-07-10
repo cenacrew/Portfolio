@@ -15,6 +15,11 @@ interface NowPlaying {
   albumArt?: string;
   progressMs: number;
   durationMs: number;
+  // Deep link to open the track in the visitor's own Spotify (phase 4.10 A5).
+  url?: string;
+  // The device the admin is listening on (phase 4.10 A5, coordinator add-on).
+  // Only present when currently playing and the playback-state scope is granted.
+  device?: { name: string; type: string };
 }
 
 // ~30s in-memory cache to stay well under Spotify's rate limits.
@@ -43,13 +48,18 @@ async function getAccessToken(): Promise<string | null> {
 }
 
 type Track = {
+  id?: string;
   name?: string;
   duration_ms?: number;
   artists?: { name?: string }[];
   album?: { images?: { url?: string }[] };
+  external_urls?: { spotify?: string };
 };
 
 function fromTrack(item: Track, extra: Partial<NowPlaying>): NowPlaying {
+  const url =
+    item.external_urls?.spotify ??
+    (item.id ? `https://open.spotify.com/track/${item.id}` : undefined);
   return {
     isPlaying: false,
     track: item.name ?? "—",
@@ -57,6 +67,7 @@ function fromTrack(item: Track, extra: Partial<NowPlaying>): NowPlaying {
     albumArt: item.album?.images?.[0]?.url,
     progressMs: 0,
     durationMs: item.duration_ms ?? 1,
+    url,
     ...extra,
   };
 }
@@ -64,6 +75,36 @@ function fromTrack(item: Track, extra: Partial<NowPlaying>): NowPlaying {
 async function fetchNowPlaying(): Promise<NowPlaying | null> {
   const token = await getAccessToken();
   if (!token) return null;
+
+  // Prefer /me/player: it returns the track, progress AND the active device
+  // (phase 4.10 A5). Needs the user-read-playback-state scope; if that scope
+  // isn't granted (403/401) we fall back to currently-playing without a device.
+  try {
+    const player = await fetch("https://api.spotify.com/v1/me/player", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (player.ok && player.status !== 204) {
+      const data = (await player.json()) as {
+        is_playing?: boolean;
+        progress_ms?: number;
+        item?: Track;
+        device?: { name?: string; type?: string };
+      };
+      if (data.item?.name && data.is_playing) {
+        return fromTrack(data.item, {
+          isPlaying: true,
+          progressMs: data.progress_ms ?? 0,
+          device:
+            data.device?.name != null
+              ? { name: data.device.name, type: data.device.type ?? "unknown" }
+              : undefined,
+        });
+      }
+    }
+  } catch {
+    // fall through to currently-playing
+  }
 
   const res = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
     headers: { Authorization: `Bearer ${token}` },

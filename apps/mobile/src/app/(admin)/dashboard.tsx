@@ -1,8 +1,8 @@
 import type { Breakpoint, WidgetBreakpointLayout } from "@portfolio/shared";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { useEffect, useRef, useState } from "react";
-import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, Pressable, RefreshControl, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DragGrid } from "../../components/DragGrid";
 import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, Title, success, tap } from "../../components/ui";
@@ -19,15 +19,27 @@ export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const { signOut } = useAuth();
-  const { widgets, loading, refreshing, error, refresh } = useWidgets();
+  const { widgets, loading, refreshing, error, refresh, reload } = useWidgets();
 
   const [bp, setBp] = useState<Breakpoint>("mobile");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const getCellsRef = useRef<(() => Record<string, { x: number; y: number; w: number; h: number }>) | null>(null);
 
-  const width = Dimensions.get("window").width;
+  // Reactive window size (phase 4.10 B1): reading Dimensions once left the
+  // desktop board laid out at the portrait width after the forced landscape
+  // rotation, squishing/mis-placing tiles. useWindowDimensions re-measures when
+  // the orientation flips so the grid recomputes at the real width.
+  const { width } = useWindowDimensions();
   const boardWidth = width - space.lg * 2;
+
+  // Re-fetch when the dashboard regains focus so widgets added or resized on
+  // another screen appear immediately (phase 4.10 B2).
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload]),
+  );
 
   // Once per launch: refresh "ma-loc" maps and report this device's presence
   // (timezone + location) so the public dashboard follows the admin (C1).

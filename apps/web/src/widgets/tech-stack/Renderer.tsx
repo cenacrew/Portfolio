@@ -1,10 +1,12 @@
 import type { WidgetRendererProps } from "../types";
 import type { TechStackConfig } from "./schema";
 import { TECHS } from "./techs";
+import { LOGOS } from "./logos";
 
-// Badge grid of technologies. The tile is a size container (qrcode.css): the
-// title hides on the smallest formats and the badges auto-fit, so 1x1 shows a
-// tidy cluster while 3x2 shows the full labelled set.
+// Badge grid of technologies with real brand logos (phase 4.10 A12): each chip
+// wears the brand colour and its official glyph. The tile is a size container
+// (qrcode.css): the title hides on the smallest formats and the badges auto-fit,
+// so 1x1 shows a tidy cluster of logos while 3x2 shows the full labelled set.
 export default function TechStackRenderer({ config }: WidgetRendererProps<TechStackConfig>) {
   const items = config.items.filter((k) => TECHS[k]);
   return (
@@ -16,7 +18,7 @@ export default function TechStackRenderer({ config }: WidgetRendererProps<TechSt
           return (
             <span className="w-tech__badge" key={key} title={t.name}>
               <span className="w-tech__chip" style={{ background: t.bg, color: t.fg }} aria-hidden>
-                {t.mono}
+                <span className="w-tech__logo">{LOGOS[key]}</span>
               </span>
               <span className="w-tech__name">{t.name}</span>
             </span>

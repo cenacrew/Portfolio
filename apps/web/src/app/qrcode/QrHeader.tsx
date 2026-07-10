@@ -8,16 +8,11 @@ export default async function QrHeader() {
 
   return (
     <header className="qr-header">
-      <div className="qr-header__top">
-        <span className="qr-avatar">
-          <img src="/files/img/pp.png" alt={s.name} />
-        </span>
-        <div className="qr-header__side">
-          <HeaderClock tz={s.tz} />
-          <HeaderControls />
-        </div>
-      </div>
+      <span className="qr-avatar">
+        <img src="/files/img/pp.png" alt={s.name} />
+      </span>
 
+      <div className="qr-header__id">
       <h1 className="qr-name">{s.name}</h1>
       <p className="qr-tag">{s.tagline}</p>
 
@@ -47,6 +42,12 @@ export default async function QrHeader() {
             {c.label}
           </span>
         ))}
+      </div>
+      </div>
+
+      <div className="qr-header__side">
+        <HeaderClock tz={s.tz} />
+        <HeaderControls />
       </div>
     </header>
   );

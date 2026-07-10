@@ -76,7 +76,9 @@ export default async function LetterboxdRenderer({ config }: WidgetRendererProps
       headers: { "User-Agent": "cenacrew-portfolio/1.0 (+https://cenacrew.com)" },
       next: { revalidate: 3600 },
     });
-    if (res.ok) films = parseFeed(await res.text(), 4);
+    // Fetch a generous window (phase 4.10 A15); the tile shows as many as fit
+    // for its format via CSS, clipping the rest cleanly (no hard "4 last").
+    if (res.ok) films = parseFeed(await res.text(), 12);
   } catch {
     films = [];
   }
@@ -95,13 +97,22 @@ export default async function LetterboxdRenderer({ config }: WidgetRendererProps
         <ul className="w-lbxd__list">
           {films.map((f, i) => (
             <li className="w-lbxd__film" key={i}>
-              {f.poster ? (
-                <img className="w-lbxd__poster" src={f.poster} alt="" loading="lazy" />
-              ) : (
-                <span className="w-lbxd__poster w-lbxd__poster--ph" aria-hidden>
-                  🎬
-                </span>
-              )}
+              <span className="w-lbxd__thumb">
+                {f.poster ? (
+                  <img className="w-lbxd__poster" src={f.poster} alt="" loading="lazy" />
+                ) : (
+                  <span className="w-lbxd__poster w-lbxd__poster--ph" aria-hidden>
+                    🎬
+                  </span>
+                )}
+                {/* Rating badge overlaid on the poster — the only way stars stay
+                    visible in short (*x1) formats where the meta row is hidden. */}
+                {typeof f.rating === "number" ? (
+                  <span className="w-lbxd__rate" aria-hidden>
+                    <Stars rating={f.rating} />
+                  </span>
+                ) : null}
+              </span>
               <span className="w-lbxd__meta">
                 <span className="w-lbxd__title">{f.title}</span>
                 <span className="w-lbxd__sub">

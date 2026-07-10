@@ -20,11 +20,13 @@ interface LolData {
   queueLabel?: string;
   champion?: string;
   championIconUrl?: string;
+  splashUrl?: string;
+  masteryEmblemUrl?: string;
   level?: number;
   points?: number;
-  // aram: challenges-v1 101307 "Triomphe en ARAM" — cumulative ARAM WINS.
   aramWins?: number;
   challengeTier?: string;
+  aramMapUrl?: string;
 }
 
 function titleTier(tier?: string): string {
@@ -37,6 +39,34 @@ function winrate(wins?: number, losses?: number): number | null {
   const total = w + (losses ?? 0);
   if (total === 0) return null;
   return Math.round((w / total) * 100);
+}
+
+// Inline League of Legends hextech emblem (gold crest). Trademark-safe crafted
+// mark, no remote asset — always crisp at the small header size.
+function LolLogo() {
+  return (
+    <span className="w-lol__logo" aria-hidden>
+      <svg viewBox="0 0 24 24" width="18" height="18">
+        <defs>
+          <linearGradient id="lolg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#f4d78a" />
+            <stop offset="1" stopColor="#c8933a" />
+          </linearGradient>
+        </defs>
+        <path
+          d="M12 1.4l8.6 4.9v11.4L12 22.6 3.4 17.7V6.3z"
+          fill="none"
+          stroke="url(#lolg)"
+          strokeWidth="1.4"
+        />
+        <path
+          d="M9 7v8.2h5.6v-1.7h-3.7V7z"
+          fill="url(#lolg)"
+        />
+        <path d="M12 3.4l1.1 1.9h-2.2z" fill="url(#lolg)" />
+      </svg>
+    </span>
+  );
 }
 
 export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) {
@@ -62,12 +92,9 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
     };
   }, [config.mode, config.riotId]);
 
-  const head = (
-    <div className="w-lol__head">
-      <span className="w-lol__logo" aria-hidden>
-        <b />
-        <b />
-      </span>
+  const head = (dark?: boolean) => (
+    <div className={`w-lol__head${dark ? " w-lol__head--over" : ""}`}>
+      <LolLogo />
       <span className="w-eyebrow">League of Legends</span>
     </div>
   );
@@ -76,7 +103,7 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
   if (!loaded) {
     return (
       <div className="w-lol w-lol--idle">
-        {head}
+        {head()}
         <span className="w-lol__muted">Chargement…</span>
       </div>
     );
@@ -84,7 +111,7 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
   if (!data || !data.ok) {
     return (
       <div className="w-lol w-lol--idle">
-        {head}
+        {head()}
         <span className="w-lol__muted">Stats indisponibles</span>
       </div>
     );
@@ -93,13 +120,20 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
   if (data.mode === "mastery") {
     return (
       <div className="w-lol w-lol--mastery">
-        {head}
-        <div className="w-lol__body">
-          <span className="w-lol__champ">
-            {data.championIconUrl ? (
-              <img className="w-lol__champ-img" src={data.championIconUrl} alt="" />
+        {data.splashUrl ? (
+          <span
+            className="w-lol__splash"
+            style={{ backgroundImage: `url(${data.splashUrl})` }}
+            aria-hidden
+          />
+        ) : null}
+        {head(true)}
+        <div className="w-lol__body w-lol__body--mastery">
+          <span className="w-lol__crest">
+            {data.masteryEmblemUrl ? (
+              <img className="w-lol__crest-img" src={data.masteryEmblemUrl} alt="" />
             ) : (
-              <span className="w-lol__champ-img w-lol__champ-img--ph" aria-hidden>
+              <span className="w-lol__crest-img w-lol__crest-img--ph" aria-hidden>
                 ⚔
               </span>
             )}
@@ -108,9 +142,9 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
             ) : null}
           </span>
           <span className="w-lol__info">
-            <span className="w-lol__name">{data.champion}</span>
-            <span className="w-lol__queue">Champion favori</span>
-            <span className="w-lol__points">
+            <span className="w-lol__queue w-lol__queue--over">Maîtrise · favori</span>
+            <span className="w-lol__name w-lol__name--over">{data.champion}</span>
+            <span className="w-lol__points w-lol__points--over">
               {(data.points ?? 0).toLocaleString("fr-FR")}
               <small> pts</small>
             </span>
@@ -126,10 +160,19 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
     const tier = data.challengeTier ? data.challengeTier.toLowerCase() : "unranked";
     return (
       <div className="w-lol w-lol--aram" data-tier={tier}>
-        {head}
+        {head()}
         <div className="w-lol__body w-lol__body--aram">
-          <span className="w-lol__big">{(data.aramWins ?? 0).toLocaleString("fr-FR")}</span>
+          <span className="w-lol__aram-map">
+            {data.aramMapUrl ? (
+              <img src={data.aramMapUrl} alt="" />
+            ) : (
+              <span className="w-lol__aram-map--ph" aria-hidden>
+                ❄
+              </span>
+            )}
+          </span>
           <span className="w-lol__info">
+            <span className="w-lol__big">{(data.aramWins ?? 0).toLocaleString("fr-FR")}</span>
             <span className="w-lol__queue">victoires ARAM</span>
             {data.challengeTier ? (
               <span className="w-lol__chip">Défi {titleTier(data.challengeTier)}</span>
@@ -144,7 +187,7 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
   const wr = winrate(data.wins, data.losses);
   return (
     <div className="w-lol w-lol--rank" data-tier={data.tier ? data.tier.toLowerCase() : "unranked"}>
-      {head}
+      {head()}
       <div className="w-lol__body">
         <span className="w-lol__emblem">
           {data.ranked && data.emblemUrl ? (
@@ -165,9 +208,15 @@ export default function LolRenderer({ config }: WidgetRendererProps<LolConfig>) 
               <span className="w-lol__stats">
                 <span className="w-lol__lp">{data.lp} LP</span>
                 <span className="w-lol__wl">
-                  {data.wins}V {data.losses}D{wr !== null ? ` · ${wr}%` : ""}
+                  {data.wins}V {data.losses}D
                 </span>
+                {wr !== null ? <span className="w-lol__wr">{wr}% WR</span> : null}
               </span>
+              {wr !== null ? (
+                <span className="w-lol__meter" aria-hidden>
+                  <span style={{ width: `${wr}%` }} />
+                </span>
+              ) : null}
             </>
           ) : (
             <>
