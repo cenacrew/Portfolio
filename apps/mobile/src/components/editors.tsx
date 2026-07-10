@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { uploadImage, uploadVideo } from "../lib/actions";
 import { radius, space, useTheme } from "../lib/theme";
-import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, TextField, ToggleRow, tap } from "./ui";
+import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, SliderRow, TextField, ToggleRow, tap } from "./ui";
 
 // Pick an image from the library and upload it to widget-media, returning the
 // public URL through onDone. Used by the photo editor now that the top-bar
@@ -19,12 +19,12 @@ function PickImageButton({ onDone }: { onDone: (url: string) => void }) {
       Alert.alert("Accès refusé", "Autorise l'accès aux photos pour en importer une.");
       return;
     }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8, base64: true });
-    if (res.canceled || !res.assets[0]?.base64) return;
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
+    if (res.canceled || !res.assets[0]?.uri) return;
     setBusy(true);
     try {
       const asset = res.assets[0];
-      const url = await uploadImage(asset.base64!, asset.mimeType ?? "image/jpeg");
+      const url = await uploadImage(asset.uri, asset.mimeType ?? "image/jpeg", asset.fileSize);
       onDone(url);
       tap();
     } catch (e) {
@@ -59,7 +59,7 @@ function PickVideoButton({ onDone }: { onDone: (url: string) => void }) {
     setBusy(true);
     try {
       const asset = res.assets[0];
-      const url = await uploadVideo(asset.uri, asset.mimeType ?? "video/mp4");
+      const url = await uploadVideo(asset.uri, asset.mimeType ?? "video/mp4", asset.fileSize);
       onDone(url);
       tap();
     } catch (e) {
@@ -201,7 +201,16 @@ function LocationOrWeatherEditor({ config, onChange, withZoom }: EProps & { with
       <TextField label="Ville" value={config.city} onChange={(city) => onChange({ ...config, city })} />
       <NumberFieldRow label="Latitude" value={config.lat} onChange={(lat) => onChange({ ...config, lat })} />
       <NumberFieldRow label="Longitude" value={config.lng} onChange={(lng) => onChange({ ...config, lng })} />
-      {withZoom ? <NumberFieldRow label="Zoom (1–19)" value={config.zoom ?? 12} onChange={(zoom) => onChange({ ...config, zoom })} /> : null}
+      {withZoom ? (
+        <SliderRow
+          label="Zoom"
+          value={config.zoom ?? 12}
+          onChange={(zoom) => onChange({ ...config, zoom })}
+          min={1}
+          max={19}
+          hint="1 = vue du monde, 19 = niveau rue."
+        />
+      ) : null}
       {withZoom ? <TextField label="Légende (optionnel)" value={config.caption ?? ""} onChange={(caption) => onChange({ ...config, caption: caption || undefined })} /> : null}
     </>
   );

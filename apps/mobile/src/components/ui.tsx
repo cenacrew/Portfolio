@@ -1,3 +1,4 @@
+import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import type { ReactNode } from "react";
 import {
@@ -257,6 +258,51 @@ export function NumberFieldRow({
         placeholderTextColor={t.textFaint}
         style={[inputStyle(t), { color: t.text, fontSize: 15 }]}
       />
+    </Field>
+  );
+}
+
+// A labelled slider (phase 4.6) — used for the map zoom instead of a raw number
+// field. Shows the current value in the label and steps in whole units.
+export function SliderRow({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  hint,
+  format = (v) => String(v),
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  hint?: string;
+  format?: (v: number) => string;
+}) {
+  const t = useTheme();
+  const safe = Number.isFinite(value) ? value : min;
+  return (
+    <Field label={label} hint={hint}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Slider
+          style={{ flex: 1, height: 40 }}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          value={safe}
+          onValueChange={(v) => onChange(Math.round(v / step) * step)}
+          minimumTrackTintColor={t.accent}
+          maximumTrackTintColor={t.border}
+          thumbTintColor={t.brand}
+        />
+        <View style={{ minWidth: 44, alignItems: "center", borderWidth: 1, borderColor: t.border, borderRadius: radius.sm, paddingVertical: 6, paddingHorizontal: 8 }}>
+          <Text style={{ color: t.text, fontWeight: "800", fontSize: 14 }}>{format(safe)}</Text>
+        </View>
+      </View>
     </Field>
   );
 }
