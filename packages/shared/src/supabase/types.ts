@@ -65,6 +65,17 @@ export interface SiteSettingsRow {
   location_show: boolean;
   chips: SiteChip[];
   updated_at: string;
+  // Admin presence (phase 4.8 C1) — written by the mobile app on launch.
+  // Optional so older rows / pre-migration reads stay valid.
+  tz?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  city?: string | null;
+  presence_updated_at?: string | null;
+  // Status/mood moved from a grid widget into the header (phase 4.8 B2).
+  status_emoji?: string;
+  status_text?: string;
+  status_moods?: { emoji: string; text: string }[];
 }
 
 export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_at">>;

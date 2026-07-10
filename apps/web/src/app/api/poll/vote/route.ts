@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getVoterChoice, insertVote } from "@portfolio/shared";
+import { changeVote, getVoterChoice } from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp, voterHash } from "../../_lib/request";
 import { rateLimit } from "../../_lib/rateLimit";
@@ -36,12 +36,13 @@ export async function POST(req: Request) {
   // constraint (widget_id, voter_hash) enforces one vote per visitor.
   const hash = voterHash(req);
   try {
-    const already = await getVoterChoice(supabase, parsed.widgetId, hash);
-    if (already) {
-      return NextResponse.json({ ok: true, option: already, alreadyVoted: true });
+    // Phase 4.8 B8: a visitor can change their vote — the previous choice is
+    // replaced. `previous` lets the client adjust its optimistic counts.
+    const previous = await getVoterChoice(supabase, parsed.widgetId, hash);
+    if (previous !== parsed.option) {
+      await changeVote(supabase, { widgetId: parsed.widgetId, option: parsed.option, voterHash: hash });
     }
-    await insertVote(supabase, { widgetId: parsed.widgetId, option: parsed.option, voterHash: hash });
-    return NextResponse.json({ ok: true, option: parsed.option });
+    return NextResponse.json({ ok: true, option: parsed.option, previous });
   } catch {
     return NextResponse.json({ error: "Vote impossible." }, { status: 500 });
   }

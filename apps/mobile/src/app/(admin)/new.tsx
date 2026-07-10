@@ -7,6 +7,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Banner, Eyebrow, Muted, success, tap } from "../../components/ui";
 import { addWidget } from "../../lib/actions";
 import { ALL_TYPES, meta } from "../../lib/registry";
+
+// The status/mood tile left the grid for the header (phase 4.8 B2), so it no
+// longer appears in the add gallery. Its type stays registered for compat.
+const GALLERY_TYPES = ALL_TYPES.filter((type) => type !== "status");
 import { supabase } from "../../lib/supabase";
 import { radius, space, useTheme } from "../../lib/theme";
 
@@ -61,7 +65,7 @@ export default function NewWidget() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: space.lg, paddingTop: 0, gap: space.sm, paddingBottom: space.xl * 2 }}>
           {error ? <Banner text={error} /> : null}
-          {ALL_TYPES.map((type) => {
+          {GALLERY_TYPES.map((type) => {
             const def = meta(type);
             const busy = creating === type;
             return (

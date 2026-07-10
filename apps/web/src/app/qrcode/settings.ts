@@ -6,14 +6,20 @@ import { getPublicServerSupabase } from "@/lib/supabase/server";
 // The header values as they were hard-coded before phase 4.5. Used verbatim
 // when Supabase isn't configured, the table is empty, or a read fails — so the
 // public /qrcode header never breaks and matches production.
-export const HEADER_FALLBACK: Omit<SiteSettingsRow, "id" | "updated_at"> = {
+export const HEADER_FALLBACK = {
   name: "Valentin Sourdois Pajot",
   tagline: "Développeur Full-Stack · créatif du numérique",
   available_text: "Dispo pour un projet",
   available_show: true,
   location: "Bordeaux",
   location_show: true,
-  chips: [],
+  chips: [] as SiteSettingsRow["chips"],
+  // Admin timezone drives the header clock (A4/C1); Europe/Paris until the app
+  // reports the device's presence.
+  tz: "Europe/Paris",
+  // Status/mood shown in the header (B2).
+  status_emoji: "💻",
+  status_text: "En train de coder",
 };
 
 export type HeaderSettings = typeof HEADER_FALLBACK;
@@ -34,6 +40,9 @@ export async function loadHeaderSettings(): Promise<HeaderSettings> {
       location: row.location,
       location_show: row.location_show,
       chips: Array.isArray(row.chips) ? row.chips : [],
+      tz: row.tz || HEADER_FALLBACK.tz,
+      status_emoji: row.status_emoji || HEADER_FALLBACK.status_emoji,
+      status_text: row.status_text || HEADER_FALLBACK.status_text,
     };
   } catch {
     return HEADER_FALLBACK;

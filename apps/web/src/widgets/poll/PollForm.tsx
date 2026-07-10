@@ -26,27 +26,34 @@ export default function PollForm({
   const [busy, setBusy] = useState(false);
 
   async function vote(id: string) {
-    if (voted || busy) return;
+    // Phase 4.8 B8: a visitor can change their vote. Tapping the current choice
+    // is a no-op; tapping another moves the vote across.
+    if (busy || voted === id) return;
     setBusy(true);
-    // optimistic
+    const previous = voted;
+    // Optimistic: move the vote (decrement the old option, increment the new).
     setVoted(id);
-    setCounts((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+    setCounts((c) => {
+      const next = { ...c, [id]: (c[id] ?? 0) + 1 };
+      if (previous) next[previous] = Math.max(0, (next[previous] ?? 1) - 1);
+      return next;
+    });
     try {
       const res = await fetch("/api/poll/vote", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ widgetId, option: id }),
       });
-      const json = await res.json().catch(() => ({}));
-      if (json?.option && json.option !== id) {
-        // Server says this visitor had already voted for another option.
-        setVoted(json.option);
-      }
+      if (!res.ok) throw new Error("vote failed");
       router.refresh();
     } catch {
-      // revert optimistic change on hard failure
-      setVoted(null);
-      setCounts((c) => ({ ...c, [id]: Math.max(0, (c[id] ?? 1) - 1) }));
+      // Revert the optimistic move on hard failure.
+      setVoted(previous);
+      setCounts((c) => {
+        const next = { ...c, [id]: Math.max(0, (c[id] ?? 1) - 1) };
+        if (previous) next[previous] = (next[previous] ?? 0) + 1;
+        return next;
+      });
     } finally {
       setBusy(false);
     }
@@ -66,7 +73,7 @@ export default function PollForm({
               <button
                 className={`w-poll__opt${voted ? " is-revealed" : ""}${mine ? " is-mine" : ""}`}
                 onClick={() => vote(o.id)}
-                disabled={!!voted || busy}
+                disabled={busy}
               >
                 <span className="w-poll__fill" style={{ width: voted ? `${pct}%` : "0%" }} />
                 <span className="w-poll__label">{o.label}</span>

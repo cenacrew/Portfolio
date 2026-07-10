@@ -1,14 +1,15 @@
-import type { Breakpoint, Mood, WidgetBreakpointLayout, WidgetRow } from "@portfolio/shared";
-import { DEFAULT_MOODS } from "@portfolio/shared";
+import type { Breakpoint, WidgetBreakpointLayout } from "@portfolio/shared";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Dimensions, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DragGrid } from "../../components/DragGrid";
-import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, TextField, Title, success, tap } from "../../components/ui";
-import { persistLayouts, saveConfig } from "../../lib/actions";
+import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, Title, success, tap } from "../../components/ui";
+import { persistLayouts } from "../../lib/actions";
 import { useAuth } from "../../lib/auth";
 import { syncMaLocationOnce } from "../../lib/maLoc";
+import { syncPresenceOnce } from "../../lib/presence";
 import { radius, space, useTheme } from "../../lib/theme";
 import { useWidgets } from "../../lib/widgets";
 
@@ -25,66 +26,36 @@ export default function Dashboard() {
   const [saving, setSaving] = useState(false);
   const getCellsRef = useRef<(() => Record<string, { x: number; y: number; w: number; h: number }>) | null>(null);
 
-  const [addOpen, setAddOpen] = useState(false);
-  const [newEmoji, setNewEmoji] = useState("");
-  const [newText, setNewText] = useState("");
-
   const width = Dimensions.get("window").width;
   const boardWidth = width - space.lg * 2;
 
-  const statusWidget = widgets.find((w) => w.type === "status");
-  const statusCfg = (statusWidget?.config && typeof statusWidget.config === "object" ? statusWidget.config : {}) as Record<string, unknown>;
-  const extraMoods = (Array.isArray(statusCfg.extraMoods) ? statusCfg.extraMoods : []) as Mood[];
-  const moods = useMemo(() => [...DEFAULT_MOODS, ...extraMoods], [extraMoods]);
-
-  // "Ma loc": refresh location-map widgets from the device once per app launch.
+  // Once per launch: refresh "ma-loc" maps and report this device's presence
+  // (timezone + location) so the public dashboard follows the admin (C1).
   useEffect(() => {
-    syncMaLocationOnce()
-      .then(() => refresh())
-      .catch(() => {});
+    Promise.allSettled([syncMaLocationOnce(), syncPresenceOnce()]).then(() => refresh());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyStatus = async (emoji: string, text: string) => {
-    if (!statusWidget) {
-      Alert.alert("Aucun widget statut", "Ajoute d'abord un widget « Statut / humeur ».");
-      return;
-    }
-    if (!text.trim()) {
-      Alert.alert("Statut vide", "Écris un statut avant de l'appliquer.");
-      return;
-    }
-    try {
-      await saveConfig(statusWidget.id, { ...statusCfg, emoji, text });
-      success();
-      refresh();
-    } catch (e) {
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible de mettre à jour");
-    }
-  };
-
-  const addMood = async () => {
-    if (!statusWidget) {
-      Alert.alert("Aucun widget statut", "Ajoute d'abord un widget « Statut / humeur » pour créer des humeurs.");
-      return;
-    }
-    const emoji = newEmoji.trim();
-    if (!emoji) {
-      Alert.alert("Emoji manquant", "Choisis un emoji au clavier avant d'ajouter l'humeur.");
-      return;
-    }
-    const mood: Mood = { emoji, text: newText.trim() || emoji };
-    try {
-      await saveConfig(statusWidget.id, { ...statusCfg, extraMoods: [...extraMoods, mood] });
-      success();
-      setNewEmoji("");
-      setNewText("");
-      setAddOpen(false);
-      refresh();
-    } catch (e) {
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Impossible d'ajouter l'humeur");
-    }
-  };
+  // Desktop editing in landscape (phase 4.8 C5): with 9 columns the desktop
+  // board needs the wide side. Force landscape while the desktop toggle is on,
+  // back to portrait on mobile or when leaving the screen.
+  useEffect(() => {
+    const lock = async () => {
+      try {
+        await ScreenOrientation.lockAsync(
+          bp === "desktop"
+            ? ScreenOrientation.OrientationLock.LANDSCAPE
+            : ScreenOrientation.OrientationLock.PORTRAIT_UP,
+        );
+      } catch {
+        // Expo Go / unsupported: ignore, the board still works portrait.
+      }
+    };
+    lock();
+    return () => {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {});
+    };
+  }, [bp]);
 
   const saveLayout = async () => {
     const getCells = getCellsRef.current;
@@ -145,71 +116,10 @@ export default function Dashboard() {
 
         {error ? <Banner text={error} /> : null}
 
-        {/* Quick status */}
-        <View style={{ gap: space.md }}>
-          <SectionTitle>Statut du moment</SectionTitle>
-
-          <Card>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              <Text style={{ fontSize: 18 }}>{(statusCfg.emoji as string) ?? "💬"}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: t.text, fontWeight: "800" }}>Humeur</Text>
-                <Muted>{statusWidget ? ((statusCfg.text as string) ?? "—") : "Aucun widget statut"}</Muted>
-              </View>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, alignItems: "center" }}>
-              {moods.map((m, i) => (
-                <Pressable
-                  key={`${m.emoji}-${m.text}-${i}`}
-                  onPress={() => {
-                    tap();
-                    applyStatus(m.emoji, m.text);
-                  }}
-                  style={{ borderWidth: 1.5, borderColor: t.border, borderRadius: radius.pill, paddingVertical: 8, paddingHorizontal: 12, flexDirection: "row", gap: 6, alignItems: "center" }}
-                >
-                  <Text style={{ fontSize: 15 }}>{m.emoji}</Text>
-                  <Text style={{ color: t.textMuted, fontWeight: "700", fontSize: 12 }}>{m.text}</Text>
-                </Pressable>
-              ))}
-              {/* "+" — add a custom mood (emoji keyboard) to the list. */}
-              <Pressable
-                onPress={() => {
-                  tap();
-                  setAddOpen((v) => !v);
-                }}
-                style={{ width: 40, height: 40, borderRadius: radius.pill, borderWidth: 1.5, borderColor: t.accent, alignItems: "center", justifyContent: "center" }}
-              >
-                <Text style={{ color: t.accent, fontSize: 22, fontWeight: "700", marginTop: -2 }}>+</Text>
-              </Pressable>
-            </ScrollView>
-
-            {addOpen ? (
-              <View style={{ marginTop: 12, gap: space.sm }}>
-                <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end" }}>
-                  <View style={{ width: 70 }}>
-                    <Text style={{ color: t.text, fontWeight: "700", fontSize: 14, marginBottom: 6 }}>Emoji</Text>
-                    <TextInput
-                      value={newEmoji}
-                      onChangeText={(v) => setNewEmoji(v.slice(0, 4))}
-                      autoFocus
-                      placeholder="🌙"
-                      placeholderTextColor={t.textFaint}
-                      style={{ backgroundColor: t.surfaceAlt, borderRadius: radius.sm, borderWidth: 1, borderColor: t.border, paddingHorizontal: 14, paddingVertical: 12, color: t.text, fontSize: 22, textAlign: "center" }}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <TextField label="Texte (optionnel)" value={newText} onChange={setNewText} placeholder="Ex : Day off" />
-                  </View>
-                </View>
-                <Button label="Ajouter à mes humeurs" onPress={addMood} variant="accent" />
-              </View>
-            ) : null}
-          </Card>
-
-          <View style={{ flexDirection: "row", gap: space.sm }}>
-            <Button label="🪧 En-tête" onPress={() => router.push("/(admin)/header")} variant="ghost" style={{ flex: 1 }} />
-            <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
-          </View>
+        {/* Shortcuts to the header (status + infos) and guestbook */}
+        <View style={{ flexDirection: "row", gap: space.sm }}>
+          <Button label="🪧 En-tête & statut" onPress={() => router.push("/(admin)/header")} variant="ghost" style={{ flex: 1 }} />
+          <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
         </View>
 
         {/* Live board — drag to arrange, tap to manage */}
@@ -225,15 +135,10 @@ export default function Dashboard() {
             Disposition
           </SectionTitle>
 
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Muted style={{ flex: 1 }}>
-              Appui long pour déplacer une tuile, tape pour la gérer.
-              {bp === "desktop" ? " Vue desktop 5 colonnes (dézoomée)." : ""}
-            </Muted>
-            <Pressable onPress={() => { tap(); router.push("/(admin)/preview"); }} hitSlop={8}>
-              <Text style={{ color: t.accent, fontWeight: "800", fontSize: 13 }}>👁 Rendu réel</Text>
-            </Pressable>
-          </View>
+          <Muted>
+            Appui long pour déplacer une tuile, tape pour la gérer.
+            {bp === "desktop" ? " Vue desktop 9 colonnes (paysage)." : ""}
+          </Muted>
 
           {loading ? (
             <Muted>Chargement…</Muted>
@@ -261,35 +166,50 @@ export default function Dashboard() {
         </View>
       </ScrollView>
 
-      {/* FAB — add a widget */}
+      {/* FAB — "Rendu réel" (bottom-left, phase 4.8 C2) */}
+      <Pressable
+        onPress={() => {
+          tap();
+          router.push("/(admin)/preview");
+        }}
+        accessibilityLabel="Voir le rendu réel"
+        style={({ pressed }) => [fabStyle(t, "left"), pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 }]}
+      >
+        <Text style={{ fontSize: 24, marginTop: -1 }}>👁</Text>
+      </Pressable>
+
+      {/* FAB — add a widget (bottom-right) */}
       <Pressable
         onPress={() => {
           tap();
           router.push("/(admin)/new");
         }}
         accessibilityLabel="Ajouter un widget"
-        style={({ pressed }) => [
-          {
-            position: "absolute",
-            right: space.lg,
-            bottom: space.lg + 8,
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: t.brand,
-            alignItems: "center",
-            justifyContent: "center",
-            shadowColor: "#000",
-            shadowOpacity: 0.25,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 6,
-          },
-          pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
-        ]}
+        style={({ pressed }) => [fabStyle(t, "right"), pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 }]}
       >
         <Text style={{ color: t.onBrand, fontSize: 32, lineHeight: 34, fontWeight: "700", marginTop: -2 }}>+</Text>
       </Pressable>
     </SafeAreaView>
   );
+}
+
+function fabStyle(t: ReturnType<typeof useTheme>, side: "left" | "right") {
+  return {
+    position: "absolute" as const,
+    [side]: space.lg,
+    bottom: space.lg + 8,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: side === "right" ? t.brand : t.surface,
+    borderWidth: side === "left" ? 1 : 0,
+    borderColor: t.border,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  };
 }

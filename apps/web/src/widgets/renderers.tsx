@@ -17,6 +17,11 @@ import WatchlistRenderer from "./watchlist/Renderer";
 import VisitorCounterRenderer from "./visitor-counter/Renderer";
 import PollRenderer from "./poll/Renderer";
 import FreeLinkRenderer from "./free-link/Renderer";
+import YoutubeEmbedRenderer from "./youtube-embed/Renderer";
+import TechStackRenderer from "./tech-stack/Renderer";
+import PaypalRenderer from "./paypal/Renderer";
+import LetterboxdRenderer from "./letterboxd/Renderer";
+import ToileRenderer from "./toile/Renderer";
 
 // Renderer map, kept separate from the client-safe registry because some
 // renderers are async server components (they read Supabase / fetch APIs).
@@ -38,4 +43,9 @@ export const renderers: Record<WidgetType, WidgetRenderer<unknown>> = {
   "visitor-counter": VisitorCounterRenderer as WidgetRenderer<unknown>,
   poll: PollRenderer as WidgetRenderer<unknown>,
   "free-link": FreeLinkRenderer as WidgetRenderer<unknown>,
+  "youtube-embed": YoutubeEmbedRenderer as WidgetRenderer<unknown>,
+  "tech-stack": TechStackRenderer as WidgetRenderer<unknown>,
+  paypal: PaypalRenderer as WidgetRenderer<unknown>,
+  letterboxd: LetterboxdRenderer as WidgetRenderer<unknown>,
+  toile: ToileRenderer as WidgetRenderer<unknown>,
 };
