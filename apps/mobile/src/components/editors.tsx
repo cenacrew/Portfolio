@@ -1,5 +1,6 @@
 import type { WidgetType } from "@portfolio/shared";
 import { LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
@@ -210,6 +211,9 @@ function StatusEditor({ config, onChange }: EProps) {
 
 function LocationOrWeatherEditor({ config, onChange, withZoom }: EProps & { withZoom?: boolean }) {
   const maLoc = config.mode === "ma-loc";
+  // Weather (no zoom): follows the admin presence by default (phase 4.10 A7),
+  // fixed city fields shown only when that's turned off.
+  const follows = !withZoom && config.followPresence !== false;
   return (
     <>
       {withZoom ? (
@@ -219,10 +223,21 @@ function LocationOrWeatherEditor({ config, onChange, withZoom }: EProps & { with
           onChange={(on) => onChange({ ...config, mode: on ? "ma-loc" : "fixed" })}
           hint="La carte se cale sur la position de ce téléphone à chaque ouverture de l'app (autorisation requise)."
         />
-      ) : null}
+      ) : (
+        <ToggleRow
+          label="Suivre ma présence"
+          value={follows}
+          onChange={(on) => onChange({ ...config, followPresence: on })}
+          hint="La météo suit la localisation de l'app (comme « Ma loc »). Désactive pour une ville fixe."
+        />
+      )}
+      {!follows ? (
+        <>
       <TextField label="Ville" value={config.city} onChange={(city) => onChange({ ...config, city })} />
       <NumberFieldRow label="Latitude" value={config.lat} onChange={(lat) => onChange({ ...config, lat })} />
       <NumberFieldRow label="Longitude" value={config.lng} onChange={(lng) => onChange({ ...config, lng })} />
+        </>
+      ) : null}
       {withZoom ? (
         <SliderRow
           label="Zoom"
@@ -294,12 +309,60 @@ function GithubStatsEditor({ config, onChange }: EProps) {
   );
 }
 
+// Native date+time picker (phase 4.10 B5): friendlier than typing an ISO
+// string. On Android it opens the date dialog, then the time dialog, and writes
+// the chosen moment back as an ISO string.
+function DateTimeField({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
+  const t = useTheme();
+  const parsed = value ? new Date(value) : new Date();
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const [step, setStep] = useState<null | "date" | "time">(null);
+  const [temp, setTemp] = useState<Date>(date);
+
+  const open = () => {
+    setTemp(date);
+    setStep("date");
+  };
+
+  const onPick = (event: { type?: string }, selected?: Date) => {
+    if (event?.type === "dismissed" || !selected) {
+      setStep(null);
+      return;
+    }
+    if (step === "date") {
+      const d = new Date(temp);
+      d.setFullYear(selected.getFullYear(), selected.getMonth(), selected.getDate());
+      setTemp(d);
+      setStep("time");
+    } else {
+      const d = new Date(temp);
+      d.setHours(selected.getHours(), selected.getMinutes(), 0, 0);
+      setStep(null);
+      onChange(d.toISOString());
+    }
+  };
+
+  return (
+    <Field label="Date cible">
+      <Pressable
+        onPress={open}
+        style={{ borderWidth: 1, borderColor: t.border, borderRadius: radius.sm, paddingVertical: 12, paddingHorizontal: 14 }}
+      >
+        <Text style={{ color: t.text, fontSize: 15, fontWeight: "600" }}>
+          {date.toLocaleString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+        </Text>
+      </Pressable>
+      {step ? <DateTimePicker value={temp} mode={step} onChange={onPick} /> : null}
+    </Field>
+  );
+}
+
 function CountdownEditor({ config, onChange }: EProps) {
   return (
     <>
       <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
       <TextField label="Emoji" value={config.emoji} onChange={(emoji) => onChange({ ...config, emoji })} />
-      <TextField label="Date cible (ISO)" value={config.target} onChange={(target) => onChange({ ...config, target })} autoCapitalize="none" hint="Format : 2026-12-31T00:00:00.000Z" />
+      <DateTimeField value={config.target} onChange={(target) => onChange({ ...config, target })} />
     </>
   );
 }
@@ -381,13 +444,19 @@ function PhotoEditor({ config, onChange }: EProps) {
       label="Images"
       items={config.images ?? []}
       addLabel="Image"
-      makeItem={() => ({ src: "", alt: "" })}
+      makeItem={() => ({ src: "", alt: "", caption: undefined as string | undefined })}
       onChange={(images) => onChange({ ...config, images })}
       renderItem={(item: any, update) => (
         <>
           <PickImageButton onDone={(src) => update({ src })} />
           <TextField label="Source (URL)" value={item.src} onChange={(src) => update({ src })} keyboardType="url" autoCapitalize="none" hint="Importe depuis le téléphone, ou colle une URL." />
-          <TextField label="Description (alt)" value={item.alt ?? ""} onChange={(alt) => update({ alt })} />
+          {/* Phase 4.10 B4: the description is the caption shown on the tile
+              (like videos). Mirror it into `alt` for accessibility. */}
+          <TextField
+            label="Description (légende affichée)"
+            value={item.caption ?? ""}
+            onChange={(caption) => update({ caption: caption || undefined, alt: caption })}
+          />
         </>
       )}
     />

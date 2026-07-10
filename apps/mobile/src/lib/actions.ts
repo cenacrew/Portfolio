@@ -97,19 +97,22 @@ async function readLocalFile(uri: string): Promise<{ bytes: Uint8Array; size: nu
   return { bytes, size };
 }
 
-// Guard: the number of bytes we actually read must be plausible and, when the
-// picker told us the file size, must match it. Anything off → throw a clear
-// message and DO NOT upload (no more silent 14-byte corruption).
+// Guard against the original 14-byte truncated read (phase 4.6). The only
+// reliable signal is a near-empty read: reject anything under ~4 KB (phase 4.10
+// B3). We do NOT compare to the picker's reported size for images — Android
+// recompresses on import, so a legitimate read is often much smaller than the
+// picked file (e.g. 263832 / 812361 bytes) and that must not be rejected.
+const MIN_READ_BYTES = 4 * 1024;
+
 function assertReadOk(read: number, expectedSize: number | undefined, kind: "image" | "vidéo"): void {
-  if (read < 64) {
+  if (read < MIN_READ_BYTES) {
     throw new Error(`La ${kind} n'a pas pu être lue (fichier vide). Réessaie ou choisis-en une autre.`);
   }
-  if (expectedSize && expectedSize > 0) {
-    const drift = Math.abs(read - expectedSize);
-    // Allow a tiny tolerance for metadata rounding; anything larger is a bad read.
-    if (drift > Math.max(1024, expectedSize * 0.02)) {
-      throw new Error(`La ${kind} lue ne correspond pas au fichier choisi (${read} / ${expectedSize} octets). Import annulé.`);
-    }
+  // Picker-size comparison kept only for videos, and only to catch a read that
+  // is drastically SMALLER than the picked file (a truncated read); a moderate
+  // shrink from recompression is allowed.
+  if (kind === "vidéo" && expectedSize && expectedSize > MIN_READ_BYTES && read < expectedSize * 0.25) {
+    throw new Error(`La ${kind} lue semble tronquée (${read} / ${expectedSize} octets). Import annulé.`);
   }
 }
 
