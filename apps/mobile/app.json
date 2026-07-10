@@ -11,6 +11,8 @@
       "supportsTablet": false
     },
     "android": {
+      "package": "com.cenacrew.qrcodeadmin",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0d0c62",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
