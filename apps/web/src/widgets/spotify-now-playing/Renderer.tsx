@@ -15,7 +15,20 @@ type Track = {
   albumArt?: string;
   progressMs: number;
   durationMs: number;
+  url?: string;
+  device?: { name: string; type: string };
 };
+
+// A small glyph per Spotify Connect device type.
+function deviceGlyph(type: string): string {
+  const t = type.toLowerCase();
+  if (t.includes("smartphone") || t.includes("phone")) return "📱";
+  if (t.includes("computer")) return "💻";
+  if (t.includes("speaker")) return "🔊";
+  if (t.includes("tv") || t.includes("cast")) return "📺";
+  if (t.includes("game")) return "🎮";
+  return "🎵";
+}
 
 // Live widget: polls /api/spotify every 30s. `null` (nothing playing / Spotify
 // not configured) renders a calm idle state instead of breaking.
@@ -115,6 +128,27 @@ export default function NowPlayingRenderer() {
             <span>{fmt(data?.durationMs ?? 0)}</span>
           </div>
         </>
+      ) : null}
+
+      {data?.url ? (
+        <div className="w-np__foot">
+          <a
+            className="w-np__listen"
+            href={data.url}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Écouter ce titre sur Spotify"
+          >
+            <span className="w-np__listen-ic" aria-hidden>🎧</span>
+            <span className="w-np__listen-tx">Écouter ce titre</span>
+          </a>
+          {data.isPlaying && data.device ? (
+            <span className="w-np__device" title={`sur ${data.device.name}`}>
+              <span aria-hidden>{deviceGlyph(data.device.type)}</span>
+              <span className="w-np__device-name">{data.device.name}</span>
+            </span>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
