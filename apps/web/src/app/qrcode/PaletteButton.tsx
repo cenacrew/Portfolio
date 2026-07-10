@@ -2,12 +2,27 @@
 
 import { useState } from "react";
 
-// "Paint" button next to the theme toggle. Pulls a fresh accessible colour pair
-// from randoma11y (via our /api/palette proxy) and applies it to the board's
-// --c1 / --c2 base variables — everything else is derived from them, and dark
-// mode is just the inversion of the current pair. Nothing is persisted: a reload
-// returns to the default cream + navy. Network failures are swallowed silently
-// (the button simply retries on the next tap).
+// "Paint" button next to the theme toggle. Generates a fresh accessible colour
+// pair fully client-side with the `randoma11y` package (APCA contrast model,
+// threshold 60 — the user's explicit choice) and applies it to the board's
+// --c1 / --c2 base variables. Everything else is derived from them, and dark
+// mode is just the inversion of the current pair. It is instant (no network)
+// and BOTH colours vary. Nothing is persisted: a reload returns to cream + navy.
+//
+// The generator is dynamically imported so it stays out of the initial bundle
+// and only loads on first tap.
+
+// Relative luminance (sRGB) — used to decide which colour is paper (lighter →
+// --c1) and which is ink (darker → --c2), so light mode always reads correctly.
+function luminance(hex: string): number {
+  const n = parseInt(hex.replace("#", ""), 16);
+  const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+}
+
 export default function PaletteButton() {
   const [busy, setBusy] = useState(false);
 
@@ -15,10 +30,11 @@ export default function PaletteButton() {
     if (busy) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/palette", { cache: "no-store" });
-      if (!res.ok) return;
-      const { c1, c2 } = (await res.json()) as { c1?: string; c2?: string };
-      if (!c1 || !c2) return;
+      const { randoma11y } = await import("randoma11y");
+      const { colors } = randoma11y({ algorithm: "APCA", threshold: 60 });
+      const [a, b] = colors;
+      // Lighter colour = paper (--c1), darker = ink (--c2).
+      const [c1, c2] = luminance(a) >= luminance(b) ? [a, b] : [b, a];
       const page = document.querySelector<HTMLElement>(".qr-page");
       if (!page) return;
       page.style.setProperty("--c1", c1);
