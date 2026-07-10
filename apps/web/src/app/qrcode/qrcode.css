@@ -451,18 +451,19 @@ body.dark-mode .qr-page {
   --note-bg: #ffe0e6;
   --note-ink: #7a2a41;
 }
-.w-note__pin {
-  position: absolute;
-  top: 9px;
-  right: 12px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.22);
-  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.2);
+/* Quotation-mark header (phase 4.10 A3): the note reads as a pinned quote. */
+.w-note__quote {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 0.6;
+  height: 20px;
+  color: var(--note-ink);
+  opacity: 0.32;
+  flex: none;
 }
 .w-note__text {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   overflow: hidden;
 }
 .w-note__text strong {
@@ -998,34 +999,41 @@ body.dark-mode .qr-page {
 }
 .w-cd__grid {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   margin-top: auto;
 }
 .w-cd__cell {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 2px;
   flex: 1;
   min-width: 0;
 }
+/* Numbers scale with the tile itself (container units), so a 3x3 countdown
+   reads as a hero and a 1x1 stays legible (phase 4.10 A8). */
 .w-cd__cell b {
   font-family: var(--font-bricolage), sans-serif;
-  font-weight: 700;
-  font-size: clamp(13px, 3.8vw, 21px);
+  font-weight: 800;
+  font-size: clamp(18px, 13cqmin, 52px);
+  line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
 .w-cd__cell i {
   font-style: normal;
-  font-size: 9px;
+  font-size: clamp(8px, 3cqmin, 13px);
   color: var(--qr-ink-faint);
   text-transform: uppercase;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
 }
 .w-cd__done {
   margin-top: auto;
-  font-weight: 700;
-  font-size: 16px;
+  font-weight: 800;
+  font-size: clamp(18px, 8cqmin, 34px);
+}
+@container tile (max-height: 130px) {
+  .w-cd__cell b { font-size: clamp(15px, 9cqmin, 24px); }
 }
 
 /* ---------- watchlist ---------- */
@@ -1112,15 +1120,16 @@ body.dark-mode .qr-page {
   justify-content: center;
   gap: 3px;
 }
+/* Number + label scale with the tile (phase 4.10 A9). */
 .w-visits__num {
   font-family: var(--font-bricolage), sans-serif;
   font-weight: 800;
-  font-size: clamp(26px, 9vw, 34px);
+  font-size: clamp(28px, 22cqmin, 92px);
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .w-visits__label {
-  font-size: 12px;
+  font-size: clamp(11px, 4.5cqmin, 18px);
   color: var(--qr-ink-soft);
 }
 
@@ -1275,9 +1284,12 @@ body.dark-mode .qr-page {
   .w-guest__form {
     display: none;
   }
-  /* poll → question + total, no option bars */
-  .w-poll__opts {
-    display: none;
+  /* poll → keep votable options but tighten them (phase 4.10 A10). Tall-narrow
+     tiles (1x2 / 1x3) have room; only genuinely tiny 1x1 collapses (below). */
+  .w-poll__opt {
+    padding: 6px 9px;
+    font-size: 11.5px;
+    border-radius: 9px;
   }
   .w-poll__q {
     font-size: 12.5px;
@@ -1324,6 +1336,12 @@ body.dark-mode .qr-page {
   }
 }
 
+/* Genuinely tiny tiles (1x1): a poll can't fit votable rows → question + total
+   only (phase 4.10 A10). Tall-narrow tiles keep their options. */
+@container tile (max-width: 200px) and (max-height: 200px) {
+  .w-poll__opts { display: none; }
+}
+
 /* ---- SHORT tiles (≈ 1 grid row): drop overlays/rows that need height. */
 @container tile (max-height: 150px) {
   .w-gh__repos {
@@ -1348,25 +1366,16 @@ body.dark-mode .qr-page {
   .w-status__text {
     font-size: 17px;
   }
-  .w-visits__num {
-    font-size: 40px;
-  }
   .w-note {
     font-size: 16px;
   }
 }
 
-/* ---- LARGE square (3x3): center single-value widgets, enlarge counters. */
+/* ---- LARGE square (3x3): center single-value widgets. */
 @container tile (min-width: 300px) and (min-height: 300px) {
   .w-visits {
     align-items: center;
     text-align: center;
-  }
-  .w-visits__num {
-    font-size: 52px;
-  }
-  .w-cd__cell b {
-    font-size: 26px;
   }
   .w-social__glyph {
     width: 34%;
@@ -1415,11 +1424,38 @@ body.dark-mode .qr-page {
    ============================================================ */
 
 /* ---------- youtube embed ---------- */
+.w-yt {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 .w-yt-embed {
   border: 0;
   display: block;
   width: 100%;
   height: 100%;
+}
+/* Optional title (phase 4.10 A11): a legible caption bar over the player,
+   pinned to the bottom so it never covers the video's centre. */
+.w-yt__title {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 12px 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #fff;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent);
+  pointer-events: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+@container tile (max-height: 130px) {
+  .w-yt__title { display: none; }
 }
 
 /* ---------- paypal (sober donation) ---------- */
@@ -1436,12 +1472,13 @@ body.dark-mode .qr-page {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--qr-ink) 8%, transparent);
-  color: var(--qr-ink);
+  background: #fff;
+  box-shadow: var(--qr-shadow);
 }
+.w-paypal__icon svg { width: 24px; height: 24px; }
 .w-paypal__title {
   display: block;
   font-family: var(--font-bricolage), "Raleway", sans-serif;
@@ -1501,10 +1538,12 @@ body.dark-mode .qr-page {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  font-weight: 800;
-  font-size: 15px;
-  letter-spacing: -0.02em;
   box-shadow: var(--qr-shadow);
+}
+.w-tech__logo {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
 }
 .w-tech__name {
   font-size: 10.5px;
@@ -1560,6 +1599,8 @@ body.dark-mode .qr-page {
   flex-direction: column;
   gap: 8px;
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 .w-lbxd__film {
   display: flex;
@@ -1567,6 +1608,26 @@ body.dark-mode .qr-page {
   gap: 9px;
   min-width: 0;
 }
+.w-lbxd__thumb {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+.w-lbxd__rate {
+  /* Hidden by default (the meta row carries the rating); revealed only in the
+     short compact-row layout where meta is hidden (phase 4.10 A15). */
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  justify-content: center;
+  padding: 2px 0 1px;
+  font-size: 8px;
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), transparent);
+}
+.w-lbxd__rate .w-lbxd__stars { color: #52e072; letter-spacing: 0; }
 .w-lbxd__poster {
   width: 30px;
   height: 45px;
@@ -1598,11 +1659,26 @@ body.dark-mode .qr-page {
 }
 .w-lbxd__stars { color: #00b020; font-weight: 700; letter-spacing: 0.5px; }
 .w-lbxd__empty { color: var(--qr-ink-faint); font-size: 13px; }
-/* Small formats: show posters as a compact row without meta. */
+/* Small formats: show posters as a compact row without meta; the rating badge
+   overlays each poster so notes stay visible in *x1 (phase 4.10 A15). */
 @container tile (max-height: 150px) {
-  .w-lbxd__list { flex-direction: row; }
+  .w-lbxd__list { flex-direction: row; align-items: flex-start; overflow: hidden; }
   .w-lbxd__meta { display: none; }
   .w-lbxd__poster { width: 34px; height: 51px; }
+  .w-lbxd__rate { display: flex; }
+}
+/* Wide tiles: lay films out as a poster wall so we show many without overlap. */
+@container tile (min-width: 300px) and (min-height: 220px) {
+  .w-lbxd__list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 10px;
+  }
+  .w-lbxd__film { flex-direction: column; align-items: flex-start; gap: 4px; width: 68px; }
+  .w-lbxd__poster { width: 68px; height: 102px; }
+  .w-lbxd__meta { max-width: 68px; }
+  .w-lbxd__title { font-size: 11.5px; white-space: normal; line-height: 1.15; }
 }
 
 /* ---------- toile (collaborative canvas) ---------- */

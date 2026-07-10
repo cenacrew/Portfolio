@@ -35,7 +35,7 @@ function renderInline(text: string): ReactNode[] {
 export default function NoteRenderer({ config }: WidgetRendererProps<NoteConfig>) {
   return (
     <div className={`w-note w-note--${config.tone}`}>
-      <span className="w-note__pin" aria-hidden />
+      <span className="w-note__quote" aria-hidden>&ldquo;</span>
       <p className="w-note__text">{renderInline(config.text)}</p>
       {config.signature && (
         <span className="w-note__sign">— {config.signature}</span>
