@@ -94,20 +94,38 @@ body.dark-mode .qr-page {
 }
 
 /* ---------- header ---------- */
+/* Mobile: avatar + aside on the first row, identity spanning below. Desktop:
+   avatar | identity (fills) | aside, so the row no longer bunches on the left
+   (phase 4.10 A1). */
 .qr-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "avatar side"
+    "id id";
+  align-items: start;
+  column-gap: 14px;
   padding: 30px 4px 22px;
 }
-.qr-header__top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
+.qr-avatar { grid-area: avatar; }
+.qr-header__id { grid-area: id; margin-top: 12px; }
 .qr-header__side {
+  grid-area: side;
+  justify-self: end;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
+}
+@media (min-width: 768px) {
+  .qr-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "avatar id side";
+    align-items: center;
+    column-gap: 28px;
+  }
+  .qr-header__id { margin-top: 0; }
+  .qr-header__side { align-self: start; }
 }
 /* Avatar (phase 4.8 B3): larger, a full solid circle hugging the round photo
    crop — same proportions as the cenacrew.com home avatar. */
@@ -150,13 +168,14 @@ body.dark-mode .qr-page {
   text-transform: capitalize;
   color: var(--qr-ink-soft);
 }
+/* Palette + dark-mode controls, a touch bigger (phase 4.10 A1). */
 .qr-theme {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
   border: 1px solid var(--qr-line);
   background: var(--qr-tile);
   color: var(--qr-ink);
@@ -164,12 +183,13 @@ body.dark-mode .qr-page {
   box-shadow: var(--qr-shadow);
   transition: transform 0.2s;
 }
+.qr-theme svg { width: 21px; height: 21px; }
 .qr-theme:hover {
   transform: translateY(-2px);
 }
 .qr-controls {
   display: inline-flex;
-  gap: 8px;
+  gap: 9px;
 }
 .qr-palette svg {
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -192,7 +212,7 @@ body.dark-mode .qr-page {
   font-size: clamp(30px, 8.5vw, 40px);
   line-height: 1.03;
   letter-spacing: -0.02em;
-  margin-top: 18px;
+  margin-top: 0;
 }
 .qr-tag {
   margin-top: 8px;
