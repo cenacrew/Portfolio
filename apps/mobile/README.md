@@ -41,6 +41,48 @@ pnpm --filter mobile exec tsc --noEmit          # typecheck
 cd apps/mobile && npx expo export --platform android   # JS bundle compiles
 ```
 
+## Build a standalone APK (EAS preview)
+
+Goal: a real `.apk` installed on the phone that runs without Expo Go or a PC.
+Config lives in `eas.json` (profile `preview` → internal distribution, Android
+`buildType: apk`) and `app.json` (`android.package = com.cenacrew.qrcodeadmin`,
+`versionCode`). The build runs on Expo's free tier.
+
+### 1. One-time setup
+```bash
+npm install -g eas-cli          # or: pnpm add -g eas-cli
+eas login                        # your Expo account
+cd apps/mobile
+eas init                         # links the project, writes the EAS projectId
+```
+
+### 2. Embed the public env vars (EXPO_PUBLIC_*)
+The local `apps/mobile/.env` is **not** uploaded to the EAS build servers
+(it's gitignored). For an `EXPO_PUBLIC_*` value to be inlined into the bundle at
+build time, register it as an **EAS environment variable** in the `preview`
+environment (both values are the public anon credentials — safe to store there):
+
+```bash
+cd apps/mobile
+eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_URL      --value "https://<project>.supabase.co" --visibility plaintext
+eas env:create --environment preview --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "sb_publishable_..."                --visibility plaintext
+```
+
+The `preview` build profile declares `"environment": "preview"`, so EAS injects
+these before Metro bundles — `process.env.EXPO_PUBLIC_SUPABASE_URL` etc. are
+then baked into the APK. (Alternative: hardcode them under `build.preview.env`
+in `eas.json`; not done here to avoid committing the URL/key.)
+
+### 3. Build the APK
+```bash
+cd apps/mobile
+eas build --profile preview --platform android
+```
+
+EAS returns a build URL; when it finishes, download the `.apk` (or scan the
+QR code EAS prints) and install it on the phone (allow "install from unknown
+sources"). No Expo Go, no PC needed afterwards.
+
 ## pnpm monorepo + Metro (the classic friction point)
 
 pnpm installs dependencies as symlinks into an isolated store

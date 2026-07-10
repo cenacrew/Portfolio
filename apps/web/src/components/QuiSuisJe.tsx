@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export default function QuiSuisJe() {
   return (
     <div id="QSJ">
@@ -5,8 +7,14 @@ export default function QuiSuisJe() {
         Qui suis-je ?
       </p>
       <div className="QSJContent">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img id="creation" alt="illustration creation" src="/files/img/creation.png" />
+        <Image
+          id="creation"
+          alt="illustration creation"
+          src="/files/img/creation.png"
+          width={1376}
+          height={1195}
+          style={{ height: "auto" }}
+        />
         <p id="firstP" className="text m para">
           Je suis passionné et créatif, intéressé par l&apos;art numérique et la
           création de logo, DA, UI design, et maîtrisant des logiciels tels que
@@ -21,8 +29,14 @@ export default function QuiSuisJe() {
           J&apos;ai obtenu mon bac STI2D avec mention très bien au Lycée Albert
           Claveille à Périgueux.
         </p>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img id="formation" alt="illustration formation" src="/files/img/formation.png" />
+        <Image
+          id="formation"
+          alt="illustration formation"
+          src="/files/img/formation.png"
+          width={1492}
+          height={489}
+          style={{ height: "auto" }}
+        />
       </div>
     </div>
   );

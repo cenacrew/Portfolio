@@ -1,6 +1,5 @@
+import Image from "next/image";
 import { LinkIcon, GithubIcon, EyeIcon } from "./icons";
-
-/* eslint-disable @next/next/no-img-element */
 
 // Section Projets : deux rangées de cartes. Chaque carte garde ses classes
 // (card1..card6) et ids d'illustration d'origine pour un rendu identique.
@@ -14,7 +13,7 @@ export default function Projects() {
       <div className="firstRow">
         <div className="card1 card">
           <p className="cardTitle">Mini-RSA</p>
-          <img src="/files/img/miniRSA.png" className="illuprojets" id="illuRSA" alt="Mini-RSA" />
+          <Image src="/files/img/miniRSA.png" className="illuprojets" id="illuRSA" alt="Mini-RSA" width={512} height={512} style={{ height: "auto" }} />
           <p className="cardDesc">
             Pouvoir crypter et décrypter des message à base de génération de clé
             et en implémenter son interface
@@ -36,7 +35,7 @@ export default function Projects() {
 
         <div className="card2 card">
           <p className="cardTitle">Affiche JPO</p>
-          <img src="/files/img/JPO.png" className="wip" id="illuJPO" alt="Affiche JPO" />
+          <Image src="/files/img/JPO.png" className="wip" id="illuJPO" alt="Affiche JPO" width={768} height={576} style={{ height: "auto" }} />
           <p className="cardDesc">
             Réaliser les différentes affiches et badges pour la journée portes
             ouvertes 2022 de l&apos;IUT informatique tout en respectant un cahier
@@ -52,7 +51,7 @@ export default function Projects() {
 
         <div className="card3 card">
           <p className="cardTitle">Pong</p>
-          <img src="/files/img/pong.png" className="wip" id="illuPong" alt="Pong" />
+          <Image src="/files/img/pong.png" className="wip" id="illuPong" alt="Pong" width={1280} height={657} style={{ height: "auto" }} />
           <p className="cardDesc">
             Réaliser un jeu reprenant le principe de &quot;pong&quot; en pouvant
             controler 2 raquettes, un mode avec 4 balles et le rajout
@@ -75,7 +74,7 @@ export default function Projects() {
       <div className="secondRow">
         <div className="card4 card">
           <p className="cardTitle">BloomFilter</p>
-          <img src="/files/img/Bloom.png" className="wip" id="illuBloom" alt="BloomFilter" />
+          <Image src="/files/img/Bloom.png" className="wip" id="illuBloom" alt="BloomFilter" width={200} height={200} style={{ height: "auto" }} />
           <p className="cardDesc">
             Réaliser un Filtre de Bloom fonctionnant de trois facon différentes
             puis un benchmark de ce filtre et en réaliser un papier d&apos;analyse
@@ -95,7 +94,7 @@ export default function Projects() {
 
         <div className="card5 card">
           <p className="cardTitle">Démineur</p>
-          <img src="/files/img/demineur.png" className="wip" id="illuDemineur" alt="Démineur" />
+          <Image src="/files/img/demineur.png" className="wip" id="illuDemineur" alt="Démineur" width={512} height={512} style={{ height: "auto" }} />
           <p className="cardDesc">
             Corriger, optimiser et améliorer un démineur en java, via
             l&apos;utilisation de branche et de merge
@@ -112,7 +111,7 @@ export default function Projects() {
 
         <div className="card6 card">
           <p className="cardTitle">WatchList</p>
-          <img src="/files/img/watchlist.png" className="wip" id="illuWatchlist" alt="WatchList" />
+          <Image src="/files/img/watchlist.png" className="wip" id="illuWatchlist" alt="WatchList" width={145} height={70} style={{ height: "auto" }} />
           <p className="cardDesc">
             En partant de rien, réaliser un site permetant de voir une liste de
             series, les liker, suivre notre progression et plein d&apos;autre
