@@ -67,14 +67,14 @@ src/
     login.tsx              # Supabase email/password, persisted session
     (admin)/
       _layout.tsx          # session guard
-      dashboard.tsx        # bento preview + quick actions + Realtime
-      reorder.tsx          # order / size-per-breakpoint / visibility
+      dashboard.tsx        # 2D drag board (mobile/desktop) + quick status + Realtime
       new.tsx              # add-widget gallery
-      widget/[id].tsx      # per-type edit form (validated by shared Zod)
+      widget/[id].tsx      # per-type edit form + size (for the toggled breakpoint)
       guestbook.tsx        # guestbook moderation (list + delete)
   components/
-    ui.tsx                 # design system (navy + cream, dark mode)
+    ui.tsx                 # design system (navy + cream, dark mode) + slider
     WidgetPreview.tsx      # simplified per-type tile previews
+    DragGrid.tsx           # to-scale 2D drag board with live collision push
     editors.tsx            # per-type RN edit forms
   lib/
     supabase.ts            # anon client, AsyncStorage session persistence

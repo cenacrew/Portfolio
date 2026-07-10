@@ -20,7 +20,7 @@ function daysUntil(iso?: string): number | null {
   return Math.max(0, Math.ceil((d - Date.now()) / 86400000));
 }
 
-function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
+export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
   const c = asObj(row.config);
   const title = (v: string) => (
     <Text numberOfLines={2} style={{ color: t.text, fontWeight: "800", fontSize: 15, letterSpacing: -0.2 }}>
