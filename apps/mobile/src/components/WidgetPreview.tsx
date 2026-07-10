@@ -1,5 +1,5 @@
 import type { WidgetRow } from "@portfolio/shared";
-import { toilePublicUrl } from "@portfolio/shared";
+import { LOL_MODE_LABELS, toilePublicUrl } from "@portfolio/shared";
 import { Image } from "expo-image";
 import { Pressable, Text, View, type ViewStyle } from "react-native";
 import { meta } from "../lib/registry";
@@ -184,6 +184,14 @@ export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
           <Text style={{ fontSize: 22 }}>🎞️</Text>
           {title("Letterboxd")}
           {sub(`@${c.username || "cenacrew"}`)}
+        </View>
+      );
+    case "lol":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 22 }}>🎮</Text>
+          {title(LOL_MODE_LABELS[c.mode as keyof typeof LOL_MODE_LABELS] ?? "League of Legends")}
+          {sub(c.riotId || "cenacrew#EUW")}
         </View>
       );
     case "toile": {

@@ -1785,3 +1785,279 @@ body.dark-mode .qr-page {
 .toile-btn--ghost { background: transparent; color: var(--qr-ink-soft); }
 .toile-btn--send { background: var(--qr-ink); color: var(--qr-bg); border-color: var(--qr-ink); }
 .toile-btn:disabled { opacity: 0.55; cursor: default; }
+
+/* ---------- lol (League of Legends) — phase 4.9 ---------- */
+.w-lol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-width: 0;
+  /* Tier accent, overridden per rank via [data-tier]. Drives the emblem glow,
+     the LP colour and the champion level badge. Defaults to a hextech gold. */
+  --tier: #c8a24a;
+}
+.w-lol[data-tier="iron"] { --tier: #7c7368; }
+.w-lol[data-tier="bronze"] { --tier: #a45b34; }
+.w-lol[data-tier="silver"] { --tier: #8fa3ad; }
+.w-lol[data-tier="gold"] { --tier: #d3a53f; }
+.w-lol[data-tier="platinum"] { --tier: #3ba7a0; }
+.w-lol[data-tier="emerald"] { --tier: #29a36a; }
+.w-lol[data-tier="diamond"] { --tier: #5a7fe0; }
+.w-lol[data-tier="master"] { --tier: #9b4dca; }
+.w-lol[data-tier="grandmaster"] { --tier: #d0433f; }
+.w-lol[data-tier="challenger"] { --tier: #4aa9d8; }
+.w-lol[data-tier="unranked"] { --tier: var(--qr-ink-faint); }
+
+.w-lol__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.w-lol__logo {
+  position: relative;
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.w-lol__logo b {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.w-lol__logo b:first-child {
+  border: 1.6px solid #c8a24a;
+}
+.w-lol__logo b:last-child {
+  width: 4px;
+  height: 4px;
+  background: #c8a24a;
+}
+
+.w-lol__body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* --- rank --- */
+/* The CommunityDragon emblems are wide 1280x720 art with big transparent side
+   margins. Bound them in a square box (aspect-ratio 1) so they never eat the
+   tile's horizontal space, and `contain` keeps the whole crest visible. */
+.w-lol__emblem {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  max-height: 84px;
+  aspect-ratio: 1;
+}
+.w-lol__emblem-img {
+  width: 100%;
+  height: 100%;
+  /* `cover` crops the wide transparent side margins of the 1280x720 art so the
+     crest fills the square box at full height instead of shrinking to fit. */
+  object-fit: cover;
+  filter: drop-shadow(0 3px 8px color-mix(in srgb, var(--tier) 45%, transparent));
+}
+.w-lol__emblem-img--ph {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px dashed var(--qr-line-strong);
+  color: var(--qr-ink-faint);
+  font-weight: 800;
+  font-size: 20px;
+}
+.w-lol__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.w-lol__tier {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--qr-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-lol__queue {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qr-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-lol__stats {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.w-lol__lp {
+  font-weight: 800;
+  color: color-mix(in srgb, var(--tier) 78%, var(--qr-ink));
+}
+.w-lol__wl {
+  color: var(--qr-ink-soft);
+  font-weight: 600;
+}
+
+/* --- mastery --- */
+.w-lol__champ {
+  position: relative;
+  flex: none;
+  display: inline-block;
+  height: 100%;
+  max-height: 72px;
+  aspect-ratio: 1;
+}
+.w-lol__champ-img {
+  width: 100%;
+  height: 100%;
+  max-height: 72px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1.5px solid color-mix(in srgb, var(--tier) 55%, transparent);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--tier) 30%, transparent);
+}
+.w-lol__champ-img--ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--qr-tile-2);
+  font-size: 24px;
+}
+.w-lol__lvl {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  transform: translateX(-50%);
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e7c977, #c8a24a);
+  color: #2a2005;
+  font-weight: 800;
+  font-size: 11px;
+  text-align: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+}
+.w-lol__name {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  line-height: 1.05;
+  color: var(--qr-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-lol__points {
+  margin-top: 5px;
+  font-weight: 800;
+  font-size: 15px;
+  color: color-mix(in srgb, var(--tier) 70%, var(--qr-ink));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.w-lol__points small {
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--qr-ink-soft);
+}
+
+/* --- aram (challenge 101307 "Triomphe en ARAM" = total ARAM wins) --- */
+.w-lol__body--aram {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+.w-lol__big {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--qr-ink);
+  font-variant-numeric: tabular-nums;
+}
+.w-lol--aram .w-lol__queue {
+  font-size: 12px;
+}
+.w-lol__chip {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--tier) 72%, var(--qr-ink));
+  background: color-mix(in srgb, var(--tier) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tier) 32%, transparent);
+  white-space: nowrap;
+}
+
+/* --- idle / degraded --- */
+.w-lol--idle {
+  justify-content: flex-start;
+}
+.w-lol__muted {
+  color: var(--qr-ink-faint);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.w-lol__muted--sm {
+  font-size: 11px;
+  margin: 2px 0 0;
+}
+
+/* Compact tiles (1x1 / short): drop the queue label + eyebrow text, shrink art. */
+@container tile (max-width: 200px) {
+  .w-lol__head .w-eyebrow { display: none; }
+  .w-lol__queue { display: none; }
+  /* The aram label IS the meaning of the number — never hide it. */
+  .w-lol--aram .w-lol__queue { display: block; font-size: 10.5px; }
+  .w-lol__body { gap: 9px; }
+  .w-lol__tier,
+  .w-lol__name { font-size: 15px; }
+  .w-lol__big { font-size: 26px; }
+  .w-lol__chip { display: none; }
+  .w-lol__emblem-img,
+  .w-lol__champ { max-height: 52px; }
+}
+@container tile (max-height: 130px) {
+  .w-lol__stats { margin-top: 2px; }
+}
+
+/* Roomy tiles: let the art breathe. */
+@container tile (min-width: 300px) and (min-height: 200px) {
+  .w-lol__emblem-img,
+  .w-lol__champ { max-height: 96px; }
+  .w-lol__tier,
+  .w-lol__name { font-size: 22px; }
+  .w-lol__big { font-size: 46px; }
+}

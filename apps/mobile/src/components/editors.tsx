@@ -1,5 +1,5 @@
 import type { WidgetType } from "@portfolio/shared";
-import { SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import { LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
@@ -461,6 +461,30 @@ function ToileEditor({ config, onChange }: EProps) {
   );
 }
 
+function LolEditor({ config, onChange }: EProps) {
+  const modeOptions = (Object.keys(LOL_MODE_LABELS) as (keyof typeof LOL_MODE_LABELS)[]).map((value) => ({
+    value,
+    label: LOL_MODE_LABELS[value],
+  }));
+  return (
+    <>
+      <TextField
+        label="Riot ID"
+        value={config.riotId}
+        onChange={(riotId) => onChange({ ...config, riotId })}
+        autoCapitalize="none"
+        hint="Format pseudo#tag (compte EUW). Le PUUID est résolu côté serveur."
+      />
+      <SelectRow
+        label="Affichage"
+        value={config.mode}
+        options={modeOptions}
+        onChange={(mode) => onChange({ ...config, mode })}
+      />
+    </>
+  );
+}
+
 export function TypeEditor({ type, config, onChange }: { type: WidgetType; config: any; onChange: (next: any) => void }) {
   switch (type) {
     case "social-link":
@@ -505,6 +529,8 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <LetterboxdEditor config={config} onChange={onChange} />;
     case "toile":
       return <ToileEditor config={config} onChange={onChange} />;
+    case "lol":
+      return <LolEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

@@ -24,6 +24,7 @@ import * as techStack from "./tech-stack/schema";
 import * as paypal from "./paypal/schema";
 import * as letterboxd from "./letterboxd/schema";
 import * as toile from "./toile/schema";
+import * as lol from "./lol/schema";
 
 import SocialLinkEditor from "./social-link/Editor";
 import NoteEditor from "./note/Editor";
@@ -46,6 +47,7 @@ import TechStackEditor from "./tech-stack/Editor";
 import PaypalEditor from "./paypal/Editor";
 import LetterboxdEditor from "./letterboxd/Editor";
 import ToileEditor from "./toile/Editor";
+import LolEditor from "./lol/Editor";
 
 const s = (w: number, h: number): WidgetSize => ({ w, h });
 
@@ -252,6 +254,15 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     sizes: ALL_SIZES,
     defaultSize: s(2, 2),
     Editor: ToileEditor,
+  }),
+  lol: defineWidget({
+    schema: lol.lolSchema,
+    defaultConfig: lol.lolDefault,
+    label: lol.lolLabel,
+    description: "Ton rang ou ton champion favori (League of Legends).",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 1),
+    Editor: LolEditor,
   }),
 };
 

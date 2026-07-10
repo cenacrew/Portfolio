@@ -16,6 +16,9 @@ import {
   toileDefault,
   toileLabel,
   toileSchema,
+  lolDefault,
+  lolLabel,
+  lolSchema,
   videoDefault,
   videoLabel,
   videoSchema,
@@ -276,6 +279,15 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     emoji: "🎨",
     sizes: ALL_SIZES,
     defaultSize: s(2, 2),
+  },
+  lol: {
+    schema: lolSchema,
+    defaultConfig: lolDefault,
+    label: lolLabel,
+    description: "Ton rang ou ton champion favori (LoL).",
+    emoji: "🎮",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 1),
   },
 };
 
