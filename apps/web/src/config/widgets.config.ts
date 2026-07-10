@@ -15,19 +15,8 @@ const l = (
 const ts = "2026-07-01T09:00:00.000Z";
 
 export const widgets: Widget[] = [
-  {
-    id: "status",
-    type: "status",
-    config: {
-      emoji: "🎧",
-      text: "En alternance chez SQLI — je code ce dashboard bento en Next.js.",
-      updated: "Mis à jour aujourd'hui",
-    },
-    layout: l({ x: 0, y: 0, w: 2, h: 1 }, { x: 0, y: 0, w: 2, h: 1 }),
-    visible: true,
-    position: 0,
-    createdAt: ts,
-  },
+  // The status/mood tile moved to the header (phase 4.8 B2); it's no longer a
+  // grid widget. Its content now lives on site_settings.status_*.
   {
     id: "weather",
     type: "weather",
