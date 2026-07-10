@@ -2,6 +2,7 @@
 
 import { toilePublicUrl, TOILE_SIZE } from "@portfolio/shared";
 import { useEffect, useRef, useState } from "react";
+import GreatModal from "../ui/GreatModal";
 
 // 16 pertinent colours: ink/paper/greys, the site navy, warm + cool primaries
 // and secondaries, and two skin tones.
@@ -241,20 +242,9 @@ export default function ToileModal({
     }
   };
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div className="toile-modal" role="dialog" aria-modal="true" aria-label={title} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="toile-modal__panel">
-        <div className="toile-modal__bar">
-          <span className="toile-modal__title">{title}</span>
-          <button className="toile-modal__x" onClick={onClose} aria-label="Fermer">✕</button>
-        </div>
-
+    <GreatModal title={title} onClose={onClose} className="gmodal--toile">
+      <div className="toile-modal__grid">
         <div className="toile-modal__stage">
           <canvas
             ref={displayRef}
@@ -309,6 +299,6 @@ export default function ToileModal({
           </div>
         </div>
       </div>
-    </div>
+    </GreatModal>
   );
 }

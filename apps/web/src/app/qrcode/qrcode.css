@@ -537,6 +537,30 @@ body.dark-mode .qr-page {
   display: flex;
   flex-direction: column;
   gap: 9px;
+  /* The whole tile is now a button that opens the modal (phase 4.10 A6). */
+  width: 100%;
+  height: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+.w-guest__list--preview { overflow: hidden; }
+.w-guest__add {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--qr-ink);
+  color: var(--qr-tile);
+  font-size: 11.5px;
+  font-weight: 700;
+  flex: none;
 }
 .w-guest__head {
   display: flex;
@@ -1538,11 +1562,9 @@ body.dark-mode .qr-page {
 
 /* ---- NARROW tiles (≈ 1 grid column): collapse dense widgets to a summary. */
 @container tile (max-width: 200px) {
-  /* guestbook → just the header + count */
-  .w-guest__list,
-  .w-guest__form {
-    display: none;
-  }
+  /* guestbook preview stays (as many words as fit + the add pill, A6); just
+     tighten the add label. */
+  .w-guest__add { padding: 5px 9px; font-size: 11px; }
   /* poll → keep votable options but tighten them (phase 4.10 A10). Tall-narrow
      tiles (1x2 / 1x3) have room; only genuinely tiny 1x1 collapses (below). */
   .w-poll__opt {
@@ -1956,13 +1978,15 @@ body.dark-mode .qr-page {
   display: block;
   image-rendering: auto;
 }
+/* Empty toile: a clean white canvas, no broken-image icon (phase 4.10 A13). */
+.w-toile--empty { background: #fff; }
 .w-toile__blank {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--qr-ink-faint);
+  color: #c9ccd6;
 }
 .w-toile__label {
   position: absolute;
@@ -1983,8 +2007,11 @@ body.dark-mode .qr-page {
   .w-toile__sub { display: none; }
 }
 
-/* ---------- toile drawing modal ---------- */
-.toile-modal {
+/* ============================================================
+   Shared large modal — toile + guestbook (phase 4.10 A6/A13)
+   Takes ~90% of a phone screen, a comfortable large panel on desktop.
+   ============================================================ */
+.gmodal {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -1992,40 +2019,81 @@ body.dark-mode .qr-page {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(6, 6, 24, 0.6);
+  background: rgba(6, 6, 24, 0.62);
   backdrop-filter: blur(4px);
 }
-.toile-modal__panel {
-  width: min(94vw, 460px);
-  max-height: 94dvh;
-  overflow: auto;
+.gmodal__panel {
+  width: min(92vw, 900px);
+  max-width: 92vw;
+  height: min(90dvh, 760px);
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 22px;
+  padding: 18px;
+  border-radius: 24px;
   background: var(--qr-bg);
   border: 1px solid var(--qr-line-strong);
   box-shadow: var(--qr-shadow-hover);
 }
-.toile-modal__bar {
+/* Toile panel hugs its square canvas + tools rather than stretching full width. */
+.gmodal--toile { width: min(92vw, 820px); height: auto; max-height: 90dvh; }
+.gmodal--guest { width: min(92vw, 560px); }
+.gmodal__bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex: none;
+  margin-bottom: 14px;
 }
-.toile-modal__title {
+.gmodal__title {
   font-family: var(--font-bricolage), "Raleway", sans-serif;
   font-weight: 800;
-  font-size: 18px;
+  font-size: 20px;
+  letter-spacing: -0.01em;
 }
-.toile-modal__x {
-  border: 0;
-  background: transparent;
+.gmodal__x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--qr-line);
+  border-radius: 12px;
+  background: var(--qr-tile);
   color: var(--qr-ink-soft);
-  font-size: 18px;
   cursor: pointer;
-  line-height: 1;
 }
+.gmodal__x:hover { color: var(--qr-ink); }
+.gmodal__body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* --- toile modal layout: canvas + tools, side-by-side on desktop --- */
+.toile-modal__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+@media (min-width: 720px) {
+  .toile-modal__grid { flex-direction: row; align-items: flex-start; }
+  .toile-modal__grid .toile-modal__stage { flex: 0 0 min(58vh, 460px); width: min(58vh, 460px); }
+  .toile-modal__grid .toile-modal__tools { flex: 1; min-width: 220px; }
+}
+
+/* --- guestbook modal layout: scrollable list + pinned form --- */
+.guest-modal { display: flex; flex-direction: column; min-height: 0; flex: 1; gap: 12px; }
+.guest-modal__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 2px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.guest-modal__form { flex: none; }
+
 .toile-modal__stage {
   position: relative;
   aspect-ratio: 1;

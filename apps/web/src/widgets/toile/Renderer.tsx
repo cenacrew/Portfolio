@@ -20,10 +20,16 @@ export default function ToileRenderer({ config, widget }: WidgetRendererProps<To
 
   return (
     <>
-      <button className="w-toile" onClick={() => setOpen(true)} aria-label={`${config.title} — dessiner`}>
+      <button
+        className={`w-toile${!url || broken ? " w-toile--empty" : ""}`}
+        onClick={() => setOpen(true)}
+        aria-label={`${config.title} — dessiner`}
+      >
         {url && !broken ? (
           <img className="w-toile__img" src={url} alt={config.title} onError={() => setBroken(true)} />
         ) : (
+          // Empty toile: a clean white canvas (no broken-image icon), just a
+          // discreet pencil invite (phase 4.10 A13).
           <span className="w-toile__blank" aria-hidden>
             <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 19l7-7a2.1 2.1 0 0 0-3-3l-7 7-1 4 4-1z" />

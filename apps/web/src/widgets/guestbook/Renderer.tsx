@@ -2,11 +2,12 @@ import { getGuestbookMessages } from "@portfolio/shared";
 import { getPublicServerSupabase } from "@/lib/supabase/server";
 import type { WidgetRendererProps } from "../types";
 import type { GuestbookConfig, GuestbookMessage } from "./schema";
-import GuestbookForm from "./GuestbookForm";
+import GuestbookBoard from "./GuestbookBoard";
 
 // Server component: reads real messages from Supabase (falls back to the
-// widget's seed when Supabase isn't configured). The form is a client child
-// that POSTs to /api/guestbook and refreshes the board.
+// widget's seed when Supabase isn't configured), then hands them to the client
+// board which shows a compact preview and opens the shared large modal for the
+// full list + submit form (phase 4.10 A6).
 export default async function GuestbookRenderer({ config }: WidgetRendererProps<GuestbookConfig>) {
   let messages: GuestbookMessage[] = config.seed;
 
@@ -20,24 +21,5 @@ export default async function GuestbookRenderer({ config }: WidgetRendererProps<
     }
   }
 
-  return (
-    <div className="w-guest">
-      <div className="w-guest__head">
-        <span className="w-eyebrow">{config.title}</span>
-        <span className="w-guest__count">{messages.length}</span>
-      </div>
-
-      <ul className="w-guest__list">
-        {messages.map((m, i) => (
-          <li key={i} className="w-guest__msg">
-            <p className="w-guest__body">{m.message}</p>
-            <span className="w-guest__author">{m.author}</span>
-          </li>
-        ))}
-        {messages.length === 0 && <li className="w-guest__empty">Sois le premier à écrire.</li>}
-      </ul>
-
-      <GuestbookForm prompt={config.prompt} />
-    </div>
-  );
+  return <GuestbookBoard title={config.title} prompt={config.prompt} messages={messages} />;
 }
