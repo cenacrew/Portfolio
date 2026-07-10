@@ -23,3 +23,4 @@ export * from "./tech-stack";
 export * from "./paypal";
 export * from "./letterboxd";
 export * from "./toile";
+export * from "./lol";

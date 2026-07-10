@@ -26,6 +26,8 @@ export const WIDGET_TYPES = [
   "paypal",
   "letterboxd",
   "toile",
+  // Phase 4.9 — League of Legends (Riot API, server-side).
+  "lol",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];
