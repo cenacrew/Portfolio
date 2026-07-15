@@ -1,10 +1,11 @@
 import type { WidgetType } from "@portfolio/shared";
-import { LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import { formatFileSize, LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
-import { uploadImage, uploadVideo } from "../lib/actions";
+import { uploadFile, uploadImage, uploadVideo } from "../lib/actions";
 import { radius, space, useTheme } from "../lib/theme";
 import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, SliderRow, TextField, ToggleRow, tap } from "./ui";
 
@@ -76,6 +77,44 @@ function PickVideoButton({ onDone }: { onDone: (url: string) => void }) {
       style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
     >
       {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>🎞️ Importer une vidéo</Text>}
+    </Pressable>
+  );
+}
+
+// Pick any document from the device and upload it to widget-media (files/).
+// expo-document-picker works in Expo Go. The ~50 MB cap is enforced in
+// uploadFile; here we just surface a clear error if the read/upload fails.
+function PickFileButton({
+  onDone,
+}: {
+  onDone: (file: { fileUrl: string; fileName: string; sizeBytes: number; mimeType: string }) => void;
+}) {
+  const t = useTheme();
+  const [busy, setBusy] = useState(false);
+  const pick = async () => {
+    const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true, multiple: false });
+    if (res.canceled || !res.assets?.[0]?.uri) return;
+    const asset = res.assets[0];
+    setBusy(true);
+    try {
+      const mime = asset.mimeType ?? "application/octet-stream";
+      const name = asset.name ?? "fichier";
+      const { url, sizeBytes } = await uploadFile(asset.uri, name, mime);
+      onDone({ fileUrl: url, fileName: name, sizeBytes, mimeType: mime });
+      tap();
+    } catch (e) {
+      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Pressable
+      onPress={pick}
+      disabled={busy}
+      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
+    >
+      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>📎 Importer un fichier</Text>}
     </Pressable>
   );
 }
@@ -539,6 +578,38 @@ function ToileEditor({ config, onChange }: EProps) {
   );
 }
 
+function FileDownloadEditor({ config, onChange }: EProps) {
+  const t = useTheme();
+  const size = formatFileSize(config.sizeBytes ?? 0);
+  return (
+    <>
+      <PickFileButton
+        onDone={({ fileUrl, fileName, sizeBytes, mimeType }) => onChange({ ...config, fileUrl, fileName, sizeBytes, mimeType })}
+      />
+      {config.fileUrl ? (
+        <Text style={{ color: t.textMuted, fontSize: 12 }} numberOfLines={2}>
+          Fichier : {config.fileName || config.fileUrl}
+          {size ? ` · ${size}` : ""}
+        </Text>
+      ) : (
+        <Text style={{ color: t.textFaint, fontSize: 12 }}>Aucun fichier. Tout type accepté, 50 Mo max.</Text>
+      )}
+      <TextField
+        label="Titre affiché (optionnel)"
+        value={config.label ?? ""}
+        onChange={(label) => onChange({ ...config, label: label || undefined })}
+        hint="Par défaut, le nom du fichier est affiché."
+      />
+      <TextField
+        label="Description (optionnel)"
+        value={config.description ?? ""}
+        onChange={(description) => onChange({ ...config, description: description || undefined })}
+        multiline
+      />
+    </>
+  );
+}
+
 function LolEditor({ config, onChange }: EProps) {
   const modeOptions = (Object.keys(LOL_MODE_LABELS) as (keyof typeof LOL_MODE_LABELS)[]).map((value) => ({
     value,
@@ -609,6 +680,8 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <ToileEditor config={config} onChange={onChange} />;
     case "lol":
       return <LolEditor config={config} onChange={onChange} />;
+    case "file-download":
+      return <FileDownloadEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

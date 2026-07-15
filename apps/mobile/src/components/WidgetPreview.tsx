@@ -1,5 +1,5 @@
 import type { WidgetRow } from "@portfolio/shared";
-import { LOL_MODE_LABELS, toilePublicUrl } from "@portfolio/shared";
+import { extensionOf, fileKind, formatFileSize, LOL_MODE_LABELS, toilePublicUrl } from "@portfolio/shared";
 import { Image } from "expo-image";
 import { Pressable, Text, View, type ViewStyle } from "react-native";
 import { meta } from "../lib/registry";
@@ -201,6 +201,22 @@ export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
           <Image source={{ uri }} style={{ flex: 1 }} contentFit="cover" transition={150} />
           <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: 6, backgroundColor: "rgba(0,0,0,0.4)" }}>
             <Text style={{ color: "#fff", fontSize: 11, fontWeight: "800" }}>{c.title || "La toile"}</Text>
+          </View>
+        </View>
+      );
+    }
+    case "file-download": {
+      const name = (c.label as string) || (c.fileName as string) || "Fichier";
+      const tag = extensionOf((c.fileName as string) || "").toUpperCase() || fileKind((c.fileName as string) || "", (c.mimeType as string) || "").toUpperCase();
+      const size = formatFileSize((c.sizeBytes as number) ?? 0);
+      return (
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View style={{ width: 38, height: 46, borderRadius: 8, backgroundColor: t.brand, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>{tag ? tag.slice(0, 4) : "FILE"}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            {title(name)}
+            {sub(c.fileUrl ? size || "Prêt" : "Aucun fichier")}
           </View>
         </View>
       );

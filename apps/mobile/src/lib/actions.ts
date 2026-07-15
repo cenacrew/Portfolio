@@ -1,7 +1,12 @@
 import type { Breakpoint, WidgetBreakpointLayout, WidgetRow, WidgetSize, WidgetType } from "@portfolio/shared";
 import {
   deleteWidget,
+  extractMediaPaths,
+  extensionOf,
   GRID,
+  MAX_FILE_BYTES,
+  type MediaWidget,
+  pruneWidgetMedia,
   reorderWidgets,
   toileArchivePath,
   toilePath,
@@ -45,16 +50,39 @@ export async function addWidget(type: WidgetType, widgets: WidgetRow[]): Promise
   });
 }
 
+// Saves a widget's config, then prunes any media the OLD config referenced but
+// the new one no longer does (a replaced photo/video/file), unless another
+// widget still uses it. Best-effort cleanup — never blocks the save.
 export async function saveConfig(id: string, config: unknown): Promise<WidgetRow> {
-  return updateWidget(supabase, id, { config });
+  const { data: old } = await supabase.from("widgets").select("id,type,config").eq("id", id).maybeSingle();
+  const updated = await updateWidget(supabase, id, { config });
+  if (old) {
+    try {
+      await pruneWidgetMedia(supabase, extractMediaPaths(old as MediaWidget));
+    } catch {
+      /* storage cleanup is best-effort; the config was saved */
+    }
+  }
+  return updated;
 }
 
 export async function setVisible(id: string, visible: boolean): Promise<WidgetRow> {
   return updateWidget(supabase, id, { visible });
 }
 
+// Deletes a widget, then removes its media from the bucket if no other widget
+// references it (phase 7 B). Best-effort cleanup — the widget is gone either way.
 export async function deleteW(id: string): Promise<void> {
-  return deleteWidget(supabase, id);
+  const { data } = await supabase.from("widgets").select("id,type,config").eq("id", id).maybeSingle();
+  const removed = data as MediaWidget | null;
+  await deleteWidget(supabase, id);
+  if (removed) {
+    try {
+      await pruneWidgetMedia(supabase, extractMediaPaths(removed));
+    } catch {
+      /* storage cleanup is best-effort; the widget row is already deleted */
+    }
+  }
 }
 
 // Change a widget's size for one breakpoint, clamping width to the columns and
@@ -153,6 +181,34 @@ export async function uploadVideo(uri: string, mime = "video/mp4", expectedSize?
   if (error) throw error;
   const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
   return data.publicUrl;
+}
+
+// Uploads a picked document (any type, ~50 MB max) to the widget-media bucket
+// under the `files/` prefix and returns its public URL + the real byte size.
+// Reads real bytes with expo-file-system (see readLocalFile) — never fetch(uri),
+// which truncates local file:// reads in Expo Go (phase 4.6 bug).
+export async function uploadFile(
+  uri: string,
+  fileName: string,
+  mime = "application/octet-stream",
+): Promise<{ url: string; sizeBytes: number }> {
+  const { bytes } = await readLocalFile(uri);
+  if (bytes.byteLength === 0) {
+    throw new Error("Le fichier n'a pas pu être lu (vide). Réessaie ou choisis-en un autre.");
+  }
+  if (bytes.byteLength > MAX_FILE_BYTES) {
+    throw new Error("Fichier trop lourd (max 50 Mo). Choisis un fichier plus léger.");
+  }
+  const rawExt = extensionOf(fileName);
+  const ext = rawExt ? rawExt.replace(/[^a-z0-9]/gi, "").slice(0, 8) : "bin";
+  const path = `files/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from(STORAGE_BUCKET).upload(path, bytes, {
+    contentType: mime || "application/octet-stream",
+    upsert: false,
+  });
+  if (error) throw error;
+  const { data } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(path);
+  return { url: data.publicUrl, sizeBytes: bytes.byteLength };
 }
 
 // A tiny opaque-white PNG. Uploaded to the toile bucket on reset; the tile and
