@@ -23,6 +23,9 @@ export default function CountdownRenderer({
   const [t, setT] = useState<ReturnType<typeof diff> | null>(null);
 
   useEffect(() => {
+    // Compute the countdown only after mount to avoid an SSR/CSR hydration
+    // mismatch; setState-in-effect is intentional here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setT(diff(target));
     const id = setInterval(() => setT(diff(target)), 1000);
     return () => clearInterval(id);

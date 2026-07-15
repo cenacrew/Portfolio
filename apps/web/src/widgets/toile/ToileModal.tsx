@@ -75,6 +75,10 @@ export default function ToileModal({
     loadImage(toilePublicUrl(supabaseUrl, widgetId, version)).then((img) => {
       if (img) bctx.drawImage(img, 0, 0, TOILE_SIZE, TOILE_SIZE);
       setLoaded(true);
+      // `composite` is declared just below; it is only *called* here inside an
+      // async callback that runs long after the component body has finished
+      // evaluating, so the reference is always defined at call time.
+      // eslint-disable-next-line react-hooks/immutability
       composite();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

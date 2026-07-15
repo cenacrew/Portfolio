@@ -33,6 +33,9 @@ export default function GreatModal({
 
   // Resolve the portal target on mount (client only).
   useEffect(() => {
+    // The portal target only exists in the DOM client-side; setState-in-effect
+    // is the correct idiom to resolve it after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTarget(document.querySelector<HTMLElement>(".qr-page") ?? document.body);
   }, []);
 

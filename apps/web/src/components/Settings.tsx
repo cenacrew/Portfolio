@@ -10,6 +10,9 @@ export default function Settings() {
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
+    // Read the client-only <body> class after mount to avoid an SSR/CSR
+    // hydration mismatch; setState-in-effect is the correct idiom here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDark(document.body.classList.contains("dark-mode"));
   }, []);
 

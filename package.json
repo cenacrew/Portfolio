@@ -11,6 +11,8 @@
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
     "lint": "pnpm --filter web lint",
+    "test": "pnpm --filter @portfolio/shared test",
+    "test:e2e": "pnpm --filter web test:e2e",
     "purge:media": "node scripts/purge-orphan-media.ts"
   },
   "devDependencies": {

@@ -9,8 +9,14 @@
     ".": "./src/index.ts",
     "./widget-configs/*": "./src/widget-configs/*.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.10",
     "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
   }
 }
