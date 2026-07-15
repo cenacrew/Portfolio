@@ -93,6 +93,15 @@ export const registry: Record<WidgetType, RegistryEntry> = {
   guestbook: defineWidget({
     schema: guestbook.guestbookSchema,
     defaultConfig: guestbook.guestbookDefault,
+    // Seed a couple of messages so the QA tile shows a populated book.
+    sampleConfig: {
+      title: "Livre d'or",
+      prompt: "Laisse-moi un petit mot",
+      seed: [
+        { author: "Léa", message: "Super portfolio, bravo !", createdAt: "2026-01-02T10:00:00.000Z" },
+        { author: "Marco", message: "J'adore le dashboard bento.", createdAt: "2026-01-03T18:30:00.000Z" },
+      ],
+    } satisfies guestbook.GuestbookConfig,
     label: guestbook.guestbookLabel,
     description: "Les visiteurs laissent un mot.",
     sizes: ALL_SIZES,
@@ -121,6 +130,15 @@ export const registry: Record<WidgetType, RegistryEntry> = {
   photo: defineWidget({
     schema: photo.photoSchema,
     defaultConfig: photo.photoDefault,
+    // A 2-image carousel from bundled assets so the QA console shows a real
+    // gallery (the default single placeholder image is less telling).
+    sampleConfig: {
+      images: [
+        { src: "/files/img/JPO.png", alt: "Exemple 1" },
+        { src: "/files/img/Bloom.png", alt: "Exemple 2" },
+      ],
+      intervalSec: 5,
+    } satisfies photo.PhotoConfig,
     label: photo.photoLabel,
     description: "Une photo ou un mini-carrousel.",
     bleed: true,
@@ -178,6 +196,15 @@ export const registry: Record<WidgetType, RegistryEntry> = {
   watchlist: defineWidget({
     schema: watchlist.watchlistSchema,
     defaultConfig: watchlist.watchlistDefault,
+    // A few items with progress + statuses so the list layout is exercised.
+    sampleConfig: {
+      title: "Ma watchlist",
+      items: [
+        { title: "Dune", status: "done", accent: "#c98a3a" },
+        { title: "Severance", status: "watching", current: 4, total: 9, accent: "#3a6ec9" },
+        { title: "Arcane", status: "plan", accent: "#7d3ac9" },
+      ],
+    } satisfies watchlist.WatchlistConfig,
     label: watchlist.watchlistLabel,
     description: "Films / séries en cours.",
     sizes: ALL_SIZES,
@@ -270,6 +297,16 @@ export const registry: Record<WidgetType, RegistryEntry> = {
   "file-download": defineWidget({
     schema: fileDownload.fileDownloadSchema,
     defaultConfig: fileDownload.fileDownloadDefault,
+    // A realistic file so the QA tile renders its icon/name/size (the default
+    // is empty until a file is picked). The URL isn't fetched in the console.
+    sampleConfig: {
+      fileUrl: "https://example.com/cv.pdf",
+      fileName: "cv-valentin.pdf",
+      sizeBytes: 842000,
+      mimeType: "application/pdf",
+      label: "Mon CV",
+      description: "PDF · à jour 2026",
+    } satisfies fileDownload.FileDownloadConfig,
     label: fileDownload.fileDownloadLabel,
     description: "Un fichier à télécharger (PDF, ZIP, APK…).",
     sizes: ALL_SIZES,
@@ -280,4 +317,11 @@ export const registry: Record<WidgetType, RegistryEntry> = {
 
 export function getWidgetDefinition(type: WidgetType): RegistryEntry {
   return registry[type];
+}
+
+// Example config the QA console renders for a type (phase 9): the explicit
+// `sampleConfig` when set, otherwise the type's default config.
+export function getSampleConfig(type: WidgetType): unknown {
+  const def = registry[type];
+  return def.sampleConfig ?? def.defaultConfig;
 }

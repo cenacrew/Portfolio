@@ -29,6 +29,10 @@ export type WidgetEditor<TConfig> = ComponentType<WidgetEditorProps<TConfig>>;
 export interface WidgetMeta<TConfig> {
   schema: z.ZodTypeAny;
   defaultConfig: TConfig;
+  // A telling example config used by the QA test console (phase 9). Falls back
+  // to `defaultConfig` when omitted; set it where the default would render an
+  // empty/placeholder tile so the audit sees a realistic widget.
+  sampleConfig?: TConfig;
   label: string;
   // A short human description shown in the admin "add widget" gallery.
   description?: string;
@@ -47,6 +51,7 @@ export interface WidgetMeta<TConfig> {
 export interface RegistryEntry {
   schema: z.ZodTypeAny;
   defaultConfig: unknown;
+  sampleConfig?: unknown;
   label: string;
   description?: string;
   bleed?: boolean;
