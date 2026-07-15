@@ -15,6 +15,17 @@
 | 8 | Versions multiples du dashboard via URL (`/qrcode/[slug]`, ex. version « travail » orientée CV) | 7 (règles de suppression média cross-références) |
 | 9 | Workflow QA « test widgets » (détection auto « à vérifier », interface de test, validation, screenshots, issues GitHub) | — (mais à faire en dernier : il auditera tout le reste) |
 
+### Vague 2 (suggestions Fable validées par l'utilisateur)
+
+| Phase | Livrable | Dépend de |
+|-------|----------|-----------|
+| 10 | Filet de sécurité dev : CI GitHub Actions, tests unitaires du cœur critique, smoke test Playwright `/qrcode`, screenshots QA automatiques | 9 (console de test) |
+| 11 | Paramètres & confort : lien sur photo/carrousel, comportement de fin du countdown, son vidéo au tap, dupliquer un widget | 10 (protégé par la CI) |
+| 12 | Nouveaux widgets : `contact-card` (vCard), `cv-timeline`, `reactions` | 10 |
+| 13 | Widget mini-jeu : **Snake arcade + Flappy** (leaderboards globaux, infra scores partagée) | 12 (infra écriture anonyme réutilisée) |
+| 14 | App admin : écran mini-stats + badge « X à vérifier » sur l'entrée QA | 12, 13 (les stats agrègent réactions et scores) |
+| 15 | Notifications push (build EAS) avec préférences par source d'événement | 12, 13 (sources d'événements complètes) |
+
 ## Décisions d'architecture (validées avec l'utilisateur)
 
 - **Versions du dashboard = versions indépendantes** : table `dashboards` (slug) ; chaque widget appartient à UNE version avec ses propres layouts ; l'en-tête (`site_settings`) est aussi par version ; outil « dupliquer » pour démarrer une nouvelle version depuis la version par défaut. Gestion depuis **l'app mobile ET l'admin web**.
@@ -24,6 +35,9 @@
 - **Widget fichier : tout type, 50 Mo max** (le bucket free tier fait 1 Go au total).
 - **Bucket : correction à la racine + purge one-off** (pas seulement un nettoyage ponctuel).
 - **Analytics : `@vercel/analytics` + `@vercel/speed-insights`**, tout le site.
+- **Vague 2 — priorisation** : la CI (phase 10) passe en premier pour protéger tout le reste ; les notifications push (phase 15) en dernier car elles dépendent des nouvelles sources d'événements et du build EAS.
+- **Mini-jeux = Snake arcade + Flappy** (choix utilisateur), infra scores commune, écriture via API route rate-limitée.
+- **Notifications push = exception assumée à la règle Expo Go** (APK EAS requis ; no-op propre dans Expo Go). Préférences par source d'événement, stockées en base.
 - Décisions par défaut de l'orchestrateur (ajustables si l'utilisateur le demande) : compteur de visites **global** (incrémenté quelle que soit la version) ; slug de version inconnu → **404** ; les **archives de la toile** dans le bucket sont exclues de la purge (elles sont intentionnelles).
 
 ---
@@ -100,6 +114,74 @@
 8. **App mobile** : entrée « Test widgets » (menu ou badge « X à vérifier ») qui ouvre `/adminqrcode/test` en WebView. La WebView présente l'écran de login admin à la première ouverture (cookies de session WebView persistants ensuite) — pas de partage de session Supabase entre l'app et la WebView, c'est assumé et documenté.
 
 **Critères d'acceptation** : modifier le Renderer d'un widget → il repasse « à vérifier » au build suivant ; la page de test affiche tous ses formats dans les deux contextes ; cocher puis terminer → il disparaît de la liste et n'y revient pas tant que son code ne change pas ; ne pas cocher avec une note → ligne `issue` en base, screenshot lisible dans le bucket, issue GitHub créée avec note + image ; le tout accessible depuis l'app via la WebView.
+
+---
+
+## Phase 10 — Filet de sécurité dev (CI, tests, smoke, screenshots QA)
+
+**But** : plus aucun changement ne part en prod sans garde-fou automatique. À faire EN PREMIER dans la vague 2 : tout le reste passera dessus.
+
+1. **CI GitHub Actions** (`.github/workflows/ci.yml`) : sur push/PR — Node 24 + corepack pnpm, `pnpm install`, `pnpm build` (web, sans env vars : le fallback config locale doit suffire), `pnpm lint` (toléré au baseline des 7 erreurs préexistantes tant qu'elles ne sont pas corrigées — les documenter dans le workflow ; idéalement les corriger dans cette phase si trivial, sinon baseline explicite), `tsc --noEmit` mobile, tests unitaires (2), smoke Playwright (3). Cache pnpm.
+2. **Tests unitaires (vitest) du cœur critique** dans `packages/shared` : résolveur de collisions/anti-overlap et compactage de lignes vides (cas : push en cascade, bords de grille, breakpoints 3/9 colonnes, layouts déjà chevauchants) + validation des schémas Zod de chaque type de widget (parse de configs valides/invalides, défauts appliqués — ex. `intervalSec`).
+3. **Smoke test Playwright** : build + `next start` sans env vars, puis : `/qrcode` répond 200, l'en-tête et les tuiles rendent, **zéro chevauchement** de tuiles mesuré sur les bounding boxes DOM, en viewport 390 px et desktop. `/` (portfolio) répond aussi. C'est le garde automatique de la règle absolue.
+4. **Screenshots QA automatiques** (extension phase 9) : script Playwright qui capture chaque type×format×breakpoint rendus par la console de test, publiés en **artifacts du workflow CI**. Contrainte : la console reste protégée en prod — pour la CI, mode local explicite (ex. env `QA_SCREENSHOT_MODE` activable uniquement hors production, ou rendu direct des Renderers dans une page de test non routée en prod). Jamais de page de test non authentifiée accessible en prod.
+
+**Critères d'acceptation** : la CI passe au vert sur main ; casser volontairement le résolveur ou créer un overlap fait échouer la CI ; les artifacts contiennent un screenshot par type×format.
+
+---
+
+## Phase 11 — Paramètres de widgets & confort admin
+
+1. **Lien cliquable sur photo/carrousel** : champ `linkUrl` optionnel dans le schéma partagé du widget photo ; si présent, un tap sur l'image ouvre le lien (nouvel onglet) — les boutons/points de navigation du carrousel restent fonctionnels (pas de conflit tap/swipe).
+2. **Countdown — comportement à échéance** : champ `endBehavior` : `message` (texte de fin personnalisé, défaut « C'est parti 🎉 »), `elapsed` (bascule en compteur « depuis » : jours/heures écoulés), `hide` (la tuile disparaît du rendu public). Défaut : `message`. Éditeurs web + mobile.
+3. **Vidéo — son au tap** : champ `tapToUnmute` (bool, défaut false) : la vidéo reste autoplay muet en boucle, un tap active/coupe le son. Indicateur discret 🔇/🔊 sur la tuile.
+4. **Dupliquer un widget** (app mobile, + admin web si trivial) : action « dupliquer » dans la gestion d'une tuile — copie config + tailles, posée au premier emplacement libre via le résolveur partagé, même version de dashboard. Les médias sont partagés (pas de re-upload — le garde cross-références de la phase 7 protège la suppression).
+
+**Critères d'acceptation** : chaque paramètre visible et éditable dans l'app, effet vérifié sur `/qrcode` ; un countdown échu en mode `hide` disparaît du public mais reste visible/éditable dans l'admin ; dupliquer ne casse jamais la grille (pas d'overlap).
+
+---
+
+## Phase 12 — Nouveaux widgets : `contact-card`, `cv-timeline`, `reactions`
+
+1. **`contact-card`** : tuile « Ajouter à mes contacts » qui télécharge une vCard `.vcf` (nom, prénom, tél?, email?, org?, site?, photo — réutiliser l'avatar de l'en-tête si activé). Génération serveur (API route ou fichier généré à la volée) avec échappement vCard correct. Rendu façon carte de visite, tous formats.
+2. **`cv-timeline`** : frise verticale d'entrées manuelles `{ period, title, place, logoUrl?, description? }`, ordonnables dans l'éditeur mobile (ajout/suppression/réordonnancement). Rendu adaptatif : nombre d'entrées visibles selon le format (comme Letterboxd). Pensé pour la version « travail ».
+3. **`reactions`** : les visiteurs tapent un emoji et les compteurs s'incrémentent en Realtime. Migration `0009` : table `widget_reactions` (`widget_id, emoji, count`) + RPC `security definer` d'incrément (comme le compteur de visites) ; écriture anonyme via API route (validation Zod + rate limit IP, ex. 10 réactions/min). Config admin : liste d'emojis proposés (défaut ❤️ 🔥 👏 😂). Animation de « pop » au tap. Suppression du widget = purge de ses lignes.
+
+**Critères d'acceptation** : le `.vcf` s'importe correctement sur Android et iOS ; la timeline rend proprement dans tous ses formats ; deux navigateurs ouverts voient les compteurs de réactions bouger en Realtime ; le rate limit bloque le spam.
+
+---
+
+## Phase 13 — Widget mini-jeu : Snake arcade + Flappy
+
+Infra commune, deux jeux (choix utilisateur : Snake **et** Flappy).
+
+1. **Migration `0010`** : table `game_scores` (`id, game text, pseudo text (3 chars, filtre basique), score int, created_at`) — lecture publique, écriture via API route serveur uniquement (validation Zod, rate limit IP, plafond de plausibilité par jeu pour bloquer les scores forgés). RLS stricte.
+2. **Widget `mini-game`** : config `{ game: 'snake' | 'flappy', title? }` (deux instances possibles sur la grille). Tuile = aperçu + top 3 du leaderboard ; clic → **grande modal** (portail, comme toile/livre d'or) avec le jeu jouable **tactile ET clavier** : Snake (swipe/flèches), Flappy (tap/espace). Canvas léger, 60 fps, pas de lib de jeu externe lourde.
+3. Fin de partie : si le score entre au top 10 → saisie pseudo 3 lettres façon borne d'arcade, envoi via l'API route ; leaderboard top 10 affiché dans la modal, Realtime sur la tuile.
+
+**Critères d'acceptation** : les deux jeux jouables au doigt (390 px) et au clavier (desktop) ; un score soumis apparaît sur un autre navigateur sans refresh ; un POST forgé au-delà du plafond est rejeté ; les jeux passent l'audit QA (console de test) dans tous les formats de tuile.
+
+---
+
+## Phase 14 — App admin : mini-stats + badge QA
+
+1. **Écran « Stats »** dans l'app : total de visites, nombre de mots du guestbook, répartition des votes du sondage, compteurs de réactions, top score + nombre de parties par jeu. Requêtes agrégées simples (lecture authentifiée), pull-to-refresh. Présentation soignée (petites cartes, chiffres qui respirent) — pas besoin de graphiques complexes.
+2. **Badge « X à vérifier »** sur l'entrée « 🧪 Test widgets » : endpoint serveur (`/api/admin/qa-pending-count`, authentifié) qui croise le `qa-manifest.json` du build et la table `widget_qa` et renvoie le compte ; l'app l'affiche en badge (rafraîchi à l'ouverture du dashboard).
+
+**Critères d'acceptation** : les chiffres de l'écran Stats correspondent aux données réelles en base ; le badge reflète l'état de la console de test et disparaît quand tout est validé.
+
+---
+
+## Phase 15 — Notifications push (préférences par source)
+
+⚠️ **Exception assumée à la règle Expo Go** : les push distantes exigent le build APK EAS (déjà en place depuis la phase 5). Dans Expo Go, l'écran de préférences reste visible mais l'enregistrement push est no-op avec un message explicatif.
+
+1. **Migration `0011`** : `admin_devices` (`id, expo_push_token, platform, created_at, last_seen_at`) + `notification_prefs` (par source : `enabled`, et pour les visites un mode `off | instant | daily`) — RLS auth only.
+2. **Enregistrement** : au login dans l'app (build EAS), demander la permission notifications, enregistrer le token Expo push en base (upsert par token).
+3. **Envoi** : dans les API routes serveur existantes, après une écriture réussie et si la source est activée, appel à l'API Expo Push (`exp.host`, gratuite, pas de clé) vers tous les devices enregistrés. **Sources** : guestbook (nouveau mot), toile (nouveau dessin), sondage (nouveau vote), réactions (nouvelle réaction), mini-jeux (nouvelle entrée au top 10), visites (`instant` = chaque visite — assumé spammy, c'est un choix ; `daily` = résumé quotidien via **Vercel cron**, 1 cron/jour sur Hobby).
+4. **App : écran « Notifications »** : un toggle par source listée ci-dessus + le sélecteur de mode pour les visites ; état persisté en base (les préférences sont serveur, pas device).
+
+**Critères d'acceptation** : sur l'APK EAS, signer le guestbook depuis un autre appareil fait vibrer le téléphone admin en quelques secondes ; couper une source stoppe ses notifs ; le résumé quotidien des visites part une fois par jour ; Expo Go n'affiche aucune erreur.
 
 ---
 
