@@ -1,0 +1,333 @@
+/* ============================================================
+   /adminqrcode/test — widget QA console (phase 9).
+   Lives inside .qr-page.admin, so all --qr-* tokens, Raleway and Bricolage are
+   already set (adminqrcode/layout.tsx). Character: an "inspection lab" — quiet
+   navy/cream chrome, a monospace utility face for the exact grid coordinates
+   (W×H) and code-hash identity, and each widget shown at true grid scale inside
+   labeled device viewports (the one memorable element).
+   ============================================================ */
+
+.qa {
+  --qa-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, monospace;
+  --qa-amber: #d9832b;
+  --qa-green: #1f9d6b;
+  min-height: 100dvh;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 16px 96px;
+  font-family: "Raleway", sans-serif;
+  color: var(--qr-ink);
+}
+
+.qa-mono {
+  font-family: var(--qa-mono);
+  font-size: 0.82em;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- top bar ---------- */
+.qa-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "lead actions"
+    "meter meter";
+  align-items: center;
+  gap: 12px;
+  padding: 16px 4px;
+  margin-bottom: 18px;
+  background: color-mix(in srgb, var(--qr-bg) 84%, transparent);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--qr-line);
+}
+.qa-bar__lead { grid-area: lead; }
+.qa-bar__eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--qr-ink-faint);
+}
+.qa-bar__title {
+  font-family: var(--font-bricolage), "Raleway", sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-top: 2px;
+}
+.qa-bar__meter {
+  grid-area: meter;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--qa-mono);
+  color: var(--qr-ink-soft);
+  font-size: 13px;
+}
+.qa-bar__count {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--qr-ink);
+  font-variant-numeric: tabular-nums;
+}
+.qa-bar__count-label { text-transform: lowercase; }
+.qa-bar__sep { opacity: 0.4; }
+.qa-bar__actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (min-width: 720px) {
+  .qa-bar {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "lead meter actions";
+    padding: 20px 4px;
+  }
+  .qa-bar__meter { justify-content: center; }
+}
+
+/* ---------- flash / banners ---------- */
+.qa-flash {
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--qr-line);
+  background: var(--qr-tile);
+}
+.qa-flash--ok { border-color: color-mix(in srgb, var(--qa-green) 45%, transparent); }
+.qa-flash--warn { border-color: color-mix(in srgb, var(--qa-amber) 55%, transparent); }
+.qa-flash--error { border-color: color-mix(in srgb, #d5473d 55%, transparent); }
+.qa-link {
+  color: var(--qr-ink);
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- empty state ---------- */
+.qa-empty {
+  text-align: center;
+  padding: 84px 16px;
+}
+.qa-empty__title {
+  font-family: var(--font-bricolage), "Raleway", sans-serif;
+  font-weight: 800;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+.qa-empty__sub {
+  margin-top: 8px;
+  color: var(--qr-ink-soft);
+  font-size: 15px;
+}
+
+/* ---------- per-type section ---------- */
+.qa-list { display: flex; flex-direction: column; gap: 26px; }
+
+.qa-type {
+  border: 1px solid var(--qr-line);
+  border-radius: 20px;
+  padding: 18px;
+  background: color-mix(in srgb, var(--qr-tile) 40%, transparent);
+}
+.qa-type__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.qa-type__label {
+  font-family: var(--font-bricolage), "Raleway", sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+.qa-type__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--qr-ink-soft);
+}
+.qa-type__dot { opacity: 0.4; }
+.qa-hash { color: var(--qr-ink-faint); }
+.qa-type__nosample {
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: var(--qa-amber);
+  font-weight: 600;
+}
+
+/* ---------- format cards ---------- */
+.qa-formats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 760px) {
+  .qa-formats { grid-template-columns: repeat(2, 1fr); }
+}
+
+.qa-card {
+  border: 1px solid var(--qr-line);
+  border-left: 3px solid var(--qr-line-strong);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--qr-bg);
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+.qa-card--pending { border-left-color: var(--qa-amber); }
+.qa-card--valid {
+  border-left-color: var(--qa-green);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--qa-green) 30%, transparent);
+}
+.qa-card--done { opacity: 0.6; border-left-color: var(--qr-line); }
+
+.qa-card__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.qa-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 6px;
+  border: 1px solid var(--qr-line);
+  border-radius: 999px;
+  background: var(--qr-tile);
+  color: var(--qr-ink);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.qa-check:disabled { cursor: default; }
+.qa-check:not(:disabled):hover { border-color: var(--qr-line-strong); }
+.qa-check__box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1.5px solid var(--qr-line-strong);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+.qa-check[aria-pressed="true"] .qa-check__box {
+  background: var(--qa-green);
+  border-color: var(--qa-green);
+  color: #fff;
+}
+.qa-card--done .qa-check__box {
+  background: color-mix(in srgb, var(--qr-ink) 22%, transparent);
+  border-color: transparent;
+  color: var(--qr-bg);
+}
+.qa-check__fmt { font-size: 14px; font-weight: 700; }
+
+.qa-tag {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.qa-tag--done {
+  color: var(--qr-ink-soft);
+  background: color-mix(in srgb, var(--qr-ink) 8%, transparent);
+}
+.qa-tag--issue {
+  color: var(--qa-amber);
+  background: color-mix(in srgb, var(--qa-amber) 14%, transparent);
+}
+
+/* ---------- device viewports ---------- */
+.qa-card__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+.qa-view { margin: 0; }
+.qa-view__cap {
+  font-family: var(--qa-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--qr-ink-faint);
+  margin-bottom: 6px;
+}
+/* A neutral "board" backdrop so a tile's bounds and full-bleed edges read
+   clearly against it — the same paper the public grid sits on. */
+.qa-view__frame {
+  padding: 10px;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--qr-bg-2), transparent 60%),
+    var(--qr-bg);
+  border: 1px dashed var(--qr-line);
+  overflow: auto;
+  max-width: 100%;
+}
+
+/* The audited tile — mirrors .qr-tile's container behaviour so each real
+   Renderer adapts to the tile size exactly as on the public page. Size comes
+   from an inline width/height matching the format at true grid unit. */
+.qa-tile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+  container-name: tile;
+  border-radius: 18px;
+  background: var(--qr-tile);
+  border: 1px solid var(--qr-line);
+  box-shadow: var(--qr-shadow);
+  overflow: hidden;
+}
+.qa-tile > * { width: 100%; height: 100%; }
+.qa-tile:not(.qa-tile--bleed) > * { padding: var(--wp); }
+
+/* ---------- note ---------- */
+.qa-note {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--qr-line);
+  background: var(--qr-tile);
+  color: var(--qr-ink);
+  font-family: inherit;
+  font-size: 13.5px;
+  resize: vertical;
+}
+.qa-note::placeholder { color: var(--qr-ink-faint); }
+.qa-note:focus {
+  outline: none;
+  border-color: var(--qr-line-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--qa-amber) 18%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qa-card { transition: none; }
+}
