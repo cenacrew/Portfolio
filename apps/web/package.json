@@ -16,6 +16,8 @@
     "@portfolio/shared": "workspace:*",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.47.10",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "leaflet": "^1.9.4",
     "next": "16.2.10",
     "randoma11y": "^1.0.0",
