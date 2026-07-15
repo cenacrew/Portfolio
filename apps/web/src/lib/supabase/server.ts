@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import { createAnonClient, createServiceClient, type DbClient } from "@portfolio/shared";
+import { createAnonClient, createBearerClient, createServiceClient, type DbClient } from "@portfolio/shared";
 import type { Database } from "@portfolio/shared";
 import { publicSupabaseEnv } from "./env";
 
@@ -29,6 +29,17 @@ export async function getServerSupabase(): Promise<DbClient | null> {
       },
     },
   });
+}
+
+// Client bound to a caller-supplied Bearer access token (JWT). Runs queries AS
+// that authenticated user (RLS applies to them). Used by endpoints the mobile
+// app calls: it carries a Supabase session as a Bearer header, not the web's
+// cookies. Callers MUST verify the token with `auth.getUser()` before trusting
+// it. Returns null when Supabase isn't configured.
+export function getBearerSupabase(token: string): DbClient | null {
+  const env = publicSupabaseEnv();
+  if (!env) return null;
+  return createBearerClient(env.url, env.anonKey, token);
 }
 
 // Anon client for PUBLIC reads (no session). RLS returns only visible widgets —
