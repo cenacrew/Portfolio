@@ -84,17 +84,32 @@ function loadLocalWidgets(includeHidden = false): Widget[] {
     .filter((w): w is Widget => w !== null);
 }
 
-// Public dashboard data. Reads visible widgets from Supabase; on any failure
-// (not configured, network, migrations not run yet) falls back to local config.
-export async function loadPublicWidgets(): Promise<Widget[]> {
+// A render scope (subset of DashboardScope) — kept structural to avoid a server
+// import cycle with the qrcode route.
+export interface WidgetScope {
+  dashboardId: string | null;
+  defaultDashboardId: string | null;
+}
+
+// Public dashboard data for one version. Reads that version's visible widgets;
+// on any failure falls back to local config for the DEFAULT version only (a
+// non-default version renders empty rather than borrowing the default's tiles).
+// Admin presence (weather / "ma-loc") stays GLOBAL — read from the default
+// version's settings row.
+export async function loadPublicWidgets(scope?: WidgetScope): Promise<Widget[]> {
+  const dashboardId = scope?.dashboardId ?? null;
+  const defaultDashboardId = scope?.defaultDashboardId ?? null;
+  const isDefault = !dashboardId || dashboardId === defaultDashboardId;
+  const empty: Widget[] = [];
+
   const client = getPublicServerSupabase();
   if (!client) return deoverlap(loadLocalWidgets());
   try {
-    const rows = await getWidgets(client, { includeHidden: false });
-    if (rows.length === 0) return deoverlap(loadLocalWidgets());
+    const rows = await getWidgets(client, { includeHidden: false, dashboardId });
+    if (rows.length === 0) return isDefault ? deoverlap(loadLocalWidgets()) : empty;
     let presence: SiteSettingsRow | null = null;
     try {
-      presence = await getSiteSettings(client);
+      presence = await getSiteSettings(client, defaultDashboardId);
     } catch {
       presence = null;
     }
@@ -104,17 +119,18 @@ export async function loadPublicWidgets(): Promise<Widget[]> {
       .filter((w): w is Widget => w !== null);
     return deoverlap(applyPresence(parsed, presence));
   } catch {
-    return deoverlap(loadLocalWidgets());
+    return isDefault ? deoverlap(loadLocalWidgets()) : empty;
   }
 }
 
-// Admin data: all widgets including hidden ones, read as the signed-in admin
-// (RLS grants full read). Falls back to the local config for offline preview.
-export async function loadAdminWidgets(): Promise<Widget[]> {
+// Admin data: all widgets (incl. hidden) for one version, read as the signed-in
+// admin (RLS grants full read). A null dashboardId (legacy / pre-migration)
+// reads all widgets unscoped. Falls back to the local config for offline preview.
+export async function loadAdminWidgets(dashboardId?: string | null): Promise<Widget[]> {
   const client = await getServerSupabase();
   if (!client) return loadLocalWidgets(true);
   try {
-    const rows = await getWidgets(client, { includeHidden: true });
+    const rows = await getWidgets(client, { includeHidden: true, dashboardId });
     return rows
       .sort((a, b) => a.position - b.position)
       .map((r) => parseWidget(fromRow(r)))

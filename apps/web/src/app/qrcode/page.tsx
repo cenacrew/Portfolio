@@ -1,21 +1,12 @@
-import Link from "next/link";
-import QrHeader from "./QrHeader";
-import BentoGrid from "./BentoGrid";
+import QrcodeView from "./QrcodeView";
+import { DEFAULT_SLUG } from "./dashboard";
 
 // Public bento dashboard behind the printed QR codes (cenacrew.com/qrcode).
-// Reads widgets from Supabase at request time (falls back to the local phase-2
-// config when Supabase isn't configured), with live updates via Realtime.
+// Renders the DEFAULT version. Reads widgets from Supabase at request time
+// (falls back to the local phase-2 config when Supabase isn't configured or the
+// dashboards table isn't migrated yet), with live updates via Realtime.
 export const dynamic = "force-dynamic";
 
 export default function QrcodePage() {
-  return (
-    <main className="qr-main">
-      <QrHeader />
-      <BentoGrid />
-      <footer className="qr-foot">
-        <Link href="/">← Retour au portfolio</Link>
-        <span>© {new Date().getFullYear()} Valentin Sourdois Pajot</span>
-      </footer>
-    </main>
-  );
+  return <QrcodeView slug={DEFAULT_SLUG} />;
 }

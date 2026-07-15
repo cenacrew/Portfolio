@@ -2,6 +2,7 @@ import "server-only";
 import type { SiteSettingsRow } from "@portfolio/shared";
 import { getSiteSettings } from "@portfolio/shared";
 import { getPublicServerSupabase } from "@/lib/supabase/server";
+import type { DashboardScope } from "./dashboard";
 
 // The header values as they were hard-coded before phase 4.5. Used verbatim
 // when Supabase isn't configured, the table is empty, or a read fails — so the
@@ -24,14 +25,30 @@ export const HEADER_FALLBACK = {
 
 export type HeaderSettings = typeof HEADER_FALLBACK;
 
-// Reads the editable header from Supabase, falling back to the hard-coded
-// values on any failure. Empty text fields fall back per-field too.
-export async function loadHeaderSettings(): Promise<HeaderSettings> {
+// Reads the editable header for a version from Supabase, falling back to the
+// hard-coded values on any failure. The clock timezone (tz) is admin presence,
+// which stays GLOBAL — it's read from the default version's row, not the one
+// being rendered. Empty text fields fall back per-field too.
+export async function loadHeaderSettings(scope?: DashboardScope): Promise<HeaderSettings> {
+  const dashboardId = scope?.dashboardId ?? null;
+  const defaultDashboardId = scope?.defaultDashboardId ?? null;
   const client = getPublicServerSupabase();
   if (!client) return HEADER_FALLBACK;
   try {
-    const row = await getSiteSettings(client);
-    if (!row) return HEADER_FALLBACK;
+    const row = await getSiteSettings(client, dashboardId);
+
+    // Global presence tz — same row when rendering the default version.
+    let tz = row?.tz;
+    if (dashboardId !== defaultDashboardId) {
+      try {
+        const def = await getSiteSettings(client, defaultDashboardId);
+        tz = def?.tz;
+      } catch {
+        /* keep the version row's tz / fallback */
+      }
+    }
+
+    if (!row) return { ...HEADER_FALLBACK, tz: tz || HEADER_FALLBACK.tz };
     return {
       name: row.name || HEADER_FALLBACK.name,
       tagline: row.tagline || HEADER_FALLBACK.tagline,
@@ -40,7 +57,7 @@ export async function loadHeaderSettings(): Promise<HeaderSettings> {
       location: row.location,
       location_show: row.location_show,
       chips: Array.isArray(row.chips) ? row.chips : [],
-      tz: row.tz || HEADER_FALLBACK.tz,
+      tz: tz || HEADER_FALLBACK.tz,
       status_emoji: row.status_emoji || HEADER_FALLBACK.status_emoji,
       status_text: row.status_text || HEADER_FALLBACK.status_text,
     };

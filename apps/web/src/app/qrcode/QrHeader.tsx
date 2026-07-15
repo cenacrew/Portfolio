@@ -2,9 +2,10 @@
 import HeaderControls from "./HeaderControls";
 import HeaderClock from "./HeaderClock";
 import { loadHeaderSettings } from "./settings";
+import type { DashboardScope } from "./dashboard";
 
-export default async function QrHeader() {
-  const s = await loadHeaderSettings();
+export default async function QrHeader({ scope }: { scope?: DashboardScope }) {
+  const s = await loadHeaderSettings(scope);
 
   return (
     <header className="qr-header">
