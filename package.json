@@ -10,6 +10,10 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint"
+    "lint": "pnpm --filter web lint",
+    "purge:media": "node scripts/purge-orphan-media.ts"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.110.1"
   }
 }

@@ -9,9 +9,13 @@
 -- ============================================================
 
 -- Public bucket: anyone can read files, only the admin can write.
-insert into storage.buckets (id, name, public)
-values ('widget-media', 'widget-media', true)
-on conflict (id) do update set public = true;
+-- file_size_limit is the SERVER-SIDE guard for the 50 MB cap (phase 7): every
+-- direct upload from the app/admin goes through Supabase Storage, which rejects
+-- anything larger regardless of the client. allowed_mime_types stays null so any
+-- file type is accepted (photos, videos, PDFs, ZIPs, APKs…).
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('widget-media', 'widget-media', true, 52428800)
+on conflict (id) do update set public = true, file_size_limit = 52428800;
 
 drop policy if exists "widget-media public read"  on storage.objects;
 drop policy if exists "widget-media admin insert"  on storage.objects;

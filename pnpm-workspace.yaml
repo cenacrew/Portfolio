@@ -3,8 +3,12 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  esbuild: set this to true or false
   sharp: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - expo-document-picker@57.0.1
 
 onlyBuiltDependencies:
   - sharp
