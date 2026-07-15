@@ -105,6 +105,31 @@ export interface SiteSettingsRow {
 
 export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_at">>;
 
+// Widget QA status per (type, format) — phase 9. Admin-only table (RLS reserves
+// read AND write to authenticated). `validated_hash` is the widget-code hash a
+// human last approved; a couple is "to verify" when it's null or ≠ current hash.
+export type WidgetQaStatus = "pending" | "ok" | "issue";
+
+export interface WidgetQaRow {
+  widget_type: string;
+  format: string;
+  validated_hash: string | null;
+  status: WidgetQaStatus;
+  note: string | null;
+  screenshot_url: string | null;
+  updated_at: string;
+}
+
+export type WidgetQaInsert = {
+  widget_type: string;
+  format: string;
+  validated_hash?: string | null;
+  status?: WidgetQaStatus;
+  note?: string | null;
+  screenshot_url?: string | null;
+  updated_at?: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -142,6 +167,12 @@ export interface Database {
         Row: SiteSettingsRow;
         Insert: Partial<SiteSettingsRow> & { id?: number };
         Update: SiteSettingsUpdate;
+        Relationships: [];
+      };
+      widget_qa: {
+        Row: WidgetQaRow;
+        Insert: WidgetQaInsert;
+        Update: Partial<WidgetQaInsert>;
         Relationships: [];
       };
     };

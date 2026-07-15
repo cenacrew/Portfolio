@@ -11,6 +11,8 @@ import type {
   SiteSettingsRow,
   SiteSettingsUpdate,
   WidgetInsert,
+  WidgetQaInsert,
+  WidgetQaRow,
   WidgetRow,
   WidgetUpdate,
 } from "./types";
@@ -410,6 +412,60 @@ export async function changeVote(
   if (error) throw error;
   if (data && data.length > 0) return; // updated an existing vote
   await insertVote(client, input);
+}
+
+// ---------- widget QA (phase 9) --------------------------------------------
+// All of these tolerate the widget_qa table not existing yet (pre-migration):
+// reads return empty, writes no-op, so the QA console degrades to "everything
+// to verify, nothing persisted" instead of crashing.
+
+// A stable key for one (type, format) couple, used by the QA console maps.
+export function widgetQaKey(widgetType: string, format: string): string {
+  return `${widgetType}::${format}`;
+}
+
+// All QA rows, keyed by `${type}::${format}`. Empty map when the table is
+// missing (pre-migration) so the console still renders.
+export async function getWidgetQaMap(client: DbClient): Promise<Record<string, WidgetQaRow>> {
+  const { data, error } = await client.from("widget_qa").select("*");
+  if (error) {
+    if (isMissingRelation(error)) return {};
+    throw error;
+  }
+  const map: Record<string, WidgetQaRow> = {};
+  for (const row of (data ?? []) as WidgetQaRow[]) {
+    map[widgetQaKey(row.widget_type, row.format)] = row;
+  }
+  return map;
+}
+
+// Upserts one QA row. Returns false (without throwing) when the table is
+// missing, so a caller can surface a "persistence unavailable" warning while
+// still producing the GitHub issue.
+export async function upsertWidgetQa(client: DbClient, row: WidgetQaInsert): Promise<boolean> {
+  const payload: WidgetQaInsert = { ...row, updated_at: new Date().toISOString() };
+  const { error } = await client
+    .from("widget_qa")
+    .upsert(payload as never, { onConflict: "widget_type,format" });
+  if (error) {
+    if (isMissingRelation(error)) return false;
+    throw error;
+  }
+  return true;
+}
+
+// "Re-verify this widget": clears the validated hash for EVERY format of a type
+// so it flags as to-verify again. No-op when the table is missing.
+export async function resetWidgetQa(client: DbClient, widgetType: string): Promise<boolean> {
+  const { error } = await client
+    .from("widget_qa")
+    .update({ validated_hash: null, status: "pending", updated_at: new Date().toISOString() } as never)
+    .eq("widget_type", widgetType);
+  if (error) {
+    if (isMissingRelation(error)) return false;
+    throw error;
+  }
+  return true;
 }
 
 // ---------- visits ---------------------------------------------------------
