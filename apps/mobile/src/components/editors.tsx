@@ -440,26 +440,35 @@ function WatchlistEditor({ config, onChange }: EProps) {
 
 function PhotoEditor({ config, onChange }: EProps) {
   return (
-    <ListEditor
-      label="Images"
-      items={config.images ?? []}
-      addLabel="Image"
-      makeItem={() => ({ src: "", alt: "", caption: undefined as string | undefined })}
-      onChange={(images) => onChange({ ...config, images })}
-      renderItem={(item: any, update) => (
-        <>
-          <PickImageButton onDone={(src) => update({ src })} />
-          <TextField label="Source (URL)" value={item.src} onChange={(src) => update({ src })} keyboardType="url" autoCapitalize="none" hint="Importe depuis le téléphone, ou colle une URL." />
-          {/* Phase 4.10 B4: the description is the caption shown on the tile
-              (like videos). Mirror it into `alt` for accessibility. */}
-          <TextField
-            label="Description (légende affichée)"
-            value={item.caption ?? ""}
-            onChange={(caption) => update({ caption: caption || undefined, alt: caption })}
-          />
-        </>
-      )}
-    />
+    <>
+      <ListEditor
+        label="Images"
+        items={config.images ?? []}
+        addLabel="Image"
+        makeItem={() => ({ src: "", alt: "", caption: undefined as string | undefined })}
+        onChange={(images) => onChange({ ...config, images })}
+        renderItem={(item: any, update) => (
+          <>
+            <PickImageButton onDone={(src) => update({ src })} />
+            <TextField label="Source (URL)" value={item.src} onChange={(src) => update({ src })} keyboardType="url" autoCapitalize="none" hint="Importe depuis le téléphone, ou colle une URL." />
+            {/* Phase 4.10 B4: the description is the caption shown on the tile
+                (like videos). Mirror it into `alt` for accessibility. */}
+            <TextField
+              label="Description (légende affichée)"
+              value={item.caption ?? ""}
+              onChange={(caption) => update({ caption: caption || undefined, alt: caption })}
+            />
+          </>
+        )}
+      />
+      {/* Phase 6: configurable carousel delay. 0 = no auto-advance. */}
+      <NumberFieldRow
+        label="Défilement auto (secondes)"
+        value={config.intervalSec ?? 5}
+        onChange={(intervalSec) => onChange({ ...config, intervalSec })}
+        hint="Délai entre deux photos. 0 = pas de défilement automatique (navigation par les boutons)."
+      />
+    </>
   );
 }
 

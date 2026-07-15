@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { WidgetEditorProps } from "../types";
-import { ListEditor, TextField } from "../editor-kit";
+import { ListEditor, NumberField, TextField } from "../editor-kit";
 import type { PhotoConfig } from "./schema";
 
 type Img = PhotoConfig["images"][number];
@@ -51,25 +51,36 @@ function UploadButton({ onDone }: { onDone: (url: string) => void }) {
 
 export default function PhotoEditor({ config, onChange }: WidgetEditorProps<PhotoConfig>) {
   return (
-    <ListEditor<Img>
-      label="Images"
-      items={config.images}
-      min={1}
-      addLabel="une image"
-      makeItem={() => ({ src: "", alt: "" })}
-      onChange={(images) => onChange({ ...config, images })}
-      renderItem={(item, update) => (
-        <>
-          <TextField label="Source" value={item.src} onChange={(src) => update({ src })} placeholder="/files/img/… ou URL" />
-          <UploadButton onDone={(url) => update({ src: url })} />
-          <TextField label="Texte alt" value={item.alt} onChange={(alt) => update({ alt })} />
-          <TextField
-            label="Légende"
-            value={item.caption ?? ""}
-            onChange={(caption) => update({ caption: caption || undefined })}
-          />
-        </>
-      )}
-    />
+    <>
+      <ListEditor<Img>
+        label="Images"
+        items={config.images}
+        min={1}
+        addLabel="une image"
+        makeItem={() => ({ src: "", alt: "" })}
+        onChange={(images) => onChange({ ...config, images })}
+        renderItem={(item, update) => (
+          <>
+            <TextField label="Source" value={item.src} onChange={(src) => update({ src })} placeholder="/files/img/… ou URL" />
+            <UploadButton onDone={(url) => update({ src: url })} />
+            <TextField label="Texte alt" value={item.alt} onChange={(alt) => update({ alt })} />
+            <TextField
+              label="Légende"
+              value={item.caption ?? ""}
+              onChange={(caption) => update({ caption: caption || undefined })}
+            />
+          </>
+        )}
+      />
+      <NumberField
+        label="Défilement auto (secondes)"
+        value={config.intervalSec ?? 5}
+        onChange={(intervalSec) => onChange({ ...config, intervalSec })}
+        min={0}
+        max={60}
+        step={1}
+        hint="Délai entre deux photos. 0 = pas de défilement automatique (navigation par les boutons)."
+      />
+    </>
   );
 }

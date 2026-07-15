@@ -10,12 +10,18 @@ export const photoSchema = z.object({
       }),
     )
     .min(1),
+  // Auto-advance delay for the carousel, in seconds. Default 5 (the historical
+  // behaviour). 0 = no auto-advance, navigation via the buttons/dots only.
+  // Existing configs without the field fall back to 5 via this default (no data
+  // migration needed).
+  intervalSec: z.number().int().min(0).max(60).default(5),
 });
 
 export type PhotoConfig = z.infer<typeof photoSchema>;
 
 export const photoDefault: PhotoConfig = {
   images: [{ src: "/files/img/pp.png", alt: "" }],
+  intervalSec: 5,
 };
 
 export const photoLabel = "Photo / mini-galerie";

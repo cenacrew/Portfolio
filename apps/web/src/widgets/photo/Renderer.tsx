@@ -11,13 +11,17 @@ export default function PhotoRenderer({ config }: WidgetRendererProps<PhotoConfi
   const [tick, setTick] = useState(0);
   const many = config.images.length > 1;
   const current = config.images[i];
+  // Configurable delay (phase 6). Guard for legacy configs saved before the
+  // field existed. 0 = no auto-advance (buttons/dots only).
+  const intervalSec = config.intervalSec ?? 5;
 
-  // Auto-advance every 5s; a manual nav resets the countdown via `tick`.
+  // Auto-advance every `intervalSec` seconds; a manual nav resets the countdown
+  // via `tick`. When intervalSec is 0 the timer is never armed.
   useEffect(() => {
-    if (!many) return;
-    const id = setInterval(() => setI((p) => (p + 1) % config.images.length), 5000);
+    if (!many || intervalSec <= 0) return;
+    const id = setInterval(() => setI((p) => (p + 1) % config.images.length), intervalSec * 1000);
     return () => clearInterval(id);
-  }, [many, config.images.length, tick]);
+  }, [many, intervalSec, config.images.length, tick]);
 
   const go = (dir: number) => {
     setI((p) => (p + dir + config.images.length) % config.images.length);
