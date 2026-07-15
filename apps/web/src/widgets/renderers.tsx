@@ -23,6 +23,7 @@ import PaypalRenderer from "./paypal/Renderer";
 import LetterboxdRenderer from "./letterboxd/Renderer";
 import ToileRenderer from "./toile/Renderer";
 import LolRenderer from "./lol/Renderer";
+import FileDownloadRenderer from "./file-download/Renderer";
 
 // Renderer map, kept separate from the client-safe registry because some
 // renderers are async server components (they read Supabase / fetch APIs).
@@ -50,4 +51,5 @@ export const renderers: Record<WidgetType, WidgetRenderer<unknown>> = {
   letterboxd: LetterboxdRenderer as WidgetRenderer<unknown>,
   toile: ToileRenderer as WidgetRenderer<unknown>,
   lol: LolRenderer as WidgetRenderer<unknown>,
+  "file-download": FileDownloadRenderer as WidgetRenderer<unknown>,
 };

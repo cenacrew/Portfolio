@@ -25,6 +25,7 @@ import * as paypal from "./paypal/schema";
 import * as letterboxd from "./letterboxd/schema";
 import * as toile from "./toile/schema";
 import * as lol from "./lol/schema";
+import * as fileDownload from "./file-download/schema";
 
 import SocialLinkEditor from "./social-link/Editor";
 import NoteEditor from "./note/Editor";
@@ -48,6 +49,7 @@ import PaypalEditor from "./paypal/Editor";
 import LetterboxdEditor from "./letterboxd/Editor";
 import ToileEditor from "./toile/Editor";
 import LolEditor from "./lol/Editor";
+import FileDownloadEditor from "./file-download/Editor";
 
 const s = (w: number, h: number): WidgetSize => ({ w, h });
 
@@ -264,6 +266,15 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     sizes: ALL_SIZES,
     defaultSize: s(2, 1),
     Editor: LolEditor,
+  }),
+  "file-download": defineWidget({
+    schema: fileDownload.fileDownloadSchema,
+    defaultConfig: fileDownload.fileDownloadDefault,
+    label: fileDownload.fileDownloadLabel,
+    description: "Un fichier à télécharger (PDF, ZIP, APK…).",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 1),
+    Editor: FileDownloadEditor,
   }),
 };
 
