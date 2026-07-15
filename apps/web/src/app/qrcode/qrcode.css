@@ -2687,3 +2687,344 @@ body.dark-mode .qr-page {
   .w-lol__stats { font-size: clamp(14px, 3.4cqmin, 18px); }
   .w-lol__lvl { font-size: clamp(11px, 3cqmin, 16px); min-width: 26px; }
 }
+
+/* ============================================================
+   PHASE 12 — contact-card, cv-timeline, reactions
+   ============================================================ */
+
+/* ---------- contact-card (vCard) ---------- */
+.w-vcard {
+  --vc-accent: var(--c2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+.w-vcard__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.w-vcard__avatar {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--qr-tile-2);
+  box-shadow:
+    0 0 0 1px var(--qr-line-strong) inset,
+    0 2px 6px color-mix(in srgb, var(--c2) 12%, transparent);
+}
+.w-vcard__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.w-vcard__initials {
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+  color: var(--vc-accent);
+}
+.w-vcard__id {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.w-vcard__name {
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--qr-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-vcard__role {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--vc-accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-vcard__org {
+  font-size: 12px;
+  color: var(--qr-ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-vcard__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.w-vcard__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--qr-ink-soft);
+  min-width: 0;
+}
+.w-vcard__row svg {
+  flex: none;
+  color: var(--vc-accent);
+}
+.w-vcard__row span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-vcard__add {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--vc-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.18s, opacity 0.18s;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--c2) 22%, transparent);
+}
+.w-vcard__add svg { flex: none; }
+.w-vcard__add:hover { transform: translateY(-2px); box-shadow: 0 6px 16px color-mix(in srgb, var(--c2) 28%, transparent); }
+.w-vcard__add:active { transform: translateY(0); }
+.w-vcard__add:disabled { opacity: 0.6; cursor: default; transform: none; }
+.w-vcard__add span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* NARROW (about 1 col): drop the contact rows, center the identity, icon-only CTA. */
+@container tile (max-width: 200px) {
+  .w-vcard { gap: 10px; align-items: center; text-align: center; justify-content: center; }
+  .w-vcard__top { flex-direction: column; gap: 8px; }
+  .w-vcard__rows { display: none; }
+  .w-vcard__name { font-size: 14px; white-space: normal; }
+  .w-vcard__add { width: 100%; padding: 9px; }
+  .w-vcard__add span { display: none; }
+}
+/* ROOMY: a larger avatar and calmer spacing read as a real card. */
+@container tile (min-width: 300px) and (min-height: 240px) {
+  .w-vcard { gap: 16px; }
+  .w-vcard__avatar { width: 68px; height: 68px; border-radius: 20px; }
+  .w-vcard__name { font-size: 21px; }
+  .w-vcard__rows { gap: 9px; }
+  .w-vcard__row { font-size: 13.5px; }
+  .w-vcard__add { padding: 12px 16px; font-size: 14px; }
+}
+
+/* ---------- cv-timeline ---------- */
+.w-cv {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+}
+.w-cv__head { flex: none; }
+.w-cv__empty {
+  margin: auto 0;
+  color: var(--qr-ink-faint);
+  font-size: 13px;
+}
+.w-cv__list {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 2px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+  overflow: hidden;
+  /* Fade the last (possibly clipped) entry so a tile that cannot fit every entry
+     never shows a hard cut. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+}
+/* The rail: a single vertical line the nodes sit on. */
+.w-cv__list::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 4px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--qr-line-strong), color-mix(in srgb, var(--c2) 8%, transparent));
+}
+.w-cv__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.w-cv__node {
+  position: relative;
+  z-index: 1;
+  margin-top: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--qr-tile);
+  box-shadow: 0 0 0 2.5px var(--c2);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.w-cv__logo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.w-cv__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.w-cv__period {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--c2) 66%, transparent);
+}
+.w-cv__title {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--qr-ink);
+}
+.w-cv__place {
+  font-size: 12px;
+  color: var(--qr-ink-soft);
+}
+.w-cv__desc {
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--qr-ink-faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* NARROW: drop descriptions, keep the rail readable. */
+@container tile (max-width: 200px) {
+  .w-cv__list { gap: 11px; }
+  .w-cv__desc { display: none; }
+  .w-cv__title { font-size: 12.5px; }
+}
+/* SHORT: the descriptions are the first thing to go. */
+@container tile (max-height: 150px) {
+  .w-cv__desc { display: none; }
+}
+/* ROOMY: give the entries room and let more description show. */
+@container tile (min-width: 300px) and (min-height: 240px) {
+  .w-cv__list { gap: 18px; }
+  .w-cv__title { font-size: 15.5px; }
+  .w-cv__place { font-size: 13px; }
+  .w-cv__desc { font-size: 12.5px; -webkit-line-clamp: 3; }
+}
+
+/* ---------- reactions ---------- */
+.w-react {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  min-height: 0;
+  justify-content: center;
+}
+.w-react__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.w-react__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid var(--qr-line-strong);
+  border-radius: 999px;
+  background: var(--qr-tile-2);
+  color: var(--qr-ink);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.2, 0.7, 0.2, 1), border-color 0.18s, background 0.18s;
+}
+.w-react__btn:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--c2) 35%, transparent);
+  background: color-mix(in srgb, var(--c2) 6%, var(--qr-tile-2));
+}
+.w-react__btn:active { transform: translateY(0); }
+.w-react__emoji {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-block;
+  transform-origin: center;
+}
+.w-react__count {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--qr-ink-soft);
+  min-width: 0.7em;
+  text-align: center;
+}
+.w-react__btn.is-pop .w-react__emoji {
+  animation: w-react-pop 0.42s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@keyframes w-react-pop {
+  0% { transform: scale(1) rotate(0); }
+  30% { transform: scale(1.45) rotate(-9deg); }
+  55% { transform: scale(0.92) rotate(5deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .w-react__btn.is-pop .w-react__emoji { animation: none; }
+}
+
+/* NARROW / SHORT: tighten the pills so they still wrap cleanly. */
+@container tile (max-width: 200px) {
+  .w-react__btn { padding: 6px 10px; gap: 5px; }
+  .w-react__emoji { font-size: 16px; }
+}
+/* ROOMY: big playful emojis. */
+@container tile (min-width: 300px) and (min-height: 200px) {
+  .w-react__list { gap: 10px; }
+  .w-react__btn { padding: 9px 15px; }
+  .w-react__emoji { font-size: 22px; }
+  .w-react__count { font-size: 14px; }
+}
