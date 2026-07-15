@@ -20,7 +20,7 @@ import WidgetEditorPanel from "./WidgetEditorPanel";
 import AddWidgetGallery from "./AddWidgetGallery";
 import GuestbookModeration from "./GuestbookModeration";
 import VersionBar from "./VersionBar";
-import { deleteWidgetAction, patchWidgetAction, saveWidgetAction, signOutAction } from "./actions";
+import { deleteWidgetAction, duplicateWidgetAction, patchWidgetAction, saveWidgetAction, signOutAction } from "./actions";
 
 const GAP = 12;
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
@@ -171,6 +171,21 @@ export default function AdminBoard({
     }
   }
 
+  async function duplicateSelected() {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      const created = await duplicateWidgetAction(selected.id);
+      setWidgets((prev) => [...prev, created]);
+      setSelectedId(created.id);
+      router.refresh();
+    } catch {
+      /* keep the drawer open on failure */
+    } finally {
+      setSaving(false);
+    }
+  }
+
   // ---- add widget ----
   async function addWidget(type: WidgetType) {
     const def = registry[type];
@@ -286,6 +301,7 @@ export default function AdminBoard({
           onToggleVisible={() => toggleVisible(selected.id)}
           onSave={saveSelected}
           onDelete={removeSelected}
+          onDuplicate={duplicateSelected}
           onClose={() => setSelectedId(null)}
         />
       )}

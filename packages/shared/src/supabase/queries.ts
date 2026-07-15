@@ -17,6 +17,8 @@ import type {
   WidgetUpdate,
 } from "./types";
 import { toilePath } from "../widget-configs/toile";
+import { GRID, resolveCollisions } from "../grid";
+import type { WidgetBreakpointLayout } from "../widget";
 
 // ---------- dashboards (versions) ------------------------------------------
 // A version's id used as a scope. `null`/empty means "unscoped" — the
@@ -225,6 +227,60 @@ export async function getWidgets(
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as WidgetRow[];
+}
+
+// Duplicates a single widget within its own version (phase 11). Copies its
+// type, config and per-breakpoint SIZE, dropping the copy at the first free spot
+// (the shared collision resolver places it near the original and pushes it down
+// until it fits, so the grid never overlaps). Media is SHARED — the config's
+// URLs are copied verbatim, never re-uploaded; the cross-reference guard in
+// media.ts keeps that shared file safe when either widget is later deleted. A
+// toile's id-derived PNG is copied best-effort so the duplicate isn't blank.
+export async function duplicateWidget(client: DbClient, sourceId: string): Promise<WidgetRow> {
+  const { data: src, error: srcErr } = await client.from("widgets").select("*").eq("id", sourceId).single();
+  if (srcErr) throw srcErr;
+  const source = src as WidgetRow;
+
+  // Siblings sharing the grid (same version) — the placement must avoid them.
+  let q = client.from("widgets").select("*");
+  if (source.dashboard_id) q = q.eq("dashboard_id", source.dashboard_id);
+  const { data: sib, error: sibErr } = await q;
+  if (sibErr) throw sibErr;
+  const siblings = (sib ?? []) as WidgetRow[];
+
+  const NEW = "__duplicate__";
+  const place = (bp: import("../grid").Breakpoint) => {
+    const cols = GRID[bp].columns;
+    const s = source.layout[bp];
+    const rects = siblings.map((w) => ({ id: w.id, ...w.layout[bp] }));
+    // Seed the copy at the source cell; resolveCollisions pushes it down to the
+    // first free slot without moving the existing tiles we don't persist.
+    rects.push({ id: NEW, x: s.x, y: s.y, w: s.w, h: s.h });
+    const placed = resolveCollisions(rects, cols).find((r) => r.id === NEW)!;
+    return { x: placed.x, y: placed.y, w: placed.w, h: placed.h };
+  };
+  const layout: WidgetBreakpointLayout = { mobile: place("mobile"), desktop: place("desktop") };
+  const position = siblings.reduce((max, w) => Math.max(max, w.position + 1), 0);
+
+  const insert: WidgetInsert = {
+    type: source.type,
+    config: source.config,
+    layout,
+    visible: source.visible,
+    position,
+    ...(source.dashboard_id ? { dashboard_id: source.dashboard_id } : {}),
+  };
+  const created = await upsertWidget(client, insert);
+
+  // Best-effort copy of a toile's canvas to the new widget's id-derived path.
+  if (source.type === "toile") {
+    try {
+      await client.storage.from(WIDGET_MEDIA_BUCKET).copy(toilePath(source.id), toilePath(created.id));
+    } catch {
+      /* the duplicated toile just starts blank */
+    }
+  }
+  return created;
 }
 
 export async function upsertWidget(client: DbClient, widget: WidgetInsert & { id?: string }): Promise<WidgetRow> {

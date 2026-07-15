@@ -9,6 +9,7 @@ import {
   deleteGuestbookMessage,
   deleteWidget,
   duplicateDashboard,
+  duplicateWidget,
   extractMediaPaths,
   listDashboards,
   type MediaWidget,
@@ -107,6 +108,23 @@ export async function deleteWidgetAction(id: string): Promise<void> {
   await deleteWidget(client, id);
   if (removed) await pruneReplacedMedia(client, extractMediaPaths(removed));
   revalidatePath("/qrcode");
+}
+
+// Duplicates a widget in place (phase 11): same config + sizes, first free grid
+// slot via the shared resolver, same version, shared media.
+export async function duplicateWidgetAction(id: string): Promise<Widget> {
+  const client = await requireClient();
+  const row = await duplicateWidget(client, id);
+  revalidatePath("/qrcode");
+  return {
+    id: row.id,
+    type: row.type,
+    config: row.config,
+    layout: row.layout,
+    visible: row.visible,
+    position: row.position,
+    createdAt: row.created_at,
+  };
 }
 
 export async function reorderWidgetsAction(order: { id: string; position: number }[]): Promise<void> {

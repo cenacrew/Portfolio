@@ -6,7 +6,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "rea
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TypeEditor } from "../../../components/editors";
 import { Banner, Button, Chip, Eyebrow, Muted, SectionTitle, ToggleRow, success } from "../../../components/ui";
-import { deleteW, resetToile, saveConfig, setSize, setVisible } from "../../../lib/actions";
+import { deleteW, duplicateW, resetToile, saveConfig, setSize, setVisible } from "../../../lib/actions";
 import { meta } from "../../../lib/registry";
 import { supabase } from "../../../lib/supabase";
 import { radius, space, useTheme } from "../../../lib/theme";
@@ -94,6 +94,21 @@ export default function EditWidget() {
     }
   };
 
+  const duplicate = async () => {
+    if (!row) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await duplicateW(row.id);
+      success();
+      router.back();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Duplication impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const confirmReset = () => {
     if (!row) return;
     Alert.alert("Réinitialiser la toile ?", "La toile actuelle est archivée, puis remise à blanc.", [
@@ -178,6 +193,7 @@ export default function EditWidget() {
         </View>
 
         <Button label="Enregistrer" onPress={save} loading={saving} />
+        <Button label="⧉ Dupliquer le widget" onPress={duplicate} variant="ghost" />
         {row.type === "toile" ? <Button label="🎨 Réinitialiser la toile" onPress={confirmReset} variant="ghost" /> : null}
         <Button label="Supprimer le widget" onPress={confirmDelete} variant="danger" />
       </ScrollView>

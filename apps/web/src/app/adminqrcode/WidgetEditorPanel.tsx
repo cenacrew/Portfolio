@@ -15,6 +15,7 @@ export default function WidgetEditorPanel({
   onToggleVisible,
   onSave,
   onDelete,
+  onDuplicate,
   onClose,
 }: {
   widget: Widget;
@@ -25,6 +26,7 @@ export default function WidgetEditorPanel({
   onToggleVisible: () => void;
   onSave: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
   onClose: () => void;
 }) {
   const def = registry[widget.type];
@@ -100,6 +102,9 @@ export default function WidgetEditorPanel({
         <footer className="admin-drawer__foot">
           <button className="admin-btn admin-btn--danger" onClick={onDelete} disabled={saving}>
             Supprimer
+          </button>
+          <button className="admin-btn admin-btn--ghost" onClick={onDuplicate} disabled={saving} title="Dupliquer">
+            ⧉ Dupliquer
           </button>
           <button className="admin-btn admin-btn--primary" onClick={onSave} disabled={saving || !!error}>
             {saving ? "Enregistrement…" : "Enregistrer"}
