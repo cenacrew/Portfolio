@@ -1,6 +1,7 @@
 import { Redirect, Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { useAuth } from "../../lib/auth";
+import { DashboardsProvider } from "../../lib/dashboards";
 import { useTheme } from "../../lib/theme";
 
 export default function AdminLayout() {
@@ -16,5 +17,10 @@ export default function AdminLayout() {
   }
   if (!session) return <Redirect href="/login" />;
 
-  return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }} />;
+  // The whole admin operates on the selected dashboard version (phase 8).
+  return (
+    <DashboardsProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: t.bg } }} />
+    </DashboardsProvider>
+  );
 }

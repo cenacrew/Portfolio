@@ -29,7 +29,13 @@ function nextPosition(widgets: WidgetRow[]): number {
 
 // New widget: placed at the bottom of each breakpoint (x:0, y:bottom), width
 // clamped to the column count. Mirrors the web admin so the grid stays valid.
-export async function addWidget(type: WidgetType, widgets: WidgetRow[]): Promise<WidgetRow> {
+// Stamped with the current version (dashboardId) when known; a falsy id (legacy)
+// omits dashboard_id so pre-migration inserts still work.
+export async function addWidget(
+  type: WidgetType,
+  widgets: WidgetRow[],
+  dashboardId?: string | null,
+): Promise<WidgetRow> {
   const def = meta(type);
   const size = def.defaultSize;
   // Guard legacy rows missing a breakpoint layout so adding never throws
@@ -47,6 +53,7 @@ export async function addWidget(type: WidgetType, widgets: WidgetRow[]): Promise
     layout,
     visible: true,
     position: nextPosition(widgets),
+    ...(dashboardId ? { dashboard_id: dashboardId } : {}),
   });
 }
 

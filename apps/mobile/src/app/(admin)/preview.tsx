@@ -4,15 +4,20 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import { Eyebrow, tap } from "../../components/ui";
+import { useDashboards } from "../../lib/dashboards";
 import { space, useTheme } from "../../lib/theme";
 
-const PUBLIC_URL = "https://www.cenacrew.com/qrcode";
+const PUBLIC_BASE = "https://www.cenacrew.com/qrcode";
 
 // One-tap real render (phase 4.5): shows the actual public dashboard inside the
-// app via a WebView (bundled with Expo Go), no browser needed.
+// app via a WebView (bundled with Expo Go), no browser needed. Opens the URL of
+// the SELECTED version (phase 8) — the default version at /qrcode, others at
+// /qrcode/<slug>.
 export default function Preview() {
   const t = useTheme();
   const router = useRouter();
+  const { selected } = useDashboards();
+  const publicUrl = selected.is_default ? PUBLIC_BASE : `${PUBLIC_BASE}/${selected.slug}`;
   const web = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +44,7 @@ export default function Preview() {
       <View style={{ flex: 1 }}>
         <WebView
           ref={web}
-          source={{ uri: PUBLIC_URL }}
+          source={{ uri: publicUrl }}
           onLoadEnd={() => setLoading(false)}
           onLoadStart={() => setLoading(true)}
           startInLoadingState

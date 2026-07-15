@@ -7,8 +7,10 @@ import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DragGrid } from "../../components/DragGrid";
 import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, Title, success, tap } from "../../components/ui";
+import { VersionSelector } from "../../components/VersionSelector";
 import { persistLayouts } from "../../lib/actions";
 import { useAuth } from "../../lib/auth";
+import { useDashboards } from "../../lib/dashboards";
 import { syncMaLocationOnce } from "../../lib/maLoc";
 import { syncPresenceOnce } from "../../lib/presence";
 import { radius, space, useTheme } from "../../lib/theme";
@@ -20,7 +22,8 @@ export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
   const { signOut } = useAuth();
-  const { widgets, loading, refreshing, error, refresh, reload } = useWidgets();
+  const { selected } = useDashboards();
+  const { widgets, loading, refreshing, error, refresh, reload } = useWidgets(selected.id || null);
 
   const [bp, setBp] = useState<Breakpoint>("mobile");
   const [dirty, setDirty] = useState(false);
@@ -150,6 +153,9 @@ export default function Dashboard() {
             <Text style={{ color: t.textMuted, fontWeight: "700", fontSize: 12 }}>Déconnexion</Text>
           </Pressable>
         </View>
+
+        {/* Version selector — the whole board below operates on the selected one */}
+        <VersionSelector />
 
         {error ? <Banner text={error} /> : null}
 

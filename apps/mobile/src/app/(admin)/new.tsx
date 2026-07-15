@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-nati
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Banner, Eyebrow, Muted, success, tap } from "../../components/ui";
 import { addWidget } from "../../lib/actions";
+import { useDashboards } from "../../lib/dashboards";
 import { ALL_TYPES, meta } from "../../lib/registry";
 
 // The status/mood tile left the grid for the header (phase 4.8 B2), so it no
@@ -17,6 +18,7 @@ import { radius, space, useTheme } from "../../lib/theme";
 export default function NewWidget() {
   const t = useTheme();
   const router = useRouter();
+  const { selected } = useDashboards();
   const [widgets, setWidgets] = useState<WidgetRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState<string | null>(null);
@@ -24,21 +26,21 @@ export default function NewWidget() {
 
   useEffect(() => {
     let alive = true;
-    getWidgets(supabase, { includeHidden: true })
+    getWidgets(supabase, { includeHidden: true, dashboardId: selected.id || null })
       .then((r) => alive && setWidgets(r))
       .catch((e) => alive && setError(e instanceof Error ? e.message : "Erreur"))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, []);
+  }, [selected.id]);
 
   const create = async (type: (typeof ALL_TYPES)[number]) => {
     tap();
     setCreating(type);
     setError(null);
     try {
-      const created = await addWidget(type, widgets);
+      const created = await addWidget(type, widgets, selected.id || null);
       success();
       router.replace(`/(admin)/widget/${created.id}`);
     } catch (e) {

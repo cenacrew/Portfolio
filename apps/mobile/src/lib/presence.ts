@@ -1,4 +1,4 @@
-import { updateSiteSettings } from "@portfolio/shared";
+import { getDefaultDashboard, updateSiteSettings } from "@portfolio/shared";
 import * as Location from "expo-location";
 import { supabase } from "./supabase";
 
@@ -54,7 +54,11 @@ export async function syncPresenceOnce(): Promise<void> {
   }
 
   try {
-    await updateSiteSettings(supabase, patch as never);
+    // Presence is GLOBAL (the admin's device, not a version) — always written to
+    // the default version's settings row. A legacy/empty id targets the single
+    // pre-migration row (id = 1).
+    const def = await getDefaultDashboard(supabase);
+    await updateSiteSettings(supabase, patch as never, def.id || null);
   } catch {
     // Non-fatal: presence just won't refresh this launch.
   }

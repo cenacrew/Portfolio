@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Banner, Button, Eyebrow, Muted, TextField, ToggleRow, success, tap } from "../../components/ui";
+import { useDashboards } from "../../lib/dashboards";
 import { supabase } from "../../lib/supabase";
 import { radius, space, useTheme } from "../../lib/theme";
 
@@ -33,6 +34,8 @@ const FALLBACK: Draft = {
 export default function HeaderEditor() {
   const t = useTheme();
   const router = useRouter();
+  const { selected } = useDashboards();
+  const dashboardId = selected.id || null;
   const [draft, setDraft] = useState<Draft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -41,7 +44,7 @@ export default function HeaderEditor() {
 
   useEffect(() => {
     let alive = true;
-    getSiteSettings(supabase)
+    getSiteSettings(supabase, dashboardId)
       .then((row) => {
         if (!alive) return;
         setDraft(
@@ -61,7 +64,7 @@ export default function HeaderEditor() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [dashboardId]);
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => (d ? { ...d, [key]: value } : d));
 
@@ -75,10 +78,14 @@ export default function HeaderEditor() {
     setError(null);
     setSaving(true);
     try {
-      await updateSiteSettings(supabase, {
-        ...draft,
-        chips: draft.chips.filter((c) => c.label.trim().length > 0),
-      });
+      await updateSiteSettings(
+        supabase,
+        {
+          ...draft,
+          chips: draft.chips.filter((c) => c.label.trim().length > 0),
+        },
+        dashboardId,
+      );
       success();
       router.back();
     } catch (e) {
