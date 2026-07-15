@@ -3,7 +3,7 @@ import { GRID, resolveCollisions } from "@portfolio/shared";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, Text, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, useWindowDimensions, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { DragGrid } from "../../components/DragGrid";
 import { Banner, Button, Card, Chip, Eyebrow, Muted, SectionTitle, Title, success, tap } from "../../components/ui";
@@ -196,10 +196,6 @@ export default function Dashboard() {
               }}
             />
           )}
-
-          {dirty ? (
-            <Button label="Sauvegarder la disposition" onPress={saveLayout} loading={saving} />
-          ) : null}
         </View>
       </ScrollView>
 
@@ -226,8 +222,55 @@ export default function Dashboard() {
       >
         <Text style={{ color: t.onBrand, fontSize: 32, lineHeight: 34, fontWeight: "700", marginTop: -2 }}>+</Text>
       </Pressable>
+
+      {/* Floating save action (phase 6) — sits between the two FABs, shown only
+          when the layout has pending changes, so it's reachable without scrolling
+          past a tall board. Amber = the app's "attention / pending" accent. */}
+      {dirty ? (
+        <View style={savePillContainer} pointerEvents="box-none">
+          <Pressable
+            onPress={saveLayout}
+            disabled={saving}
+            accessibilityLabel="Enregistrer la disposition"
+            style={({ pressed }) => [savePillStyle(t), pressed && { transform: [{ scale: 0.96 }], opacity: 0.92 }]}
+          >
+            {saving ? (
+              <ActivityIndicator color={t.onAccent} />
+            ) : (
+              <Text style={{ color: t.onAccent, fontWeight: "800", fontSize: 15 }}>✓ Enregistrer</Text>
+            )}
+          </Pressable>
+        </View>
+      ) : null}
     </SafeAreaView>
   );
+}
+
+// Container spans the gap between the two 60px FABs (inset so the pill never
+// overlaps them) and centers the pill, aligned to the FABs' vertical centre.
+const savePillContainer = {
+  position: "absolute" as const,
+  left: space.lg + 60 + space.sm,
+  right: space.lg + 60 + space.sm,
+  bottom: space.lg + 12,
+  alignItems: "center" as const,
+};
+
+function savePillStyle(t: ReturnType<typeof useTheme>) {
+  return {
+    height: 52,
+    minWidth: 132,
+    paddingHorizontal: 22,
+    borderRadius: radius.pill,
+    backgroundColor: t.accent,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  };
 }
 
 function fabStyle(t: ReturnType<typeof useTheme>, side: "left" | "right") {
