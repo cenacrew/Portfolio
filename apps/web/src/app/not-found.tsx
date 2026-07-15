@@ -1,6 +1,8 @@
 // Reprise de l'ancienne 404.html. React hoiste automatiquement les <link>
 // dans le <head>. Bootstrap et la police Arvo sont conservés pour un rendu
 // identique ; les styles .page_404 vivent dans globals.css.
+import Link from "next/link";
+
 export default function NotFound() {
   return (
     <>
@@ -24,9 +26,9 @@ export default function NotFound() {
 
                   <p>the page you are looking for not avaible!</p>
 
-                  <a href="/" className="link_404">
+                  <Link href="/" className="link_404">
                     Go to Home
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

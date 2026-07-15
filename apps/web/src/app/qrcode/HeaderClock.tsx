@@ -10,6 +10,9 @@ export default function HeaderClock({ tz }: { tz: string }) {
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
+    // Client-only clock, seeded after mount to avoid an SSR/CSR minute
+    // mismatch; setState-in-effect is intentional here.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 30_000);
     return () => clearInterval(id);
