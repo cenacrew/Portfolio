@@ -13,6 +13,18 @@ export function createAnonClient(url: string, anonKey: string): DbClient {
   });
 }
 
+// Anon client that carries a user's access token (JWT) on every request, so
+// PostgREST runs the query AS that authenticated user and RLS applies to them.
+// Used server-side to honour a Bearer token sent by the mobile app (which holds
+// a Supabase session, not the web's cookies). The token is still verified with
+// `auth.getUser()` before trusting it — this only wires it onto the requests.
+export function createBearerClient(url: string, anonKey: string, token: string): DbClient {
+  return createClient<Database>(url, anonKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
 // Service-role client — bypasses RLS. MUST only ever be instantiated in a
 // trusted server context (API routes / server actions). Never ship the service
 // key to the browser.
