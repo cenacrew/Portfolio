@@ -71,6 +71,16 @@ export interface PollVoteRow {
   created_at: string;
 }
 
+// One emoji reaction counter per (widget, emoji) — phase 12. Only ever touched
+// through the increment_reaction() security-definer RPC (public read, no direct
+// write). Rows cascade-delete with their widget so removing a reactions tile
+// purges its counters.
+export interface WidgetReactionRow {
+  widget_id: string;
+  emoji: string;
+  count: number;
+}
+
 // A free header chip beyond the built-in "available" and "location" ones.
 export interface SiteChip {
   label: string;
@@ -175,11 +185,18 @@ export interface Database {
         Update: Partial<WidgetQaInsert>;
         Relationships: [];
       };
+      widget_reactions: {
+        Row: WidgetReactionRow;
+        Insert: { widget_id: string; emoji: string; count?: number };
+        Update: Partial<WidgetReactionRow>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
       increment_visits: { Args: Record<string, never>; Returns: number };
       get_visits: { Args: Record<string, never>; Returns: number };
+      increment_reaction: { Args: { p_widget_id: string; p_emoji: string }; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

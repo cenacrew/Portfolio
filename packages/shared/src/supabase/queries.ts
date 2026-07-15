@@ -13,6 +13,7 @@ import type {
   WidgetInsert,
   WidgetQaInsert,
   WidgetQaRow,
+  WidgetReactionRow,
   WidgetRow,
   WidgetUpdate,
 } from "./types";
@@ -534,6 +535,51 @@ export async function incrementVisits(client: DbClient): Promise<number> {
 
 export async function getVisits(client: DbClient): Promise<number> {
   const { data, error } = await client.rpc("get_visits");
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
+// ---------- reactions (phase 12) -------------------------------------------
+// All reaction helpers tolerate the widget_reactions table not existing yet
+// (pre-migration 0009): reads return an empty tally and the increment RPC error
+// is surfaced to the caller (the API route degrades to a 503) — the public
+// /qrcode never breaks because the Renderer only ever reads (empty = all zeros).
+
+// Tally of counts per emoji for one reactions widget. Empty map when the table
+// is missing so the tile renders with zeroed counters.
+export async function getReactionCounts(
+  client: DbClient,
+  widgetId: string,
+): Promise<Record<string, number>> {
+  const { data, error } = await client
+    .from("widget_reactions")
+    .select("emoji,count")
+    .eq("widget_id", widgetId);
+  if (error) {
+    if (isMissingRelation(error)) return {};
+    throw error;
+  }
+  const counts: Record<string, number> = {};
+  for (const r of (data ?? []) as Pick<WidgetReactionRow, "emoji" | "count">[]) {
+    counts[r.emoji] = Number(r.count);
+  }
+  return counts;
+}
+
+// Atomically increments (widget, emoji) and returns the new count. Runs through
+// the security-definer RPC so anon has no direct table write.
+export async function incrementReaction(
+  client: DbClient,
+  widgetId: string,
+  emoji: string,
+): Promise<number> {
+  // `as never`: same house pattern as every typed write in this file — the
+  // client's Schema generic degrades with this Database shape, so args are
+  // cast (runtime payload is exactly the RPC's named parameters).
+  const { data, error } = await client.rpc("increment_reaction", {
+    p_widget_id: widgetId,
+    p_emoji: emoji,
+  } as never);
   if (error) throw error;
   return Number(data ?? 0);
 }
