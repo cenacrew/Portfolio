@@ -2,11 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { Widget, WidgetBreakpointLayout, WidgetType } from "@portfolio/shared";
+import type { DashboardRow, Widget, WidgetBreakpointLayout, WidgetType } from "@portfolio/shared";
 import {
+  createDashboard,
+  deleteDashboard,
   deleteGuestbookMessage,
   deleteWidget,
+  duplicateDashboard,
   extractMediaPaths,
+  listDashboards,
   type MediaWidget,
   pruneWidgetMedia,
   reorderWidgets,
@@ -34,6 +38,9 @@ export interface AdminWidgetInput {
   layout: WidgetBreakpointLayout;
   visible: boolean;
   position: number;
+  // Version this widget belongs to (phase 8). Set only when CREATING a widget;
+  // omitted on updates (the widget keeps its version). Null = legacy/unscoped.
+  dashboardId?: string | null;
 }
 
 // Prune media the widget's OLD config referenced but the new config no longer
@@ -64,6 +71,9 @@ export async function saveWidgetAction(input: AdminWidgetInput): Promise<Widget>
     layout: input.layout,
     visible: input.visible,
     position: input.position,
+    // Only stamp the version when creating (no id yet) and a real version id is
+    // known. Updates keep the widget's existing dashboard_id.
+    ...(!input.id && input.dashboardId ? { dashboard_id: input.dashboardId } : {}),
   });
   await pruneReplacedMedia(client, oldPaths);
   revalidatePath("/qrcode");
@@ -115,4 +125,31 @@ export async function signOutAction(): Promise<void> {
   const client = await getServerSupabase();
   if (client) await client.auth.signOut();
   redirect("/adminqrcode/login");
+}
+
+// ---------- dashboard versions (phase 8) -----------------------------------
+
+export async function listDashboardsAction(): Promise<DashboardRow[]> {
+  const client = await requireClient();
+  return listDashboards(client);
+}
+
+export async function createDashboardAction(name: string): Promise<DashboardRow> {
+  const client = await requireClient();
+  const created = await createDashboard(client, { name });
+  revalidatePath("/qrcode");
+  return created;
+}
+
+export async function duplicateDashboardAction(sourceId: string, name: string): Promise<DashboardRow> {
+  const client = await requireClient();
+  const created = await duplicateDashboard(client, sourceId, { name });
+  revalidatePath("/qrcode");
+  return created;
+}
+
+export async function deleteDashboardAction(id: string): Promise<void> {
+  const client = await requireClient();
+  await deleteDashboard(client, id);
+  revalidatePath("/qrcode");
 }

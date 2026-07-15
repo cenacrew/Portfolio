@@ -12,13 +12,14 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { GRID, type Breakpoint, type GuestbookRow, type Widget, type WidgetSize, type WidgetType } from "@portfolio/shared";
+import { GRID, type Breakpoint, type DashboardRow, type GuestbookRow, type Widget, type WidgetSize, type WidgetType } from "@portfolio/shared";
 import { registry } from "@/widgets/registry";
 import ThemeToggle from "../qrcode/ThemeToggle";
 import AdminTile from "./AdminTile";
 import WidgetEditorPanel from "./WidgetEditorPanel";
 import AddWidgetGallery from "./AddWidgetGallery";
 import GuestbookModeration from "./GuestbookModeration";
+import VersionBar from "./VersionBar";
 import { deleteWidgetAction, patchWidgetAction, saveWidgetAction, signOutAction } from "./actions";
 
 const GAP = 12;
@@ -28,14 +29,24 @@ export default function AdminBoard({
   initialWidgets,
   previews,
   messages,
+  dashboards,
+  selectedSlug,
+  dashboardId,
 }: {
   initialWidgets: Widget[];
   previews: Record<string, ReactNode>;
   messages: GuestbookRow[];
+  dashboards: DashboardRow[];
+  selectedSlug: string;
+  dashboardId: string | null;
 }) {
   const router = useRouter();
   const [widgets, setWidgets] = useState<Widget[]>(initialWidgets);
   const [bp, setBp] = useState<Breakpoint>("mobile");
+
+  // Switching version remounts this board (keyed on the slug in the page), so
+  // local state initialises fresh from the selected version's widgets.
+  const publicHref = selectedSlug === "default" ? "/qrcode" : `/qrcode/${selectedSlug}`;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [modOpen, setModOpen] = useState(false);
@@ -184,6 +195,7 @@ export default function AdminBoard({
         layout,
         visible: true,
         position,
+        dashboardId,
       });
       setWidgets((prev) => [...prev, created]);
       setSelectedId(created.id);
@@ -214,7 +226,7 @@ export default function AdminBoard({
 
         <div className="admin-topbar__actions">
           <ThemeToggle />
-          <Link className="admin-icon-btn" href="/qrcode" target="_blank" title="Voir le site" aria-label="Voir le site">
+          <Link className="admin-icon-btn" href={publicHref} target="_blank" title="Voir la version" aria-label="Voir la version">
             ↗
           </Link>
           <form action={signOutAction}>
@@ -224,6 +236,8 @@ export default function AdminBoard({
           </form>
         </div>
       </header>
+
+      <VersionBar dashboards={dashboards} selectedSlug={selectedSlug} />
 
       <div className={`admin-board admin-board--${bp}`}>
         <DndContext sensors={sensors} onDragEnd={onDragEnd}>
