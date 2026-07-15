@@ -10,8 +10,28 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// A dashboard version (phase 8). The printed-QR default keeps slug 'default'
+// and is_default = true; it can never be deleted nor renamed.
+export interface DashboardRow {
+  id: string;
+  slug: string;
+  name: string;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface DashboardInsert {
+  id?: string;
+  slug: string;
+  name?: string;
+  is_default?: boolean;
+  created_at?: string;
+}
+
 // A widgets row. `config` stays `unknown` (validated per-type by the registry
 // Zod schema in the web app); `layout` is typed to the shared model.
+// `dashboard_id` is optional in the type so pre-migration reads (no column)
+// stay valid — the DB requires it once migration 0007 has run.
 export interface WidgetRow {
   id: string;
   type: WidgetType;
@@ -20,6 +40,7 @@ export interface WidgetRow {
   visible: boolean;
   position: number;
   created_at: string;
+  dashboard_id?: string;
 }
 
 export interface WidgetInsert {
@@ -30,6 +51,7 @@ export interface WidgetInsert {
   visible?: boolean;
   position?: number;
   created_at?: string;
+  dashboard_id?: string;
 }
 
 export type WidgetUpdate = Partial<WidgetInsert>;
@@ -76,6 +98,9 @@ export interface SiteSettingsRow {
   status_emoji?: string;
   status_text?: string;
   status_moods?: { emoji: string; text: string }[];
+  // Dashboard version this header belongs to (phase 8). Optional so
+  // pre-migration reads (no column) stay valid.
+  dashboard_id?: string;
 }
 
 export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_at">>;
@@ -83,6 +108,12 @@ export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_a
 export interface Database {
   public: {
     Tables: {
+      dashboards: {
+        Row: DashboardRow;
+        Insert: DashboardInsert;
+        Update: Partial<DashboardInsert>;
+        Relationships: [];
+      };
       widgets: {
         Row: WidgetRow;
         Insert: WidgetInsert;
