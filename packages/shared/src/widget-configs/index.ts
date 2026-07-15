@@ -25,3 +25,6 @@ export * from "./letterboxd";
 export * from "./toile";
 export * from "./lol";
 export * from "./file-download";
+export * from "./contact-card";
+export * from "./cv-timeline";
+export * from "./reactions";

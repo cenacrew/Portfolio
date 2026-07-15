@@ -30,6 +30,10 @@ export const WIDGET_TYPES = [
   "lol",
   // Phase 7 — downloadable file (any type, 50 MB max).
   "file-download",
+  // Phase 12 — contact vCard, CV timeline, emoji reactions.
+  "contact-card",
+  "cv-timeline",
+  "reactions",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];

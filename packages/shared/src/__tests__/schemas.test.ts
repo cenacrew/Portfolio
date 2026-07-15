@@ -30,6 +30,9 @@ const PREFIX: Record<WidgetType, string> = {
   toile: "toile",
   lol: "lol",
   "file-download": "fileDownload",
+  "contact-card": "contactCard",
+  "cv-timeline": "cvTimeline",
+  reactions: "reactions",
 };
 
 const bag = configs as unknown as Record<string, unknown>;

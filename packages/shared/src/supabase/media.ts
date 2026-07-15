@@ -65,6 +65,14 @@ export function extractMediaPaths(widget: MediaWidget): string[] {
     case "file-download":
       add(c.fileUrl);
       break;
+    case "contact-card":
+      add(c.photoUrl);
+      break;
+    case "cv-timeline": {
+      const entries = Array.isArray(c.entries) ? c.entries : [];
+      for (const e of entries) add(asObj(e).logoUrl);
+      break;
+    }
     case "toile":
       // The live canvas PNG. Archives (toile/archive/*) are intentional and
       // never pruned here (nor by the purge script).

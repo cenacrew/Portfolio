@@ -17,13 +17,13 @@
 
 -- 1. RLS is ENABLED on every public table -----------------------------------
 --    Expected: rowsecurity = true for widgets, guestbook_messages, poll_votes,
---    visits, site_settings.
+--    visits, site_settings, widget_reactions.
 select c.relname as table_name, c.relrowsecurity as rls_enabled
 from pg_class c
 join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
   and c.relkind = 'r'
-  and c.relname in ('widgets','guestbook_messages','poll_votes','visits','site_settings')
+  and c.relname in ('widgets','guestbook_messages','poll_votes','visits','site_settings','widget_reactions')
 order by c.relname;
 
 -- 2. Full policy inventory ---------------------------------------------------
@@ -52,6 +52,9 @@ order by tablename, cmd, policyname;
 --   site_settings:      public read (SELECT anon+auth true)
 --                       admin insert/update (authenticated, id = 1)
 --   visits:             NO policies (RLS on + no policy => nobody has direct access)
+--   widget_reactions:   public read (SELECT anon+auth true)
+--                       admin insert/update/delete (authenticated true)
+--                       -- anon increments ONLY via increment_reaction() RPC
 
 -- 3. visits must have ZERO policies (RPC-only access) ------------------------
 --    Expected: 0 rows.
@@ -67,7 +70,7 @@ join pg_namespace n on n.oid = c.relnamespace
 where n.nspname = 'public'
   and c.relkind = 'r'
   and c.relrowsecurity = false
-  and c.relname in ('widgets','guestbook_messages','poll_votes','visits','site_settings');
+  and c.relname in ('widgets','guestbook_messages','poll_votes','visits','site_settings','widget_reactions');
 
 -- 5. No anon INSERT/UPDATE/DELETE policy on widgets or site_settings ---------
 --    (i.e. the public can never write config or the header). Expected: 0 rows.
@@ -88,12 +91,12 @@ where conrelid in ('public.guestbook_messages'::regclass, 'public.poll_votes'::r
 order by table_name, conname;
 
 -- 7. security-definer RPCs exist and are executable by anon ------------------
---    Expected: increment_visits and get_visits, prosecdef = true.
+--    Expected: increment_visits, get_visits and increment_reaction, prosecdef = true.
 select p.proname, p.prosecdef as security_definer
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
-  and p.proname in ('increment_visits','get_visits')
+  and p.proname in ('increment_visits','get_visits','increment_reaction')
 order by p.proname;
 
 -- 8. Storage policies on the widget-media bucket ----------------------------
@@ -110,7 +113,8 @@ order by cmd, policyname;
 select id, public from storage.buckets where id = 'widget-media';
 
 -- 10. Realtime publication covers the tables the dashboard subscribes to -----
---     Expected: widgets, guestbook_messages, poll_votes, site_settings.
+--     Expected: widgets, guestbook_messages, poll_votes, site_settings,
+--     widget_reactions.
 select schemaname, tablename
 from pg_publication_tables
 where pubname = 'supabase_realtime' and schemaname = 'public'

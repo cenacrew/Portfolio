@@ -26,6 +26,9 @@ import * as letterboxd from "./letterboxd/schema";
 import * as toile from "./toile/schema";
 import * as lol from "./lol/schema";
 import * as fileDownload from "./file-download/schema";
+import * as contactCard from "./contact-card/schema";
+import * as cvTimeline from "./cv-timeline/schema";
+import * as reactions from "./reactions/schema";
 
 import SocialLinkEditor from "./social-link/Editor";
 import NoteEditor from "./note/Editor";
@@ -50,6 +53,9 @@ import LetterboxdEditor from "./letterboxd/Editor";
 import ToileEditor from "./toile/Editor";
 import LolEditor from "./lol/Editor";
 import FileDownloadEditor from "./file-download/Editor";
+import ContactCardEditor from "./contact-card/Editor";
+import CvTimelineEditor from "./cv-timeline/Editor";
+import ReactionsEditor from "./reactions/Editor";
 
 const s = (w: number, h: number): WidgetSize => ({ w, h });
 
@@ -312,6 +318,54 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     sizes: ALL_SIZES,
     defaultSize: s(2, 1),
     Editor: FileDownloadEditor,
+  }),
+  "contact-card": defineWidget({
+    schema: contactCard.contactCardSchema,
+    defaultConfig: contactCard.contactCardDefault,
+    // A fully filled card so the QA console shows every contact row + the CTA.
+    sampleConfig: {
+      firstName: "Valentin",
+      lastName: "Sourdois Pajot",
+      role: "Développeur produit",
+      org: "Freelance",
+      phone: "+33 6 12 34 56 78",
+      email: "hello@cenacrew.com",
+      website: "https://cenacrew.com",
+      useHeaderAvatar: true,
+    } satisfies contactCard.ContactCardConfig,
+    label: contactCard.contactCardLabel,
+    description: "Carte de visite + « Ajouter à mes contacts » (vCard).",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 2),
+    Editor: ContactCardEditor,
+  }),
+  "cv-timeline": defineWidget({
+    schema: cvTimeline.cvTimelineSchema,
+    defaultConfig: cvTimeline.cvTimelineDefault,
+    // A richer parcours so the rail + descriptions are exercised in the console.
+    sampleConfig: {
+      title: "Parcours",
+      entries: [
+        { id: "1", period: "2023 — aujourd'hui", title: "Développeur produit", place: "Freelance", description: "Applications web & mobile, du design au déploiement." },
+        { id: "2", period: "2021 — 2023", title: "Ingénieur logiciel", place: "Studio créatif", description: "Design systems et outils internes." },
+        { id: "3", period: "2019 — 2021", title: "Développeur front-end", place: "Agence" },
+        { id: "4", period: "2019", title: "Master informatique", place: "Université" },
+      ],
+    } satisfies cvTimeline.CvTimelineConfig,
+    label: cvTimeline.cvTimelineLabel,
+    description: "Frise verticale de ton parcours pro.",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 3),
+    Editor: CvTimelineEditor,
+  }),
+  reactions: defineWidget({
+    schema: reactions.reactionsSchema,
+    defaultConfig: reactions.reactionsDefault,
+    label: reactions.reactionsLabel,
+    description: "Les visiteurs tapent un emoji, compteurs en direct.",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 1),
+    Editor: ReactionsEditor,
   }),
 };
 
