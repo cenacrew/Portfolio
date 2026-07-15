@@ -1,5 +1,5 @@
 import type { WidgetType } from "@portfolio/shared";
-import { formatFileSize, LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import { COUNTDOWN_DEFAULT_END_MESSAGE, formatFileSize, LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -306,6 +306,12 @@ function VideoEditor({ config, onChange }: EProps) {
       )}
       <TextField label="URL vidéo (optionnel)" value={config.src} onChange={(src) => onChange({ ...config, src })} keyboardType="url" autoCapitalize="none" hint="Rempli automatiquement à l'import." />
       <TextField label="Légende (optionnel)" value={config.caption ?? ""} onChange={(caption) => onChange({ ...config, caption: caption || undefined })} />
+      <ToggleRow
+        label="Son au clic"
+        value={config.tapToUnmute ?? false}
+        onChange={(tapToUnmute) => onChange({ ...config, tapToUnmute })}
+        hint="La vidéo reste muette en boucle ; un tap active ou coupe le son."
+      />
     </>
   );
 }
@@ -397,11 +403,37 @@ function DateTimeField({ value, onChange }: { value: string; onChange: (iso: str
 }
 
 function CountdownEditor({ config, onChange }: EProps) {
+  const t2 = useTheme();
+  const behavior = config.endBehavior ?? "message";
   return (
     <>
       <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
       <TextField label="Emoji" value={config.emoji} onChange={(emoji) => onChange({ ...config, emoji })} />
       <DateTimeField value={config.target} onChange={(target) => onChange({ ...config, target })} />
+      <SelectRow
+        label="À l'échéance"
+        value={behavior}
+        options={[
+          { value: "message", label: "Message de fin" },
+          { value: "elapsed", label: "Compteur « depuis »" },
+          { value: "hide", label: "Masquer la tuile" },
+        ]}
+        onChange={(endBehavior) => onChange({ ...config, endBehavior })}
+        hint="Ce qui s'affiche une fois la date atteinte."
+      />
+      {behavior === "message" ? (
+        <TextField
+          label="Message de fin"
+          value={config.endMessage ?? ""}
+          onChange={(endMessage) => onChange({ ...config, endMessage })}
+          placeholder={COUNTDOWN_DEFAULT_END_MESSAGE}
+        />
+      ) : null}
+      {behavior === "hide" ? (
+        <Text style={{ color: t2.textFaint, fontSize: 12 }}>
+          La tuile disparaît du dashboard public une fois la date atteinte, mais reste ici pour l'éditer.
+        </Text>
+      ) : null}
     </>
   );
 }
@@ -484,7 +516,7 @@ function PhotoEditor({ config, onChange }: EProps) {
         label="Images"
         items={config.images ?? []}
         addLabel="Image"
-        makeItem={() => ({ src: "", alt: "", caption: undefined as string | undefined })}
+        makeItem={() => ({ src: "", alt: "", caption: undefined as string | undefined, linkUrl: undefined as string | undefined })}
         onChange={(images) => onChange({ ...config, images })}
         renderItem={(item: any, update) => (
           <>
@@ -496,6 +528,14 @@ function PhotoEditor({ config, onChange }: EProps) {
               label="Description (légende affichée)"
               value={item.caption ?? ""}
               onChange={(caption) => update({ caption: caption || undefined, alt: caption })}
+            />
+            <TextField
+              label="Lien au clic (optionnel)"
+              value={item.linkUrl ?? ""}
+              onChange={(linkUrl) => update({ linkUrl: linkUrl || undefined })}
+              keyboardType="url"
+              autoCapitalize="none"
+              hint="Un tap sur l'image ouvre ce lien."
             />
           </>
         )}

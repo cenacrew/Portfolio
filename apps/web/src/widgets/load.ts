@@ -44,6 +44,20 @@ function deoverlap(widgets: Widget[]): Widget[] {
   return widgets.map((w) => ({ ...w, layout: fixed.get(w.id)! }));
 }
 
+// Drops countdowns configured to hide once reached (phase 11). Only affects the
+// PUBLIC render — the admin loader keeps them so they stay visible/editable.
+// Runs before de-overlap so the freed grid slot is repacked cleanly.
+function dropReachedHiddenCountdowns(widgets: Widget[]): Widget[] {
+  const now = Date.now();
+  return widgets.filter((w) => {
+    if (w.type !== "countdown") return true;
+    const c = w.config as { endBehavior?: string; target?: string };
+    if (c.endBehavior !== "hide") return true;
+    const reached = new Date(c.target ?? "").getTime() <= now;
+    return !reached;
+  });
+}
+
 // Validates a widget's config with its type schema; returns null if the type
 // is unknown or the config is invalid, so one bad DB row can't blank the page.
 function parseWidget(row: {
@@ -117,7 +131,7 @@ export async function loadPublicWidgets(scope?: WidgetScope): Promise<Widget[]> 
       .sort((a, b) => a.position - b.position)
       .map((r) => parseWidget(fromRow(r)))
       .filter((w): w is Widget => w !== null);
-    return deoverlap(applyPresence(parsed, presence));
+    return deoverlap(applyPresence(dropReachedHiddenCountdowns(parsed), presence));
   } catch {
     return isDefault ? deoverlap(loadLocalWidgets()) : empty;
   }

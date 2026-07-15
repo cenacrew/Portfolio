@@ -1,6 +1,7 @@
 import type { Breakpoint, WidgetBreakpointLayout, WidgetRow, WidgetSize, WidgetType } from "@portfolio/shared";
 import {
   deleteWidget,
+  duplicateWidget,
   extractMediaPaths,
   extensionOf,
   GRID,
@@ -90,6 +91,12 @@ export async function deleteW(id: string): Promise<void> {
       /* storage cleanup is best-effort; the widget row is already deleted */
     }
   }
+}
+
+// Duplicates a widget in place: same config + sizes, dropped at the first free
+// grid slot via the shared resolver, same version, shared media (phase 11).
+export async function duplicateW(id: string): Promise<WidgetRow> {
+  return duplicateWidget(supabase, id);
 }
 
 // Change a widget's size for one breakpoint, clamping width to the columns and

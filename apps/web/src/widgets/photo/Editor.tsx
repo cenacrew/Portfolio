@@ -69,6 +69,13 @@ export default function PhotoEditor({ config, onChange }: WidgetEditorProps<Phot
               value={item.caption ?? ""}
               onChange={(caption) => update({ caption: caption || undefined })}
             />
+            <TextField
+              label="Lien au clic (optionnel)"
+              value={item.linkUrl ?? ""}
+              onChange={(linkUrl) => update({ linkUrl: linkUrl || undefined })}
+              placeholder="https://…"
+              hint="Un tap sur l’image ouvre ce lien dans un nouvel onglet."
+            />
           </>
         )}
       />

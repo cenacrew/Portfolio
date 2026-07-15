@@ -95,6 +95,15 @@ describe("photo — carousel interval default and bounds", () => {
     const parsed = configs.photoSchema.parse({ images: [{ src: "/x.png" }] });
     expect(parsed.images[0].alt).toBe("");
   });
+
+  it("leaves linkUrl undefined when omitted and keeps it when provided", () => {
+    const without = configs.photoSchema.parse({ images: [{ src: "/x.png" }] });
+    expect(without.images[0].linkUrl).toBeUndefined();
+    const withLink = configs.photoSchema.parse({
+      images: [{ src: "/x.png", linkUrl: "https://example.com" }],
+    });
+    expect(withLink.images[0].linkUrl).toBe("https://example.com");
+  });
 });
 
 describe("countdown — defaults", () => {
@@ -105,6 +114,35 @@ describe("countdown — defaults", () => {
 
   it("rejects a missing title", () => {
     expect(configs.countdownSchema.safeParse({ target: "2027-01-01T00:00:00.000Z" }).success).toBe(false);
+  });
+
+  it("defaults endBehavior to message and endMessage to the party text", () => {
+    const parsed = configs.countdownSchema.parse({ title: "Sortie", target: "2027-01-01T00:00:00.000Z" });
+    expect(parsed.endBehavior).toBe("message");
+    expect(parsed.endMessage).toBe(configs.COUNTDOWN_DEFAULT_END_MESSAGE);
+  });
+
+  it("accepts the elapsed and hide behaviours and rejects an unknown one", () => {
+    expect(
+      configs.countdownSchema.safeParse({ title: "x", target: "2027-01-01T00:00:00.000Z", endBehavior: "elapsed" })
+        .success,
+    ).toBe(true);
+    expect(
+      configs.countdownSchema.safeParse({ title: "x", target: "2027-01-01T00:00:00.000Z", endBehavior: "hide" })
+        .success,
+    ).toBe(true);
+    expect(
+      configs.countdownSchema.safeParse({ title: "x", target: "2027-01-01T00:00:00.000Z", endBehavior: "boom" })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("video — tapToUnmute default", () => {
+  it("defaults tapToUnmute to false and accepts true", () => {
+    const parsed = configs.videoSchema.parse({ src: "https://cdn/x.mp4" });
+    expect(parsed.tapToUnmute).toBe(false);
+    expect(configs.videoSchema.parse({ src: "https://cdn/x.mp4", tapToUnmute: true }).tapToUnmute).toBe(true);
   });
 });
 

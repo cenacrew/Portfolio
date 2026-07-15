@@ -1,7 +1,7 @@
 "use client";
 
 import type { WidgetEditorProps } from "../types";
-import { TextField } from "../editor-kit";
+import { TextField, ToggleField } from "../editor-kit";
 import type { VideoConfig } from "./schema";
 
 // Minimal web editor. The rich upload flow (pick a clip from the phone) lives in
@@ -25,6 +25,12 @@ export default function VideoEditor({ config, onChange }: WidgetEditorProps<Vide
         label="Légende"
         value={config.caption ?? ""}
         onChange={(caption) => onChange({ ...config, caption: caption || undefined })}
+      />
+      <ToggleField
+        label="Son au clic"
+        value={config.tapToUnmute ?? false}
+        onChange={(tapToUnmute) => onChange({ ...config, tapToUnmute })}
+        hint="La vidéo reste muette en boucle ; un tap active ou coupe le son."
       />
     </>
   );

@@ -7,6 +7,10 @@ export const photoSchema = z.object({
         src: z.string().min(1),
         alt: z.string().default(""),
         caption: z.string().optional(),
+        // Optional click target (phase 11). When set, tapping this slide's image
+        // opens the URL in a new tab; the carousel arrows/dots stay usable. Older
+        // configs without the field simply aren't clickable.
+        linkUrl: z.string().optional(),
       }),
     )
     .min(1),
