@@ -165,6 +165,9 @@ export default function Dashboard() {
           <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
         </View>
 
+        {/* QA console (phase 9) — opens the web /adminqrcode/test in a WebView */}
+        <Button label="🧪 Test widgets" onPress={() => router.push("/(admin)/test")} variant="ghost" />
+
         {/* Live board — drag to arrange, tap to manage */}
         <View style={{ gap: space.md }}>
           <SectionTitle
