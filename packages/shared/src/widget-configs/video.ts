@@ -8,12 +8,17 @@ export const videoSchema = z.object({
   src: z.string().min(1),
   poster: z.string().optional(),
   caption: z.string().optional(),
+  // When true, the muted autoplay loop stays, but tapping the tile toggles the
+  // sound (with a discreet 🔇/🔊 indicator). Default false (silent as before);
+  // older configs without the field keep playing muted (phase 11).
+  tapToUnmute: z.boolean().default(false),
 });
 
 export type VideoConfig = z.infer<typeof videoSchema>;
 
 export const videoDefault: VideoConfig = {
   src: "",
+  tapToUnmute: false,
 };
 
 export const videoLabel = "Vidéo";

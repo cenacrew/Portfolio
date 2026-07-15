@@ -876,6 +876,14 @@ body.dark-mode .qr-page {
   object-fit: cover;
   display: block;
 }
+/* Clickable slide (phase 11). Fills the tile beneath the arrows/dots, which
+   carry a higher z-index so navigation never triggers the link. */
+.w-photo__link {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: 1;
+}
 .w-photo__caption {
   position: absolute;
   left: 10px;
@@ -906,6 +914,7 @@ body.dark-mode .qr-page {
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2;
 }
 .w-photo:hover .w-photo__nav {
   opacity: 1;
@@ -922,6 +931,7 @@ body.dark-mode .qr-page {
   right: 10px;
   display: flex;
   gap: 5px;
+  z-index: 2;
 }
 .w-photo__dot {
   width: 7px;
@@ -959,6 +969,27 @@ body.dark-mode .qr-page {
   font-size: 11.5px;
   font-weight: 600;
   backdrop-filter: blur(4px);
+}
+/* Sound toggle (phase 11) — a discreet glass pill, top-right, away from the
+   bottom-left caption. */
+.w-video__sound {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  z-index: 2;
 }
 .w-video--empty {
   display: flex;
@@ -1227,6 +1258,14 @@ body.dark-mode .qr-page {
   margin-top: auto;
   font-weight: 800;
   font-size: clamp(20px, 11cqmin, 46px);
+}
+/* "Since" counter label cell (phase 11 elapsed mode): the trailing column just
+   reads "depuis", vertically centred against the elapsed j / h numbers. */
+.w-cd__cell--since {
+  justify-content: center;
+}
+.w-cd__cell--since i {
+  font-size: clamp(9px, 4.4cqmin, 18px);
 }
 @container tile (max-height: 130px) {
   .w-cd__cell b { font-size: clamp(15px, 10cqmin, 26px); }

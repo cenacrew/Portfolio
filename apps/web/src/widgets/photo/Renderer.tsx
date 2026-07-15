@@ -32,16 +32,34 @@ export default function PhotoRenderer({ config }: WidgetRendererProps<PhotoConfi
     setTick((t) => t + 1);
   };
 
+  const img = (
+    <Image
+      className="w-photo__img"
+      src={current.src}
+      alt={current.alt}
+      fill
+      sizes="(max-width: 640px) 45vw, 320px"
+      unoptimized={current.src.startsWith("data:")}
+    />
+  );
+
   return (
     <div className="w-photo">
-      <Image
-        className="w-photo__img"
-        src={current.src}
-        alt={current.alt}
-        fill
-        sizes="(max-width: 640px) 45vw, 320px"
-        unoptimized={current.src.startsWith("data:")}
-      />
+      {current.linkUrl ? (
+        // Tap the image → open its link. The arrows/dots sit above with their own
+        // z-index, so carousel navigation still works without triggering the link.
+        <a
+          className="w-photo__link"
+          href={current.linkUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={current.alt || current.caption || "Ouvrir le lien"}
+        >
+          {img}
+        </a>
+      ) : (
+        img
+      )}
 
       {current.caption && <span className="w-photo__caption">{current.caption}</span>}
 
