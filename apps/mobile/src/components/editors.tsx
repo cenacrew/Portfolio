@@ -1,10 +1,10 @@
 import type { WidgetType } from "@portfolio/shared";
-import { COUNTDOWN_DEFAULT_END_MESSAGE, formatFileSize, LOL_MODE_LABELS, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import { COUNTDOWN_DEFAULT_END_MESSAGE, formatFileSize, LOL_MODE_LABELS, makeCvTimelineEntry, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, TextInput, View } from "react-native";
 import { uploadFile, uploadImage, uploadVideo } from "../lib/actions";
 import { radius, space, useTheme } from "../lib/theme";
 import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, SliderRow, TextField, ToggleRow, tap } from "./ui";
@@ -674,6 +674,152 @@ function LolEditor({ config, onChange }: EProps) {
   );
 }
 
+function ContactCardEditor({ config, onChange }: EProps) {
+  return (
+    <>
+      <TextField label="Prénom" value={config.firstName} onChange={(firstName) => onChange({ ...config, firstName })} />
+      <TextField label="Nom" value={config.lastName} onChange={(lastName) => onChange({ ...config, lastName })} />
+      <TextField label="Rôle (optionnel)" value={config.role ?? ""} onChange={(role) => onChange({ ...config, role: role || undefined })} placeholder="Développeur produit" />
+      <TextField label="Organisation (optionnel)" value={config.org ?? ""} onChange={(org) => onChange({ ...config, org: org || undefined })} />
+      <TextField label="Téléphone (optionnel)" value={config.phone ?? ""} onChange={(phone) => onChange({ ...config, phone: phone || undefined })} autoCapitalize="none" placeholder="+33 6…" />
+      <TextField label="Email (optionnel)" value={config.email ?? ""} onChange={(email) => onChange({ ...config, email: email || undefined })} keyboardType="email-address" autoCapitalize="none" />
+      <TextField label="Site web (optionnel)" value={config.website ?? ""} onChange={(website) => onChange({ ...config, website: website || undefined })} keyboardType="url" autoCapitalize="none" />
+      <ToggleRow
+        label="Utiliser l'avatar de l'en-tête"
+        value={config.useHeaderAvatar}
+        onChange={(useHeaderAvatar) => onChange({ ...config, useHeaderAvatar })}
+        hint="La photo de la carte (et de la vCard) reprend l'avatar du dashboard."
+      />
+      {!config.useHeaderAvatar ? (
+        <TextField label="Photo (URL)" value={config.photoUrl ?? ""} onChange={(photoUrl) => onChange({ ...config, photoUrl: photoUrl || undefined })} keyboardType="url" autoCapitalize="none" />
+      ) : null}
+    </>
+  );
+}
+
+// CV timeline editor: add / remove / REORDER entries (▲▼ per row — the plan
+// requires ordering control, which the generic ListEditor doesn't offer).
+function CvTimelineEditor({ config, onChange }: EProps) {
+  const t = useTheme();
+  const entries: any[] = config.entries ?? [];
+  const setEntries = (next: any[]) => onChange({ ...config, entries: next });
+  const update = (i: number, patch: Record<string, unknown>) =>
+    setEntries(entries.map((e, idx) => (idx === i ? { ...e, ...patch } : e)));
+  const remove = (i: number) => setEntries(entries.filter((_, idx) => idx !== i));
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= entries.length) return;
+    const next = [...entries];
+    [next[i], next[j]] = [next[j], next[i]];
+    setEntries(next);
+  };
+  const arrow = (i: number, dir: -1 | 1, glyph: string) => {
+    const disabled = dir === -1 ? i === 0 : i === entries.length - 1;
+    return (
+      <Pressable
+        onPress={() => {
+          tap();
+          move(i, dir);
+        }}
+        disabled={disabled}
+        hitSlop={6}
+        style={{ width: 30, height: 30, borderWidth: 1, borderColor: t.border, borderRadius: 8, alignItems: "center", justifyContent: "center", opacity: disabled ? 0.35 : 1 }}
+      >
+        <Text style={{ color: t.textMuted, fontWeight: "800", fontSize: 13 }}>{glyph}</Text>
+      </Pressable>
+    );
+  };
+  return (
+    <>
+      <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
+      <Field label="Entrées (de la plus récente à la plus ancienne)">
+        <View style={{ gap: space.sm }}>
+          {entries.map((item, i) => (
+            <View key={item.id ?? i} style={{ borderWidth: 1, borderColor: t.border, borderRadius: radius.sm, padding: 12, gap: 8 }}>
+              <TextField label="Période" value={item.period} onChange={(period) => update(i, { period })} placeholder="2023 — aujourd'hui" />
+              <TextField label="Intitulé" value={item.title} onChange={(title) => update(i, { title })} placeholder="Développeur produit" />
+              <TextField label="Lieu" value={item.place} onChange={(place) => update(i, { place })} placeholder="Entreprise / ville" />
+              <TextField label="Logo (URL, optionnel)" value={item.logoUrl ?? ""} onChange={(logoUrl) => update(i, { logoUrl: logoUrl || undefined })} keyboardType="url" autoCapitalize="none" />
+              <TextField label="Description (optionnel)" value={item.description ?? ""} onChange={(description) => update(i, { description: description || undefined })} multiline />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                {arrow(i, -1, "▲")}
+                {arrow(i, 1, "▼")}
+                <Pressable
+                  onPress={() => {
+                    tap();
+                    remove(i);
+                  }}
+                  style={{ marginLeft: "auto" }}
+                >
+                  <Text style={{ color: t.danger, fontWeight: "700", fontSize: 13 }}>Retirer</Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+          <Pressable
+            onPress={() => {
+              tap();
+              setEntries([...entries, makeCvTimelineEntry()]);
+            }}
+            style={{ borderWidth: 1.5, borderColor: t.border, borderStyle: "dashed", borderRadius: radius.sm, padding: 12, alignItems: "center" }}
+          >
+            <Text style={{ color: t.textMuted, fontWeight: "700" }}>+ Entrée</Text>
+          </Pressable>
+        </View>
+      </Field>
+    </>
+  );
+}
+
+function ReactionsEditor({ config, onChange }: EProps) {
+  const t = useTheme();
+  const emojis: string[] = config.emojis ?? [];
+  const setAt = (i: number, value: string) => onChange({ ...config, emojis: emojis.map((e, idx) => (idx === i ? value : e)) });
+  const removeAt = (i: number) => onChange({ ...config, emojis: emojis.filter((_, idx) => idx !== i) });
+  const add = () => onChange({ ...config, emojis: [...emojis, "✨"] });
+  return (
+    <>
+      <TextField label="Titre" value={config.title} onChange={(title) => onChange({ ...config, title })} />
+      <Field label="Emojis proposés (1 à 8)">
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+          {emojis.map((emoji, i) => (
+            <View key={i} style={{ borderWidth: 1, borderColor: t.border, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 4, flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <TextInput
+                value={emoji}
+                onChangeText={(v) => setAt(i, v)}
+                maxLength={8}
+                style={{ minWidth: 34, textAlign: "center", fontSize: 20, color: t.text, paddingVertical: 2 }}
+              />
+              <Pressable
+                onPress={() => {
+                  tap();
+                  removeAt(i);
+                }}
+                disabled={emojis.length <= 1}
+                hitSlop={8}
+                style={{ opacity: emojis.length <= 1 ? 0.35 : 1 }}
+              >
+                <Text style={{ color: t.danger, fontWeight: "800", fontSize: 13 }}>✕</Text>
+              </Pressable>
+            </View>
+          ))}
+          {emojis.length < 8 ? (
+            <Pressable
+              onPress={() => {
+                tap();
+                add();
+              }}
+              style={{ width: 44, height: 44, borderWidth: 1.5, borderColor: t.border, borderStyle: "dashed", borderRadius: radius.sm, alignItems: "center", justifyContent: "center" }}
+            >
+              <Text style={{ color: t.textMuted, fontSize: 22, fontWeight: "700" }}>+</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </Field>
+    </>
+  );
+}
+
 export function TypeEditor({ type, config, onChange }: { type: WidgetType; config: any; onChange: (next: any) => void }) {
   switch (type) {
     case "social-link":
@@ -722,6 +868,12 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <LolEditor config={config} onChange={onChange} />;
     case "file-download":
       return <FileDownloadEditor config={config} onChange={onChange} />;
+    case "contact-card":
+      return <ContactCardEditor config={config} onChange={onChange} />;
+    case "cv-timeline":
+      return <CvTimelineEditor config={config} onChange={onChange} />;
+    case "reactions":
+      return <ReactionsEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

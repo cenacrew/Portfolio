@@ -221,6 +221,35 @@ export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
         </View>
       );
     }
+    case "contact-card": {
+      const name = [c.firstName, c.lastName].filter(Boolean).join(" ") || "Contact";
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 22 }}>📇</Text>
+          {title(name)}
+          {sub(c.role || c.org || "Carte de contact (vCard)")}
+        </View>
+      );
+    }
+    case "cv-timeline":
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <Text style={{ fontSize: 22 }}>🧭</Text>
+          {title(c.title || "Parcours")}
+          {sub(`${c.entries?.length ?? 0} entrées`)}
+        </View>
+      );
+    case "reactions": {
+      const emojis: string[] = Array.isArray(c.emojis) ? c.emojis : [];
+      return (
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          {title(c.title || "Réactions")}
+          <Text numberOfLines={1} style={{ fontSize: 20, marginTop: 4 }}>
+            {emojis.slice(0, 6).join(" ") || "❤️ 🔥 👏 😂"}
+          </Text>
+        </View>
+      );
+    }
     default: {
       const m = meta(row.type);
       return (
