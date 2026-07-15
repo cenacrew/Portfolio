@@ -34,6 +34,8 @@ export const WIDGET_TYPES = [
   "contact-card",
   "cv-timeline",
   "reactions",
+  // Phase 13 — retro-arcade mini-game (Snake / Flappy) with a shared leaderboard.
+  "mini-game",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];
