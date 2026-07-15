@@ -31,6 +31,9 @@ import {
   reactionsDefault,
   reactionsLabel,
   reactionsSchema,
+  miniGameDefault,
+  miniGameLabel,
+  miniGameSchema,
   videoDefault,
   videoLabel,
   videoSchema,
@@ -336,6 +339,15 @@ export const registry: Record<WidgetType, MobileWidgetMeta> = {
     emoji: "❤️",
     sizes: ALL_SIZES,
     defaultSize: s(2, 1),
+  },
+  "mini-game": {
+    schema: miniGameSchema,
+    defaultConfig: miniGameDefault,
+    label: miniGameLabel,
+    description: "Un mini-jeu rétro (Snake ou Flappy) avec classement partagé.",
+    emoji: "🕹️",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 2),
   },
 };
 

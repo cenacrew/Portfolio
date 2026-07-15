@@ -29,6 +29,7 @@ import * as fileDownload from "./file-download/schema";
 import * as contactCard from "./contact-card/schema";
 import * as cvTimeline from "./cv-timeline/schema";
 import * as reactions from "./reactions/schema";
+import * as miniGame from "./mini-game/schema";
 
 import SocialLinkEditor from "./social-link/Editor";
 import NoteEditor from "./note/Editor";
@@ -56,6 +57,7 @@ import FileDownloadEditor from "./file-download/Editor";
 import ContactCardEditor from "./contact-card/Editor";
 import CvTimelineEditor from "./cv-timeline/Editor";
 import ReactionsEditor from "./reactions/Editor";
+import MiniGameEditor from "./mini-game/Editor";
 
 const s = (w: number, h: number): WidgetSize => ({ w, h });
 
@@ -366,6 +368,21 @@ export const registry: Record<WidgetType, RegistryEntry> = {
     sizes: ALL_SIZES,
     defaultSize: s(2, 1),
     Editor: ReactionsEditor,
+  }),
+  "mini-game": defineWidget({
+    schema: miniGame.miniGameSchema,
+    defaultConfig: miniGame.miniGameDefault,
+    // Seed a populated board so the QA console shows the leaderboard layout
+    // (the live board is empty until real scores come in).
+    sampleConfig: {
+      game: "snake",
+      title: "Snake",
+    } satisfies miniGame.MiniGameConfig,
+    label: miniGame.miniGameLabel,
+    description: "Un mini-jeu rétro (Snake ou Flappy) avec classement partagé.",
+    sizes: ALL_SIZES,
+    defaultSize: s(2, 2),
+    Editor: MiniGameEditor,
   }),
 };
 

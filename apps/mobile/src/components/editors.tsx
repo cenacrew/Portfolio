@@ -1,5 +1,5 @@
 import type { WidgetType } from "@portfolio/shared";
-import { COUNTDOWN_DEFAULT_END_MESSAGE, formatFileSize, LOL_MODE_LABELS, makeCvTimelineEntry, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
+import { COUNTDOWN_DEFAULT_END_MESSAGE, formatFileSize, GAME_KEYS, GAME_LABELS, LOL_MODE_LABELS, makeCvTimelineEntry, SOCIAL_PLATFORMS, TECH_KEYS } from "@portfolio/shared";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
@@ -820,6 +820,25 @@ function ReactionsEditor({ config, onChange }: EProps) {
   );
 }
 
+function MiniGameEditor({ config, onChange }: EProps) {
+  return (
+    <>
+      <SelectRow
+        label="Jeu"
+        value={config.game}
+        options={GAME_KEYS.map((g) => ({ value: g, label: GAME_LABELS[g] }))}
+        onChange={(game) => onChange({ ...config, game })}
+      />
+      <TextField
+        label="Titre (optionnel)"
+        value={config.title ?? ""}
+        onChange={(title) => onChange({ ...config, title: title || undefined })}
+        hint="Par défaut, le nom du jeu est affiché. Joue au jeu réel via l'aperçu du dashboard."
+      />
+    </>
+  );
+}
+
 export function TypeEditor({ type, config, onChange }: { type: WidgetType; config: any; onChange: (next: any) => void }) {
   switch (type) {
     case "social-link":
@@ -874,6 +893,8 @@ export function TypeEditor({ type, config, onChange }: { type: WidgetType; confi
       return <CvTimelineEditor config={config} onChange={onChange} />;
     case "reactions":
       return <ReactionsEditor config={config} onChange={onChange} />;
+    case "mini-game":
+      return <MiniGameEditor config={config} onChange={onChange} />;
     default:
       return null;
   }

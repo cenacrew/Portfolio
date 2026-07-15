@@ -27,6 +27,7 @@ import FileDownloadRenderer from "./file-download/Renderer";
 import ContactCardRenderer from "./contact-card/Renderer";
 import CvTimelineRenderer from "./cv-timeline/Renderer";
 import ReactionsRenderer from "./reactions/Renderer";
+import MiniGameRenderer from "./mini-game/Renderer";
 
 // Renderer map, kept separate from the client-safe registry because some
 // renderers are async server components (they read Supabase / fetch APIs).
@@ -58,4 +59,5 @@ export const renderers: Record<WidgetType, WidgetRenderer<unknown>> = {
   "contact-card": ContactCardRenderer as WidgetRenderer<unknown>,
   "cv-timeline": CvTimelineRenderer as WidgetRenderer<unknown>,
   reactions: ReactionsRenderer as WidgetRenderer<unknown>,
+  "mini-game": MiniGameRenderer as WidgetRenderer<unknown>,
 };
