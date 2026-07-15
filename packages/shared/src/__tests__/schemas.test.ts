@@ -33,6 +33,7 @@ const PREFIX: Record<WidgetType, string> = {
   "contact-card": "contactCard",
   "cv-timeline": "cvTimeline",
   reactions: "reactions",
+  "mini-game": "miniGame",
 };
 
 const bag = configs as unknown as Record<string, unknown>;

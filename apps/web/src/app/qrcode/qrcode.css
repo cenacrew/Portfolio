@@ -2329,6 +2329,381 @@ body.dark-mode .qr-page {
 .toile-btn--send { background: var(--qr-ink); color: var(--qr-bg); border-color: var(--qr-ink); }
 .toile-btn:disabled { opacity: 0.55; cursor: default; }
 
+/* ============================================================
+   Mini-game (phase 13) — retro arcade tile + modal.
+   A coin-op cabinet embedded in the bento: a dark CRT "screen" with the game's
+   signature accent (Snake green / Flappy amber), a monospace high-score board,
+   and 3-letter arcade initials entry. The board is the signature element.
+   The CRT screen colour is deliberately palette-independent so the accent pops
+   in every dashboard palette + dark mode.
+   ============================================================ */
+.w-mg,
+.mg {
+  --mg-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", "Courier New", monospace;
+  --mg-screen: #0b0e1c;
+  --mg-accent: #24c08a;
+}
+
+/* ---------- tile ---------- */
+.w-mg {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  background: transparent;
+  color: var(--qr-ink);
+}
+.w-mg__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.w-mg__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border-radius: 7px;
+  background: var(--mg-accent);
+  color: #06121c;
+  font-size: 12px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-accent) 22%, transparent);
+}
+.w-mg__title {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.w-mg__play {
+  margin-left: auto;
+  flex: none;
+  font-family: var(--mg-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mg-accent);
+}
+.w-mg__scene {
+  position: relative;
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    radial-gradient(130% 90% at 50% 0%, color-mix(in srgb, var(--mg-accent) 24%, transparent), transparent 60%),
+    var(--mg-screen);
+  border: 1px solid color-mix(in srgb, var(--mg-accent) 32%, transparent);
+}
+.w-mg__scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px);
+  opacity: 0.5;
+}
+.w-mg__pix {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.w-mg__seg {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  background: var(--mg-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mg-accent) 60%, transparent);
+  animation: mg-bob 1.2s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 0.12s);
+}
+.w-mg__apple {
+  width: 11px;
+  height: 11px;
+  margin-left: 6px;
+  border-radius: 4px;
+  background: #e0245e;
+  animation: mg-pop 1s ease-in-out infinite;
+}
+.w-mg__pix--flappy .w-mg__pipe {
+  position: absolute;
+  width: 15px;
+  border-radius: 4px;
+  background: var(--mg-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--mg-accent) 45%, transparent);
+}
+.w-mg__pipe--a { top: 0; height: 40%; left: 36%; }
+.w-mg__pipe--b { bottom: 0; height: 34%; left: 62%; }
+.w-mg__bird {
+  position: absolute;
+  left: 20%;
+  top: 44%;
+  width: 15px;
+  height: 13px;
+  border-radius: 6px 6px 6px 3px;
+  background: #f4f1ea;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--mg-accent) 50%, transparent);
+  animation: mg-bob 0.9s ease-in-out infinite;
+}
+.w-mg__coin {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  text-align: center;
+  font-family: var(--mg-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mg-accent) 88%, #fff);
+  animation: mg-blink 1.2s steps(1) infinite;
+}
+.w-mg__board {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: none;
+}
+.w-mg__row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mg-mono);
+  font-size: 12px;
+}
+.w-mg__rank { color: var(--qr-ink-faint); font-weight: 700; }
+.w-mg__pseudo { font-weight: 700; letter-spacing: 0.14em; }
+.w-mg__pts { font-weight: 700; font-variant-numeric: tabular-nums; }
+.w-mg__empty {
+  font-family: var(--mg-mono);
+  font-size: 11px;
+  color: var(--qr-ink-faint);
+  letter-spacing: 0.04em;
+}
+/* Wide-short tiles (e.g. 3×1): drop the CRT scene, keep head + board. */
+@container tile (max-height: 150px) {
+  .w-mg__scene { display: none; }
+}
+/* Narrow tiles: hide the "jouer" chip; the whole tile is still tappable. */
+@container tile (max-width: 150px) {
+  .w-mg__play { display: none; }
+}
+
+/* ---------- modal ---------- */
+.gmodal--game { width: min(94vw, 900px); height: auto; max-height: 92dvh; }
+.mg {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+@media (min-width: 760px) {
+  .mg { flex-direction: row; align-items: stretch; }
+  .mg__stage { flex: 0 0 auto; width: min(52vh, 360px); }
+  .mg__board { flex: 1; }
+}
+.mg__stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 60dvh;
+  margin: 0 auto;
+  border-radius: 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(130% 80% at 50% -10%, color-mix(in srgb, var(--mg-accent) 22%, transparent), transparent 55%),
+    var(--mg-screen);
+  border: 1px solid color-mix(in srgb, var(--mg-accent) 42%, transparent);
+  box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5);
+  touch-action: none;
+}
+.mg__stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 3px);
+  opacity: 0.45;
+}
+.mg__canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.mg__hud {
+  position: absolute;
+  top: 10px;
+  left: 14px;
+  z-index: 3;
+  font-family: var(--mg-mono);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--mg-accent);
+  text-shadow: 0 0 12px color-mix(in srgb, var(--mg-accent) 65%, transparent);
+  pointer-events: none;
+}
+.mg__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 22px;
+  text-align: center;
+  background: color-mix(in srgb, var(--mg-screen) 64%, transparent);
+  backdrop-filter: blur(2px);
+}
+.mg__coin {
+  font-family: var(--mg-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--mg-accent);
+  animation: mg-blink 1.1s steps(1) infinite;
+}
+.mg__cta {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  padding: 12px 28px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--mg-accent);
+  color: #06121c;
+  cursor: pointer;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mg-accent) 24%, transparent);
+}
+.mg__cta:disabled { opacity: 0.6; cursor: default; }
+.mg__hint { color: rgba(255, 255, 255, 0.72); font-size: 12px; }
+.mg__gameover {
+  font-family: var(--font-bricolage), sans-serif;
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.01em;
+  color: #fff;
+}
+.mg__final { color: rgba(255, 255, 255, 0.82); font-size: 14px; }
+.mg__final strong { color: var(--mg-accent); font-family: var(--mg-mono); font-size: 18px; }
+.mg__saved {
+  font-family: var(--mg-mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--mg-accent);
+}
+.mg__err { color: #ff6b8b; font-size: 12px; font-weight: 600; }
+.mg__enter { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.mg__enter-label {
+  font-family: var(--mg-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+}
+.mg__initials { display: flex; gap: 10px; outline: none; }
+.mg__initials:focus-visible { outline: 2px solid var(--mg-accent); outline-offset: 6px; border-radius: 10px; }
+.mg__slot { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.mg__slot-char {
+  width: 44px;
+  text-align: center;
+  font-family: var(--mg-mono);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.3;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+.mg__slot.is-active .mg__slot-char {
+  color: var(--mg-accent);
+  border-color: var(--mg-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mg-accent) 55%, transparent);
+}
+.mg__slot-arrow {
+  background: none;
+  border: 0;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+.mg__slot-arrow:hover { color: var(--mg-accent); }
+.mg__slot-arrow:disabled { opacity: 0.4; cursor: default; }
+.mg__board { display: flex; flex-direction: column; min-height: 0; }
+.mg__board-title {
+  margin: 0 0 10px;
+  font-family: var(--mg-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--qr-ink-soft);
+}
+.mg__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+  scrollbar-width: thin;
+}
+.mg__row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-family: var(--mg-mono);
+  font-size: 14px;
+}
+.mg__row:nth-child(odd) { background: color-mix(in srgb, var(--qr-ink) 4%, transparent); }
+.mg__row.is-fresh {
+  background: color-mix(in srgb, var(--mg-accent) 24%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mg-accent) 55%, transparent);
+}
+.mg .mg__rank { color: var(--qr-ink-faint); font-weight: 700; }
+.mg__pseudo { font-weight: 700; letter-spacing: 0.16em; }
+.mg__score { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mg__row.is-fresh .mg__score { color: color-mix(in srgb, var(--mg-accent) 82%, var(--qr-ink)); }
+.mg__empty { padding: 10px; font-size: 13px; color: var(--qr-ink-faint); }
+
+@keyframes mg-bob { 50% { transform: translateY(-5px); } }
+@keyframes mg-pop { 50% { transform: scale(1.28); } }
+@keyframes mg-blink { 50% { opacity: 0.15; } }
+@media (prefers-reduced-motion: reduce) {
+  .w-mg__seg,
+  .w-mg__apple,
+  .w-mg__bird,
+  .w-mg__coin,
+  .mg__coin { animation: none; }
+}
+
 /* ---------- lol (League of Legends) — phase 4.9 ---------- */
 .w-lol {
   position: relative;

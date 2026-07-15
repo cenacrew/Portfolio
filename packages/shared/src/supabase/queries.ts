@@ -6,6 +6,8 @@ import { WIDGET_MEDIA_BUCKET, extractMediaPaths, pruneMedia, type MediaWidget } 
 import type {
   DashboardInsert,
   DashboardRow,
+  GameScoreInsert,
+  GameScoreRow,
   GuestbookRow,
   PollVoteRow,
   SiteSettingsRow,
@@ -582,4 +584,46 @@ export async function incrementReaction(
   } as never);
   if (error) throw error;
   return Number(data ?? 0);
+}
+
+// ---------- mini-game scores (phase 13) ------------------------------------
+// The leaderboard reads tolerate the game_scores table not existing yet
+// (pre-migration 0010): an empty board renders instead of crashing, so the
+// public /qrcode never breaks before the migration runs. Inserts go through the
+// server API route with the service role (anon has no direct write).
+
+// Top `limit` scores for one game, highest first (ties broken by earliest run).
+// Empty array when the table is missing (pre-migration).
+export async function getTopScores(
+  client: DbClient,
+  game: string,
+  limit = 10,
+): Promise<GameScoreRow[]> {
+  const { data, error } = await client
+    .from("game_scores")
+    .select("*")
+    .eq("game", game)
+    .order("score", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  if (error) {
+    if (isMissingRelation(error)) return [];
+    throw error;
+  }
+  return (data ?? []) as GameScoreRow[];
+}
+
+// Inserts a new score row and returns it. Caller (server API route) has already
+// validated the game, pseudo and plausibility; this only persists.
+export async function insertGameScore(
+  client: DbClient,
+  input: GameScoreInsert,
+): Promise<GameScoreRow> {
+  const { data, error } = await client
+    .from("game_scores")
+    .insert({ game: input.game, pseudo: input.pseudo, score: input.score } as never)
+    .select()
+    .single();
+  if (error) throw error;
+  return data as GameScoreRow;
 }

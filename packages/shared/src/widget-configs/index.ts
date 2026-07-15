@@ -28,3 +28,4 @@ export * from "./file-download";
 export * from "./contact-card";
 export * from "./cv-timeline";
 export * from "./reactions";
+export * from "./mini-game";

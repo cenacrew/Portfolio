@@ -81,6 +81,26 @@ export interface WidgetReactionRow {
   count: number;
 }
 
+// One high-score entry for a mini-game (phase 13). Public read; rows are only
+// ever inserted through the server API route (service role), never directly by
+// anon. `game` is a GameKey ('snake' | 'flappy'), `pseudo` the 3-letter arcade
+// initials, `score` the run result.
+export interface GameScoreRow {
+  id: string;
+  game: string;
+  pseudo: string;
+  score: number;
+  created_at: string;
+}
+
+export interface GameScoreInsert {
+  id?: string;
+  game: string;
+  pseudo: string;
+  score: number;
+  created_at?: string;
+}
+
 // A free header chip beyond the built-in "available" and "location" ones.
 export interface SiteChip {
   label: string;
@@ -189,6 +209,12 @@ export interface Database {
         Row: WidgetReactionRow;
         Insert: { widget_id: string; emoji: string; count?: number };
         Update: Partial<WidgetReactionRow>;
+        Relationships: [];
+      };
+      game_scores: {
+        Row: GameScoreRow;
+        Insert: GameScoreInsert;
+        Update: Partial<GameScoreInsert>;
         Relationships: [];
       };
     };

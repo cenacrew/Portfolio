@@ -1,5 +1,5 @@
 import type { WidgetRow } from "@portfolio/shared";
-import { extensionOf, fileKind, formatFileSize, LOL_MODE_LABELS, toilePublicUrl } from "@portfolio/shared";
+import { extensionOf, fileKind, formatFileSize, GAME_ACCENTS, GAME_LABELS, LOL_MODE_LABELS, toilePublicUrl } from "@portfolio/shared";
 import { Image } from "expo-image";
 import { Pressable, Text, View, type ViewStyle } from "react-native";
 import { meta } from "../lib/registry";
@@ -246,6 +246,23 @@ export function PreviewBody({ row, t }: { row: WidgetRow; t: Palette }) {
           {title(c.title || "Réactions")}
           <Text numberOfLines={1} style={{ fontSize: 20, marginTop: 4 }}>
             {emojis.slice(0, 6).join(" ") || "❤️ 🔥 👏 😂"}
+          </Text>
+        </View>
+      );
+    }
+    case "mini-game": {
+      const gk = (c.game === "flappy" ? "flappy" : "snake") as keyof typeof GAME_ACCENTS;
+      const accent = GAME_ACCENTS[gk];
+      return (
+        <View style={{ flex: 1, justifyContent: "space-between" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: accent, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontSize: 12 }}>{gk === "snake" ? "◆" : "▲"}</Text>
+            </View>
+            {title(c.title || GAME_LABELS[gk])}
+          </View>
+          <Text style={{ color: t.textMuted, fontSize: 11, fontWeight: "700", letterSpacing: 1 }}>
+            INSERT COIN · classement partagé
           </Text>
         </View>
       );
