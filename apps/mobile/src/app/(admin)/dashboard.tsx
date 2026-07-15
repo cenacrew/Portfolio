@@ -18,16 +18,38 @@ import { useWidgets } from "../../lib/widgets";
 
 const GAP = 10;
 
+// Public web origin hosting the admin API (same base the preview / QA WebView
+// use). The QA badge count is fetched from here with the app's session JWT.
+const WEB_BASE = "https://www.cenacrew.com";
+
 export default function Dashboard() {
   const t = useTheme();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, session } = useAuth();
   const { selected } = useDashboards();
   const { widgets, loading, refreshing, error, refresh, reload } = useWidgets(selected.id || null);
 
   const [bp, setBp] = useState<Breakpoint>("mobile");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [qaPending, setQaPending] = useState<number | null>(null);
+
+  // QA "to verify" count for the Test widgets badge. Server endpoint verifies
+  // the app's Supabase session (Bearer JWT) — best-effort, never blocks the UI.
+  const token = session?.access_token;
+  const fetchQaPending = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${WEB_BASE}/api/admin/qa-pending-count`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as { count?: number };
+      if (typeof data.count === "number") setQaPending(data.count);
+    } catch {
+      /* badge is best-effort; leave the previous value */
+    }
+  }, [token]);
   const getCellsRef = useRef<(() => Record<string, { x: number; y: number; w: number; h: number }>) | null>(null);
 
   // Reactive window size (phase 4.10 B1): reading Dimensions once left the
@@ -42,7 +64,9 @@ export default function Dashboard() {
   useFocusEffect(
     useCallback(() => {
       reload();
-    }, [reload]),
+      // Refresh the QA badge every time the dashboard regains focus.
+      fetchQaPending();
+    }, [reload, fetchQaPending]),
   );
 
   // Once per launch: refresh "ma-loc" maps and report this device's presence
@@ -165,8 +189,20 @@ export default function Dashboard() {
           <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
         </View>
 
-        {/* QA console (phase 9) — opens the web /adminqrcode/test in a WebView */}
-        <Button label="🧪 Test widgets" onPress={() => router.push("/(admin)/test")} variant="ghost" />
+        {/* Stats (phase 14) + QA console (phase 9). The QA entry carries a badge
+            with the number of (type, format) couples still to verify. */}
+        <View style={{ flexDirection: "row", gap: space.sm }}>
+          <Button label="📊 Statistiques" onPress={() => router.push("/(admin)/stats")} variant="ghost" style={{ flex: 1 }} />
+          <GhostBadgeButton
+            t={t}
+            label="🧪 Test widgets"
+            badge={qaPending && qaPending > 0 ? qaPending : null}
+            onPress={() => {
+              tap();
+              router.push("/(admin)/test");
+            }}
+          />
+        </View>
 
         {/* Live board — drag to arrange, tap to manage */}
         <View style={{ gap: space.md }}>
@@ -280,6 +316,61 @@ function savePillStyle(t: ReturnType<typeof useTheme>) {
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   };
+}
+
+// A ghost-styled button (matching the shared Button "ghost" variant) that can
+// show a small amber count badge — used for the QA "to verify" entry.
+function GhostBadgeButton({
+  t,
+  label,
+  badge,
+  onPress,
+}: {
+  t: ReturnType<typeof useTheme>;
+  label: string;
+  badge: number | null;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        {
+          flex: 1,
+          flexDirection: "row",
+          gap: 8,
+          backgroundColor: "transparent",
+          borderColor: badge ? t.accent : t.border,
+          borderWidth: 1.5,
+          borderRadius: radius.pill,
+          paddingVertical: 14,
+          paddingHorizontal: space.lg,
+          alignItems: "center",
+          justifyContent: "center",
+        },
+        pressed && { opacity: 0.75 },
+      ]}
+    >
+      <Text style={{ color: t.text, fontWeight: "800", fontSize: 15, letterSpacing: 0.2 }}>{label}</Text>
+      {badge ? (
+        <View
+          style={{
+            minWidth: 22,
+            height: 22,
+            borderRadius: 11,
+            paddingHorizontal: 6,
+            backgroundColor: t.accent,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: t.onAccent, fontWeight: "800", fontSize: 12, fontVariant: ["tabular-nums"] }}>
+            {badge > 99 ? "99+" : badge}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
 }
 
 function fabStyle(t: ReturnType<typeof useTheme>, side: "left" | "right") {
