@@ -24,3 +24,4 @@ export * from "./paypal";
 export * from "./letterboxd";
 export * from "./toile";
 export * from "./lol";
+export * from "./file-download";

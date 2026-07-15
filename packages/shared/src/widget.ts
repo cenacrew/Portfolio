@@ -28,6 +28,8 @@ export const WIDGET_TYPES = [
   "toile",
   // Phase 4.9 — League of Legends (Riot API, server-side).
   "lol",
+  // Phase 7 — downloadable file (any type, 50 MB max).
+  "file-download",
 ] as const;
 
 export type WidgetType = (typeof WIDGET_TYPES)[number];
