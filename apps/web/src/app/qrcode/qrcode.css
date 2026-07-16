@@ -2352,13 +2352,18 @@ body.dark-mode .qr-page {
    A coin-op cabinet embedded in the bento: a dark CRT "screen" with the game's
    signature accent (Snake green / Flappy amber), a monospace high-score board,
    and 3-letter arcade initials entry. The board is the signature element.
-   The CRT screen colour is deliberately palette-independent so the accent pops
-   in every dashboard palette + dark mode.
+   The CRT screen TINTS with the dashboard theme (phase 20): it derives from the
+   palette's ink base (--c2) pulled deep toward black, so the cabinet belongs to
+   whatever palette / dark mode is showing while staying dark enough for the
+   accent to pop. The canvas play-field itself reads --qr-tile / --qr-ink live
+   (see MiniGameModal.readTheme) and recolours the moment the theme changes.
    ============================================================ */
 .w-mg,
 .mg {
   --mg-mono: ui-monospace, "Cascadia Code", "SFMono-Regular", "Courier New", monospace;
-  --mg-screen: #0b0e1c;
+  /* Dark CRT, tinted by the theme ink so it tracks the palette without ever
+     getting light enough to wash out the accent. */
+  --mg-screen: color-mix(in srgb, var(--c2, #0d0c62) 55%, #05060f);
   --mg-accent: #24c08a;
 }
 

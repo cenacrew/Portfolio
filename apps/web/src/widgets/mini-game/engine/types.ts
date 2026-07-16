@@ -29,6 +29,8 @@ export interface GameHandle {
   setDirection: (dir: Direction) => void;
   // Re-measure the canvas after a layout/resize.
   resize: () => void;
+  // Swap the colour theme live (palette button / dark-mode toggle) and repaint.
+  setTheme: (theme: GameTheme) => void;
   // Tear down the loop + any owned listeners.
   dispose: () => void;
   readonly phase: GamePhase;
