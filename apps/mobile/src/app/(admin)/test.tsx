@@ -11,7 +11,11 @@ import { space, useTheme } from "../../lib/theme";
 // "Rendu réel" preview. Auth is NOT shared with the app's Supabase session: the
 // WebView shows the admin login on first open, then keeps its own session
 // cookies. Assumed and documented.
-const QA_URL = "https://www.cenacrew.com/adminqrcode/test";
+//
+// ?bp=mobile (phase 18): from the app, the console audits ONLY the mobile
+// 3-column context — fewer tiles (WebView memory) and exactly what this device
+// can show. The desktop 9-column context is audited from a PC (no param).
+const QA_URL = "https://www.cenacrew.com/adminqrcode/test?bp=mobile";
 
 export default function TestWidgets() {
   const t = useTheme();

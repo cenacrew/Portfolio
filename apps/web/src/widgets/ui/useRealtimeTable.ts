@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 
@@ -24,11 +24,20 @@ export function useRealtimeTable(
     handler.current = onChange;
   });
 
+  // Per-instance suffix: two mounted copies of the same widget (a real case on
+  // the QA console / gallery, which render one copy per audited format) would
+  // otherwise resolve to the SAME channel topic — and supabase-js throws
+  // "cannot add postgres_changes callbacks … after subscribe()" on the second
+  // .on(), crashing the whole page at hydration. Unique topics keep each copy
+  // on its own channel; the server-side filter is identical so every copy still
+  // receives the same events.
+  const instanceId = useId();
+
   useEffect(() => {
     const supabase = getBrowserSupabase();
     if (!supabase) return;
     const channel = supabase
-      .channel(channelName)
+      .channel(`${channelName}:${instanceId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table, ...(filter ? { filter } : {}) },
@@ -38,5 +47,5 @@ export function useRealtimeTable(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [channelName, table, filter]);
+  }, [channelName, table, filter, instanceId]);
 }

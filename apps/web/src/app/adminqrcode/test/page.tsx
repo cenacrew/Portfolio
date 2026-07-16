@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import type { Widget, WidgetQaRow, WidgetType } from "@portfolio/shared";
+import type { Widget, WidgetQaBreakpoint, WidgetQaRow, WidgetType } from "@portfolio/shared";
 import { getWidgetQaMap } from "@portfolio/shared";
 import { registry, getSampleConfig } from "@/widgets/registry";
 import { renderers } from "@/widgets/renderers";
@@ -28,20 +28,27 @@ function sampleWidget(type: WidgetType, config: unknown): Widget {
   };
 }
 
-// QA console (phase 9 B): renders the real public Renderer of every widget type
-// flagged "to verify" (its code changed since the last human validation) in
-// mobile + desktop grid contexts, lets the admin tick the good ones and annotate
-// the rest, then persists the outcome + opens a GitHub issue.
+// QA console (phase 9 B, split by breakpoint in phase 18): renders the real
+// public Renderer of every widget type flagged "to verify" (its code changed
+// since the last human validation) in ONE grid context, lets the admin tick the
+// good ones and annotate the rest, then persists the outcome + opens a GitHub
+// issue — all scoped to that breakpoint.
+//
+// Context selection: the mobile app's WebView opens the console with ?bp=mobile
+// (3-column context only); on a PC (no param, or ?bp=desktop) it audits the
+// desktop 9-column context only. One context per session keeps the WebView tile
+// count low (the phase-17 crash) and matches what each device can actually show.
 //
 // Same admin auth as /adminqrcode. Tolerates the widget_qa table not existing
 // yet (pre-migration): everything simply shows as "to verify".
 export default async function QaTestPage({
   searchParams,
 }: {
-  searchParams: Promise<{ all?: string }>;
+  searchParams: Promise<{ all?: string; bp?: string }>;
 }) {
-  const { all } = await searchParams;
+  const { all, bp: bpParam } = await searchParams;
   const showAll = all === "1";
+  const bp: WidgetQaBreakpoint = bpParam === "mobile" ? "mobile" : "desktop";
 
   const supabase = await getServerSupabase();
   if (!supabase) {
@@ -59,12 +66,12 @@ export default async function QaTestPage({
 
   let qaMap: Record<string, WidgetQaRow> = {};
   try {
-    qaMap = await getWidgetQaMap(supabase);
+    qaMap = await getWidgetQaMap(supabase, bp);
   } catch {
     qaMap = {};
   }
 
-  const plan = buildQaPlan(qaMap, !showAll);
+  const plan = buildQaPlan(qaMap, bp, !showAll);
 
   // Pre-render each type's Renderer once (server-side, so data-fetching widgets
   // fetch once); the client board reuses the node across every format tile and
@@ -82,5 +89,5 @@ export default async function QaTestPage({
     previews[type] = <Renderer config={parsed.data} widget={widget} />;
   }
 
-  return <QaConsole plan={plan} previews={previews} showAll={showAll} />;
+  return <QaConsole plan={plan} previews={previews} showAll={showAll} bp={bp} />;
 }

@@ -5,8 +5,8 @@
 // A couple is to-verify when its stored validated_hash is absent or differs
 // from the type's current code hash. Client-safe (no server-only imports) so
 // both the server page and the client board can share the format helpers.
-import type { WidgetQaRow, WidgetSize, WidgetType } from "@portfolio/shared";
-import { ALL_SIZES, widgetQaKey } from "@portfolio/shared";
+import type { WidgetQaBreakpoint, WidgetQaRow, WidgetSize, WidgetType } from "@portfolio/shared";
+import { ALL_SIZES, GRID, widgetQaKey } from "@portfolio/shared";
 import { registry } from "./registry";
 import manifest from "./qa-manifest.json";
 
@@ -41,17 +41,23 @@ export interface QaTypeEntry {
   toVerifyCount: number;
 }
 
-// Builds the full QA plan from the stored rows. `onlyToVerify` keeps only types
+// Builds the QA plan for ONE breakpoint from that breakpoint's stored rows
+// (phase 18). Formats are narrowed to those the breakpoint's grid can hold —
+// the 3-column mobile context drops anything wider than 3, so the console only
+// audits what a visitor can actually see there. `onlyToVerify` keeps only types
 // that have at least one format to verify (the console's default view).
 export function buildQaPlan(
   qaMap: Record<string, WidgetQaRow>,
+  breakpoint: WidgetQaBreakpoint,
   onlyToVerify = true,
 ): QaTypeEntry[] {
+  const cols = GRID[breakpoint].columns;
   const out: QaTypeEntry[] = [];
   for (const type of Object.keys(registry) as WidgetType[]) {
     const def = registry[type];
     const hash = currentHash(type);
-    const sizes: readonly WidgetSize[] = def.sizes.length ? def.sizes : ALL_SIZES;
+    const declared: readonly WidgetSize[] = def.sizes.length ? def.sizes : ALL_SIZES;
+    const sizes = declared.filter((s) => s.w <= cols);
     const formats: QaFormatEntry[] = sizes.map((size) => {
       const format = formatOf(size);
       const row = qaMap[widgetQaKey(type, format)];
