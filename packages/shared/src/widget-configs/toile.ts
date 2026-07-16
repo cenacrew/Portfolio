@@ -30,6 +30,16 @@ export function toileArchivePath(widgetId: string): string {
   return `toile/archive/${widgetId}-${Date.now()}.png`;
 }
 
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: the live canvas PNG lives at an id-derived path (no URL in the config).
+// Copied on duplication so a duplicated toile keeps its drawing. Archives
+// (toile/archive/*) are intentional and never pruned.
+export const toileMedia: WidgetMediaSpec = {
+  idKeyedPath: toilePath,
+  copyOnDuplicate: true,
+};
+
 // Public URL of a toile's PNG in the widget-media bucket. `version` cache-busts
 // the browser <img> so a fresh upload shows immediately (bumped on every send).
 export function toilePublicUrl(supabaseUrl: string, widgetId: string, version = 0): string {

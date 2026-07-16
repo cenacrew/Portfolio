@@ -34,6 +34,16 @@ export const cvTimelineDefault: CvTimelineConfig = {
 
 export const cvTimelineLabel = "Frise de parcours";
 
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: each entry's optional logo.
+export const cvTimelineMedia: WidgetMediaSpec = {
+  urls: (config) => {
+    const entries = (config as Partial<CvTimelineConfig>)?.entries;
+    return Array.isArray(entries) ? entries.map((e) => e?.logoUrl) : [];
+  },
+};
+
 // A fresh entry for the "add" button, with a short random id.
 export function makeCvTimelineEntry(): CvTimelineEntry {
   return {
