@@ -9,75 +9,91 @@ import { uploadFile, uploadImage, uploadVideo } from "../lib/actions";
 import { radius, space, useTheme } from "../lib/theme";
 import { EmojiPickerRow, Field, NumberFieldRow, SelectRow, SliderRow, TextField, ToggleRow, tap } from "./ui";
 
-// Pick an image from the library and upload it to widget-media, returning the
-// public URL through onDone. Used by the photo editor now that the top-bar
-// "post a photo" shortcut is gone (tap a tile to manage its media).
-function PickImageButton({ onDone }: { onDone: (url: string) => void }) {
+// Shared "import media" button behind the image / video / file pickers: one
+// busy lifecycle and one byte-identical border/spinner style. `run` performs the
+// pick + upload and flips `busy` on only once real work starts, so cancelling
+// (or a denied permission) never flashes the spinner. The outer press handler
+// always clears `busy` afterwards.
+function PickButton({
+  label,
+  run,
+}: {
+  label: string;
+  run: (setBusy: (b: boolean) => void) => Promise<void>;
+}) {
   const t = useTheme();
   const [busy, setBusy] = useState(false);
-  const pick = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Accès refusé", "Autorise l'accès aux photos pour en importer une.");
-      return;
-    }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
-    if (res.canceled || !res.assets[0]?.uri) return;
-    setBusy(true);
+  const onPress = async () => {
     try {
-      const asset = res.assets[0];
-      const url = await uploadImage(asset.uri, asset.mimeType ?? "image/jpeg", asset.fileSize);
-      onDone(url);
-      tap();
-    } catch (e) {
-      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+      await run(setBusy);
     } finally {
       setBusy(false);
     }
   };
   return (
     <Pressable
-      onPress={pick}
+      onPress={onPress}
       disabled={busy}
       style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
     >
-      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>📷 Importer une image</Text>}
+      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>{label}</Text>}
     </Pressable>
+  );
+}
+
+// Pick an image from the library and upload it to widget-media, returning the
+// public URL through onDone. Used by the photo editor now that the top-bar
+// "post a photo" shortcut is gone (tap a tile to manage its media).
+function PickImageButton({ onDone }: { onDone: (url: string) => void }) {
+  return (
+    <PickButton
+      label="📷 Importer une image"
+      run={async (setBusy) => {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert("Accès refusé", "Autorise l'accès aux photos pour en importer une.");
+          return;
+        }
+        const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 });
+        if (res.canceled || !res.assets[0]?.uri) return;
+        setBusy(true);
+        try {
+          const asset = res.assets[0];
+          const url = await uploadImage(asset.uri, asset.mimeType ?? "image/jpeg", asset.fileSize);
+          onDone(url);
+          tap();
+        } catch (e) {
+          Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+        }
+      }}
+    />
   );
 }
 
 // Pick a video from the library and upload it. ~50 Mo limit enforced in uploadVideo.
 function PickVideoButton({ onDone }: { onDone: (url: string) => void }) {
-  const t = useTheme();
-  const [busy, setBusy] = useState(false);
-  const pick = async () => {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      Alert.alert("Accès refusé", "Autorise l'accès à ta galerie pour importer une vidéo.");
-      return;
-    }
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], quality: 1 });
-    if (res.canceled || !res.assets[0]?.uri) return;
-    setBusy(true);
-    try {
-      const asset = res.assets[0];
-      const url = await uploadVideo(asset.uri, asset.mimeType ?? "video/mp4", asset.fileSize);
-      onDone(url);
-      tap();
-    } catch (e) {
-      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
-    <Pressable
-      onPress={pick}
-      disabled={busy}
-      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
-    >
-      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>🎞️ Importer une vidéo</Text>}
-    </Pressable>
+    <PickButton
+      label="🎞️ Importer une vidéo"
+      run={async (setBusy) => {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert("Accès refusé", "Autorise l'accès à ta galerie pour importer une vidéo.");
+          return;
+        }
+        const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], quality: 1 });
+        if (res.canceled || !res.assets[0]?.uri) return;
+        setBusy(true);
+        try {
+          const asset = res.assets[0];
+          const url = await uploadVideo(asset.uri, asset.mimeType ?? "video/mp4", asset.fileSize);
+          onDone(url);
+          tap();
+        } catch (e) {
+          Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+        }
+      }}
+    />
   );
 }
 
@@ -89,33 +105,25 @@ function PickFileButton({
 }: {
   onDone: (file: { fileUrl: string; fileName: string; sizeBytes: number; mimeType: string }) => void;
 }) {
-  const t = useTheme();
-  const [busy, setBusy] = useState(false);
-  const pick = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true, multiple: false });
-    if (res.canceled || !res.assets?.[0]?.uri) return;
-    const asset = res.assets[0];
-    setBusy(true);
-    try {
-      const mime = asset.mimeType ?? "application/octet-stream";
-      const name = asset.name ?? "fichier";
-      const { url, sizeBytes } = await uploadFile(asset.uri, name, mime);
-      onDone({ fileUrl: url, fileName: name, sizeBytes, mimeType: mime });
-      tap();
-    } catch (e) {
-      Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
-    <Pressable
-      onPress={pick}
-      disabled={busy}
-      style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1.5, borderColor: t.accent, borderRadius: radius.sm, paddingVertical: 12 }}
-    >
-      {busy ? <ActivityIndicator color={t.accent} /> : <Text style={{ color: t.accent, fontWeight: "800" }}>📎 Importer un fichier</Text>}
-    </Pressable>
+    <PickButton
+      label="📎 Importer un fichier"
+      run={async (setBusy) => {
+        const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true, multiple: false });
+        if (res.canceled || !res.assets?.[0]?.uri) return;
+        const asset = res.assets[0];
+        setBusy(true);
+        try {
+          const mime = asset.mimeType ?? "application/octet-stream";
+          const name = asset.name ?? "fichier";
+          const { url, sizeBytes } = await uploadFile(asset.uri, name, mime);
+          onDone({ fileUrl: url, fileName: name, sizeBytes, mimeType: mime });
+          tap();
+        } catch (e) {
+          Alert.alert("Échec de l'import", e instanceof Error ? e.message : "Réessaie.");
+        }
+      }}
+    />
   );
 }
 
