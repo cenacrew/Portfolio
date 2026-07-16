@@ -5,7 +5,13 @@ import {
   isSingleEmoji,
   REACTIONS_CUSTOM_CAP,
 } from "../widget-configs";
-import { deleteReactionEmoji, ensureCustomReaction, getReactionCounts, toggleReaction } from "../supabase/queries";
+import {
+  deleteReactionEmoji,
+  ensureCustomReaction,
+  getReactionCounts,
+  ReactionRpcUnavailableError,
+  toggleReaction,
+} from "../supabase/queries";
 import type { DbClient } from "../supabase/client";
 
 // ---------------------------------------------------------------------------
@@ -136,19 +142,20 @@ describe("toggleReaction", () => {
     await expect(toggleReaction(client, "w1", "🔥", "hash")).resolves.toEqual({ count: 2, active: false });
   });
 
-  it("falls back to increment when the RPC is missing (pre-migration)", async () => {
+  it("throws a distinct error when the RPC is missing (no silent increment fallback)", async () => {
     for (const error of [MISSING_FUNCTION, MISSING_FUNCTION_PGRST]) {
       const calls: string[] = [];
       const client = fakeClient({
         rpc: (name) => {
           calls.push(name);
-          if (name === "toggle_reaction") return { data: null, error };
-          // increment_reaction fallback
-          return { data: 7, error: null };
+          return { data: null, error };
         },
       });
-      await expect(toggleReaction(client, "w1", "🔥", "hash")).resolves.toEqual({ count: 7, active: true });
-      expect(calls).toEqual(["toggle_reaction", "increment_reaction"]);
+      await expect(toggleReaction(client, "w1", "🔥", "hash")).rejects.toBeInstanceOf(
+        ReactionRpcUnavailableError,
+      );
+      // It must NOT degrade to an unbounded increment_reaction.
+      expect(calls).toEqual(["toggle_reaction"]);
     }
   });
 
