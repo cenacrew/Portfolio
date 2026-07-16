@@ -1270,6 +1270,24 @@ body.dark-mode .qr-page {
 @container tile (max-height: 130px) {
   .w-cd__cell b { font-size: clamp(15px, 10cqmin, 26px); }
 }
+/* Admin-only placeholder for a reached hide-on-end countdown: the public grid
+   drops the tile, but the admin board keeps an identifiable chip so the tile
+   stays findable/editable instead of rendering blank (phase 16). */
+.w-cd--hidden {
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+}
+.w-cd__hidden-chip {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: clamp(10px, 4.6cqmin, 14px);
+  font-weight: 700;
+  line-height: 1.25;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  border: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
+}
 
 /* ---------- watchlist ---------- */
 .w-watch {

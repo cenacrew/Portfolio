@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isCountdownHiddenNow } from "@portfolio/shared";
 import type { WidgetRendererProps } from "../types";
 import type { CountdownConfig } from "./schema";
 
@@ -24,6 +25,7 @@ function diff(target: number) {
 
 export default function CountdownRenderer({
   config,
+  admin,
 }: WidgetRendererProps<CountdownConfig>) {
   const target = new Date(config.target).getTime();
   // Compute only after mount to avoid SSR/CSR hydration mismatch.
@@ -47,10 +49,21 @@ export default function CountdownRenderer({
 
   const behavior = config.endBehavior ?? "message";
 
-  // Reached + hide: render nothing so the tile vanishes the instant it ticks to
-  // zero while a visitor is watching. The server loader also filters these out
-  // so they never take a grid slot on a fresh load.
-  if (t?.done && behavior === "hide") return null;
+  // Reached + hide: on the PUBLIC grid, render nothing so the tile vanishes the
+  // instant it ticks to zero while a visitor is watching (the server loader also
+  // filters these out so they never take a slot on a fresh load). In the ADMIN
+  // board, show an identifiable placeholder instead of a blank tile so the admin
+  // can still find and edit it. Gated on `t` (post-mount) to match the shared
+  // predicate the loader uses without risking a hydration mismatch.
+  if (t !== null && isCountdownHiddenNow(config)) {
+    if (!admin) return null;
+    return (
+      <div className="w-cd w-cd--hidden">
+        <span className="w-eyebrow">{config.title}</span>
+        <p className="w-cd__hidden-chip">⏳ Terminé — masqué du public</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-cd">

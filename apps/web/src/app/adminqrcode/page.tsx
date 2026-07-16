@@ -38,7 +38,7 @@ export default async function AdminPage({
   const previews: Record<string, ReactNode> = {};
   for (const w of widgets) {
     const Renderer = renderers[w.type];
-    previews[w.id] = <Renderer config={w.config} widget={w} />;
+    previews[w.id] = <Renderer config={w.config} widget={w} admin />;
   }
 
   let messages: GuestbookRow[] = [];

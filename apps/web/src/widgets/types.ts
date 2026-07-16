@@ -7,6 +7,11 @@ import type { Widget, WidgetSize } from "@portfolio/shared";
 export type WidgetRendererProps<TConfig> = {
   config: TConfig;
   widget: Widget<TConfig>;
+  // True when rendered inside the admin board preview (not the public grid).
+  // Lets a Renderer that would vanish from the public dashboard (e.g. a reached
+  // hide-on-end countdown) show an identifiable placeholder to the admin instead
+  // of a blank tile.
+  admin?: boolean;
 };
 
 // Renderers may be server components (sync or async — e.g. github-stats,

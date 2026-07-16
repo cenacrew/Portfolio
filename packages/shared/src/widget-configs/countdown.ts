@@ -31,3 +31,16 @@ export const countdownDefault: CountdownConfig = {
 };
 
 export const countdownLabel = "Compte à rebours";
+
+// Single source of truth for "this countdown is past its target AND configured
+// to hide once reached". Consumed by the public loader (drops the tile
+// server-side) and the client Renderer (renders nothing live) so the two can
+// never drift. Tolerant of loosely-typed configs (the loader hands raw rows).
+export function isCountdownHiddenNow(
+  config: { endBehavior?: string; target?: string },
+  now: number = Date.now(),
+): boolean {
+  if (config.endBehavior !== "hide") return false;
+  const target = new Date(config.target ?? "").getTime();
+  return Number.isFinite(target) && target <= now;
+}
