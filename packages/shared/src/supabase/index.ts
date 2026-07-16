@@ -3,3 +3,4 @@ export * from "./client";
 export * from "./queries";
 export * from "./media";
 export * from "./stats";
+export * from "./notifications";
