@@ -4,6 +4,14 @@ import { useState } from "react";
 import { buildVCard, vcardFileStem } from "@portfolio/shared";
 import type { ContactCardConfig } from "./schema";
 
+// Phones/tablets (coarse pointer, no hover) have a native handler for a
+// text/vcard response served inline: navigating to it opens the OS "add to
+// contacts" sheet. Desktop browsers don't, so there we download a .vcf instead.
+function prefersInlineContact(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  return window.matchMedia("(pointer: coarse)").matches;
+}
+
 // Triggers a browser download of the given bytes as a .vcf file.
 function downloadVcf(text: string, stem: string) {
   const blob = new Blob([text], { type: "text/vcard;charset=utf-8" });
@@ -49,9 +57,18 @@ export default function AddToContacts({
 
   async function add() {
     if (busy) return;
+    const base = `/api/contact-card?widgetId=${encodeURIComponent(widgetId)}`;
+    // Mobile: navigate to the inline vCard so the OS opens the native contact
+    // sheet (phase 17 bug 4). No blob download to intercept it into Downloads.
+    if (prefersInlineContact()) {
+      window.location.href = base;
+      return;
+    }
+    // Desktop: fetch (embedded photo + proper escaping) and save a .vcf, with a
+    // client-built fallback when the server can't be reached (offline / QA).
     setBusy(true);
     try {
-      const res = await fetch(`/api/contact-card?widgetId=${encodeURIComponent(widgetId)}`);
+      const res = await fetch(`${base}&download=1`);
       if (!res.ok) throw new Error("server unavailable");
       const text = await res.text();
       downloadVcf(text, stem);

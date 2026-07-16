@@ -29,14 +29,22 @@ async function fetchPhoto(url: string): Promise<{ base64: string; mime: string }
   }
 }
 
-// GET /api/contact-card?widgetId=<uuid>
-// Loads the contact-card widget, builds a properly escaped vCard (RFC 6350
-// escaping, optional embedded photo) and streams it as a .vcf download. The
-// public tile falls back to a client-built, photo-less vCard when this returns
-// a non-2xx (offline / QA console / unknown id), so it never leaves the visitor
-// without a card.
+// GET /api/contact-card?widgetId=<uuid>[&download=1]
+// Loads the contact-card widget and builds a properly escaped vCard (RFC 6350
+// escaping, optional embedded photo).
+//
+// Content-Disposition defaults to INLINE: navigating to this URL on Android/iOS
+// hands the text/vcard response straight to the OS, which opens the native "add
+// to contacts" sheet instead of dropping a .vcf into Downloads (phase 17 bug 4).
+// `?download=1` forces `attachment` for desktop, where browsers have no inline
+// vcard handler and a file download is the sensible behavior. The public tile
+// picks the right mode per device (see AddToContacts) and still falls back to a
+// client-built, photo-less vCard when this returns a non-2xx (offline / QA
+// console / unknown id), so it never leaves the visitor without a card.
 export async function GET(req: Request) {
-  const widgetId = new URL(req.url).searchParams.get("widgetId");
+  const url = new URL(req.url);
+  const widgetId = url.searchParams.get("widgetId");
+  const download = url.searchParams.get("download") === "1";
   if (!widgetId) {
     return NextResponse.json({ error: "widgetId manquant." }, { status: 400 });
   }
@@ -66,7 +74,7 @@ export async function GET(req: Request) {
   // Resolve the photo: the header avatar (absolute from the request origin) when
   // reuse is on, otherwise the custom photo URL. Embedding is best-effort.
   const photoUrl = c.useHeaderAvatar
-    ? new URL(CONTACT_CARD_HEADER_AVATAR, new URL(req.url).origin).toString()
+    ? new URL(CONTACT_CARD_HEADER_AVATAR, url.origin).toString()
     : c.photoUrl;
   const photo = photoUrl ? await fetchPhoto(photoUrl) : null;
 
@@ -86,7 +94,7 @@ export async function GET(req: Request) {
     status: 200,
     headers: {
       "Content-Type": "text/vcard; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${vcardFileStem(c)}.vcf"`,
+      "Content-Disposition": `${download ? "attachment" : "inline"}; filename="${vcardFileStem(c)}.vcf"`,
       "Cache-Control": "no-store",
     },
   });
