@@ -51,6 +51,12 @@
           "locationWhenInUsePermission": "QRCodeAdmin utilise ta position pour recentrer la carte « Ma loc » sur le dashboard."
         }
       ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0d0c62"
+        }
+      ],
       "@react-native-community/datetimepicker"
     ],
     "experiments": {

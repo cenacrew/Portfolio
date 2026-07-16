@@ -1,5 +1,4 @@
 import Constants from "expo-constants";
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { upsertAdminDevice } from "@portfolio/shared";
 import { supabase } from "./supabase";
@@ -45,6 +44,10 @@ export async function registerForPushNotifications(): Promise<PushRegisterResult
   if (!pushSupported()) return "unsupported";
 
   try {
+    // Lazy import: expo-notifications logs a warning the moment it loads inside
+    // Expo Go (remote push unsupported there). Importing only past the guard
+    // keeps Expo Go sessions completely silent.
+    const Notifications = await import("expo-notifications");
     const existing = await Notifications.getPermissionsAsync();
     let status = existing.status;
     if (status !== "granted") {
