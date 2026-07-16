@@ -7,7 +7,9 @@
  * and always excluded from purge.
  *
  * Dry-run by default (prints a report, deletes nothing). Pass --apply to delete.
- * Runs on Node >= 24 (native TypeScript execution, no build step).
+ * Run via `pnpm purge:media` (tsx) — the runner resolves the @portfolio/shared
+ * workspace package and its TypeScript sources, which bare `node` cannot (the
+ * shared package uses extensionless ESM imports resolved by a bundler).
  *
  *   Dry-run:  pnpm purge:media
  *   Apply:    pnpm purge:media -- --apply
@@ -17,76 +19,26 @@
  * required (listing + deleting bucket objects bypasses RLS) and is NEVER
  * committed.
  *
- * Self-contained on purpose (a standalone maintenance tool, no workspace
- * resolution): the path-extraction logic below MIRRORS
- * packages/shared/src/supabase/media.ts — keep the two in sync if a new
- * media-referencing widget type is added.
+ * The path-extraction logic is imported from @portfolio/shared (the single
+ * source of truth) so this tool can never fall behind the app's notion of which
+ * media a widget references — an earlier hand-rolled copy here classed
+ * contact-card / cv-timeline media as orphans and would have deleted it.
  */
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  createServiceClient,
+  extractMediaPaths,
+  storagePathFromPublicUrl,
+  WIDGET_MEDIA_BUCKET,
+  type DbClient,
+  type MediaWidget,
+} from "@portfolio/shared";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
-const BUCKET = "widget-media";
-const STORAGE_MARKER = `/storage/v1/object/public/${BUCKET}/`;
-
-// ---- shared logic mirror (packages/shared/src/supabase/media.ts) -----------
-
-function storagePathFromPublicUrl(url: unknown): string | null {
-  if (typeof url !== "string" || !url) return null;
-  const i = url.indexOf(STORAGE_MARKER);
-  if (i === -1) return null;
-  let path = url.slice(i + STORAGE_MARKER.length);
-  const cut = path.search(/[?#]/);
-  if (cut !== -1) path = path.slice(0, cut);
-  try {
-    path = decodeURIComponent(path);
-  } catch {
-    /* keep raw */
-  }
-  return path || null;
-}
-
-interface MediaWidget {
-  id: string;
-  type: string;
-  config: unknown;
-}
-
-function asObj(v: unknown): Record<string, unknown> {
-  return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
-}
-
-function extractMediaPaths(widget: MediaWidget): string[] {
-  const paths = new Set<string>();
-  const add = (url: unknown) => {
-    const p = storagePathFromPublicUrl(url);
-    if (p) paths.add(p);
-  };
-  const c = asObj(widget.config);
-  switch (widget.type) {
-    case "photo": {
-      const images = Array.isArray(c.images) ? c.images : [];
-      for (const img of images) add(asObj(img).src);
-      break;
-    }
-    case "video":
-      add(c.src);
-      add(c.poster);
-      break;
-    case "file-download":
-      add(c.fileUrl);
-      break;
-    case "toile":
-      paths.add(`toile/${widget.id}.png`);
-      break;
-    default:
-      break;
-  }
-  return [...paths];
-}
+const BUCKET = WIDGET_MEDIA_BUCKET;
 
 // ---- env + helpers ---------------------------------------------------------
 
@@ -124,7 +76,7 @@ interface StoredObject {
   size: number;
 }
 
-async function listAll(client: SupabaseClient, prefix = ""): Promise<StoredObject[]> {
+async function listAll(client: DbClient, prefix = ""): Promise<StoredObject[]> {
   const out: StoredObject[] = [];
   const pageSize = 100;
   let offset = 0;
@@ -180,19 +132,21 @@ async function main(): Promise<void> {
   }
 
   const apply = process.argv.includes("--apply");
-  const client = createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const client = createServiceClient(url, serviceKey);
 
   // 1) Everything currently in the bucket.
   const objects = await listAll(client);
 
-  // 2) Everything still referenced.
+  // 2) Everything still referenced. `extractMediaPaths` is the app's own
+  //    declaration of each widget's media; a deep JSON scan of the config runs
+  //    alongside it (belt-and-braces) so a stray bucket URL in an as-yet
+  //    undeclared field is still counted as referenced, never purged.
   const referenced = new Set<string>();
   const { data: widgets, error: wErr } = await client.from("widgets").select("id,type,config");
   if (wErr) throw wErr;
   for (const w of (widgets ?? []) as MediaWidget[]) {
     for (const p of extractMediaPaths(w)) referenced.add(p);
+    collectPathsFromJson(w.config, referenced);
   }
   const { data: settings } = await client.from("site_settings").select("*");
   for (const row of settings ?? []) collectPathsFromJson(row, referenced);
