@@ -4,6 +4,7 @@ import { incrementReaction, reactionsSchema } from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
+import { notifyAdmins } from "../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,6 +57,10 @@ export async function POST(req: Request) {
 
   try {
     const count = await incrementReaction(supabase, parsed.widgetId, parsed.emoji);
+    notifyAdmins("reactions", {
+      title: "Nouvelle réaction",
+      body: `${parsed.emoji} sur le dashboard`,
+    });
     return NextResponse.json({ ok: true, emoji: parsed.emoji, count });
   } catch {
     return NextResponse.json({ error: "Réaction impossible." }, { status: 500 });

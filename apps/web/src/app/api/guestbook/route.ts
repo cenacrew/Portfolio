@@ -4,6 +4,7 @@ import { insertGuestbookMessage } from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
+import { notifyAdmins } from "../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,9 +38,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const row = await insertGuestbookMessage(supabase, {
-      author: parsed.author?.trim() || "Anonyme",
-      message: parsed.message.trim(),
+    const author = parsed.author?.trim() || "Anonyme";
+    const message = parsed.message.trim();
+    const row = await insertGuestbookMessage(supabase, { author, message });
+    notifyAdmins("guestbook", {
+      title: "💌 Nouveau mot au livre d'or",
+      body: `${author} : ${message.length > 120 ? `${message.slice(0, 117)}…` : message}`,
     });
     return NextResponse.json({ message: row }, { status: 201 });
   } catch {

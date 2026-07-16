@@ -4,6 +4,7 @@ import { changeVote, getVoterChoice } from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp, voterHash } from "../../_lib/request";
 import { rateLimit } from "../../_lib/rateLimit";
+import { notifyAdmins } from "../../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,11 @@ export async function POST(req: Request) {
     const previous = await getVoterChoice(supabase, parsed.widgetId, hash);
     if (previous !== parsed.option) {
       await changeVote(supabase, { widgetId: parsed.widgetId, option: parsed.option, voterHash: hash });
+      // Only a genuine change (new vote or switched choice) is worth a push.
+      notifyAdmins("poll", {
+        title: "🗳️ Nouveau vote au sondage",
+        body: previous ? "Un visiteur a changé son vote." : "Un visiteur vient de voter.",
+      });
     }
     return NextResponse.json({ ok: true, option: parsed.option, previous });
   } catch {

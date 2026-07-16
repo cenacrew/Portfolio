@@ -160,6 +160,45 @@ export type WidgetQaInsert = {
   updated_at?: string;
 };
 
+// A registered admin device (phase 15). One row per Expo push token. Admin-only
+// (RLS reserves all access to authenticated); the server fans out pushes with
+// the service role. Optional fields keep pre-migration reads valid.
+export interface AdminDeviceRow {
+  id: string;
+  expo_push_token: string;
+  platform: string | null;
+  created_at: string;
+  last_seen_at: string;
+}
+
+export interface AdminDeviceInsert {
+  id?: string;
+  expo_push_token: string;
+  platform?: string | null;
+  created_at?: string;
+  last_seen_at?: string;
+}
+
+// The visits notification mode. off = silent, instant = one push per visit
+// (assumed spammy), daily = one summary per day via the Vercel cron.
+export type VisitsNotifyMode = "off" | "instant" | "daily";
+
+// The single-row notification preferences (phase 15). Prefs are server-side, not
+// per-device: turning a source off silences it for every registered device.
+export interface NotificationPrefsRow {
+  id: number;
+  guestbook_enabled: boolean;
+  toile_enabled: boolean;
+  poll_enabled: boolean;
+  reactions_enabled: boolean;
+  games_enabled: boolean;
+  visits_mode: VisitsNotifyMode;
+  visits_digest_last_count: number;
+  updated_at: string;
+}
+
+export type NotificationPrefsUpdate = Partial<Omit<NotificationPrefsRow, "id" | "updated_at">>;
+
 export interface Database {
   public: {
     Tables: {
@@ -215,6 +254,18 @@ export interface Database {
         Row: GameScoreRow;
         Insert: GameScoreInsert;
         Update: Partial<GameScoreInsert>;
+        Relationships: [];
+      };
+      admin_devices: {
+        Row: AdminDeviceRow;
+        Insert: AdminDeviceInsert;
+        Update: Partial<AdminDeviceInsert>;
+        Relationships: [];
+      };
+      notification_prefs: {
+        Row: NotificationPrefsRow;
+        Insert: Partial<NotificationPrefsRow> & { id?: number };
+        Update: NotificationPrefsUpdate;
         Relationships: [];
       };
     };

@@ -12,6 +12,7 @@ import {
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
+import { notifyAdmins } from "../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,6 +63,19 @@ export async function POST(req: Request) {
     await insertGameScore(supabase, parsed);
     // Return the fresh top board so the modal can render it immediately.
     const board = await getTopScores(supabase, parsed.game, LEADERBOARD_SIZE);
+    // Notify only when this run actually made the leaderboard: the board holds
+    // at most LEADERBOARD_SIZE rows, so an incomplete board means it's in, and a
+    // full board includes it iff the run's score reaches the lowest kept score.
+    const entered =
+      board.length < LEADERBOARD_SIZE ||
+      (board.length > 0 && parsed.score >= board[board.length - 1].score);
+    if (entered) {
+      const label = parsed.game === "snake" ? "Snake" : "Flappy";
+      notifyAdmins("games", {
+        title: "🕹️ Nouvelle entrée au classement",
+        body: `${parsed.pseudo} entre au top ${label} avec ${parsed.score.toLocaleString("fr-FR")} pts.`,
+      });
+    }
     return NextResponse.json({ ok: true, board });
   } catch {
     return NextResponse.json({ error: "Enregistrement impossible." }, { status: 500 });

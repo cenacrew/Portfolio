@@ -3,6 +3,7 @@ import { getVisits, incrementVisits } from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
+import { notifyAdmins } from "../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,13 @@ export async function POST(req: Request) {
   }
 
   try {
-    return NextResponse.json({ count: await incrementVisits(supabase) });
+    const count = await incrementVisits(supabase);
+    // Instant-visit push (only if the admin opted into the spammy mode).
+    notifyAdmins("visits-instant", {
+      title: "🚶 Nouvelle visite",
+      body: `${count.toLocaleString("fr-FR")} visites au total sur le dashboard.`,
+    });
+    return NextResponse.json({ count });
   } catch {
     return NextResponse.json({ count: null });
   }
