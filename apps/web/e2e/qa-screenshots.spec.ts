@@ -30,12 +30,20 @@ test("capture every widget tile from the QA gallery", async ({ page }) => {
   const n = await tiles.count();
   expect(n, "number of QA tiles rendered").toBeGreaterThan(0);
 
+  // Read all three data-attributes for every tile in ONE round-trip instead of
+  // three awaited getAttribute() calls per tile (~1900 serial IPC hops before).
+  const meta = await tiles.evaluateAll((els) =>
+    els.map((el) => ({
+      type: el.getAttribute("data-qa-type") ?? "unknown",
+      format: el.getAttribute("data-qa-format") ?? "0x0",
+      bp: el.getAttribute("data-qa-bp") ?? "bp",
+    })),
+  );
+
   let captured = 0;
   for (let i = 0; i < n; i++) {
     const el = tiles.nth(i);
-    const type = (await el.getAttribute("data-qa-type")) ?? "unknown";
-    const format = (await el.getAttribute("data-qa-format")) ?? "0x0";
-    const bp = (await el.getAttribute("data-qa-bp")) ?? "bp";
+    const { type, format, bp } = meta[i] ?? { type: "unknown", format: "0x0", bp: "bp" };
     const file = path.join(OUT_DIR, `${type}__${format}__${bp}.png`);
     try {
       // element.screenshot auto-scrolls the tile into view.
