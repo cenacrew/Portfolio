@@ -243,4 +243,13 @@ export const widgets: Widget[] = [
     position: 17,
     createdAt: ts,
   },
+  {
+    id: "mini-game-snake",
+    type: "mini-game",
+    config: { game: "snake", title: "Snake" },
+    layout: l({ x: 0, y: 16, w: 2, h: 2 }, { x: 0, y: 11, w: 3, h: 2 }),
+    visible: true,
+    position: 18,
+    createdAt: ts,
+  },
 ];

@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { WidgetType } from "@portfolio/shared";
@@ -30,6 +36,61 @@ interface FinishState {
   tone: "ok" | "warn" | "error" | null;
 }
 
+// A tile whose (heavy) widget preview is mounted only once it scrolls near the
+// viewport. The console renders the real public Renderer of every widget type in
+// up to ~2×N-formats copies; mounting them all at once — each with its own
+// canvas loops, Realtime channels, maps and fetches — overflowed Android
+// WebView memory and killed the page right after the first paint ("this page
+// couldn't load", phase 17 bug 3). Lazily revealing tiles keeps only what's
+// on/near screen live, so the full page loads even in a constrained WebView.
+// Revealed tiles stay mounted so screenshots on "Terminer la session" still work.
+// The outer box keeps its fixed size whether or not the preview is mounted, so
+// there is zero layout shift and the IntersectionObserver geometry is stable.
+function LazyTile({
+  className,
+  style,
+  shotKey,
+  children,
+}: {
+  className: string;
+  style: CSSProperties;
+  // When set, tags the tile with data-shot-key so finishSession can find its DOM
+  // node for a screenshot (desktop tiles only) without sharing a mutable ref map.
+  shotKey?: string;
+  children: ReactNode;
+}) {
+  const [el, setEl] = useState<HTMLDivElement | null>(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    if (shown || !el) return;
+    // No IntersectionObserver (very old WebView / SSR fallback): render eagerly.
+    if (typeof IntersectionObserver === "undefined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setShown(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      // Mount a bit before the tile enters view so scrolling stays smooth.
+      { rootMargin: "400px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [el, shown]);
+
+  return (
+    <div ref={setEl} data-shot-key={shotKey} className={className} style={style}>
+      {shown ? children : null}
+    </div>
+  );
+}
+
 export default function QaConsole({
   plan,
   previews,
@@ -43,9 +104,6 @@ export default function QaConsole({
   const [validated, setValidated] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [finish, setFinish] = useState<FinishState>({ running: false, message: null, tone: null });
-
-  // DOM refs of each format's desktop tile — the node captured for screenshots.
-  const shotRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Every actionable (to-verify) couple in the plan.
   const actionable = useMemo(
@@ -97,7 +155,9 @@ export default function QaConsole({
       const isValid = Boolean(validated[key]);
       let screenshotDataUrl: string | undefined;
       if (!isValid) {
-        const node = shotRefs.current[key];
+        // The desktop tile is tagged with data-shot-key; a lazily-unrevealed tile
+        // simply has no content to shoot (best-effort, as before).
+        const node = document.querySelector<HTMLDivElement>(`[data-shot-key="${key}"]`);
         if (node) {
           try {
             screenshotDataUrl = await toPng(node, { cacheBust: true, pixelRatio: 1 });
@@ -252,24 +312,22 @@ export default function QaConsole({
                           <figure className="qa-view">
                             <figcaption className="qa-view__cap">Mobile · 3 col</figcaption>
                             <div className="qa-view__frame" style={{ "--wp": `${M.wp}px` } as CSSProperties}>
-                              <div className={tileClass} style={tileBox(f.w, f.h, M_UNIT, M.gap)}>
+                              <LazyTile className={tileClass} style={tileBox(f.w, f.h, M_UNIT, M.gap)}>
                                 {node}
-                              </div>
+                              </LazyTile>
                             </div>
                           </figure>
                         ) : null}
                         <figure className="qa-view">
                           <figcaption className="qa-view__cap">Desktop · 9 col</figcaption>
                           <div className="qa-view__frame" style={{ "--wp": `${D.wp}px` } as CSSProperties}>
-                            <div
+                            <LazyTile
                               className={tileClass}
                               style={tileBox(f.w, f.h, D.unit, D.gap)}
-                              ref={(el) => {
-                                shotRefs.current[key] = el;
-                              }}
+                              shotKey={key}
                             >
                               {node}
-                            </div>
+                            </LazyTile>
                           </div>
                         </figure>
                       </div>
