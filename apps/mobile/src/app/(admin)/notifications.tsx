@@ -85,8 +85,17 @@ export default function Notifications() {
     tap();
     setRegState("working");
     const result = await registerForPushNotifications();
-    setRegState(result === "registered" ? "registered" : result === "denied" ? "denied" : "idle");
-    if (result === "error") setError("Activation impossible sur cet appareil.");
+    if (result.status === "registered") {
+      setRegState("registered");
+      setError(null);
+    } else if (result.status === "denied") {
+      setRegState("denied");
+      setError(null);
+    } else {
+      // "error" or "unsupported": show the concrete reason, never a blind message.
+      setRegState("idle");
+      setError(result.reason ?? "Activation impossible sur cet appareil.");
+    }
   }, []);
 
   return (

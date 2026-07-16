@@ -28,9 +28,11 @@ const OPPOSITE: Record<Direction, Direction> = {
 
 export function mountSnake(
   canvas: HTMLCanvasElement,
-  theme: GameTheme,
+  initialTheme: GameTheme,
   cb: GameCallbacks,
 ): GameHandle {
+  // Mutable so the palette button / dark-mode toggle can recolour a live game.
+  let theme = initialTheme;
   let snake: Cell[] = [];
   let dir: Direction = "right";
   // Buffer up to two queued turns so quick double-taps register in order.
@@ -204,6 +206,12 @@ export function mountSnake(
     if (!loop.running) render();
   };
 
+  const setTheme = (next: GameTheme) => {
+    theme = next;
+    // Repaint immediately when idle; the running loop repaints itself.
+    if (!loop.running) render();
+  };
+
   reset();
   const loop = createLoop(step, render);
   // Start in "ready": paint one static frame, no rAF until play begins.
@@ -214,6 +222,7 @@ export function mountSnake(
     press,
     setDirection,
     resize,
+    setTheme,
     dispose: () => loop.stop(),
     get phase() {
       return phase;

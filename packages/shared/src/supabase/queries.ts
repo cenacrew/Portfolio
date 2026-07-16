@@ -616,14 +616,27 @@ export interface ReactionToggleResult {
   active: boolean;
 }
 
+// Thrown when toggle_reaction can't be reached because the RPC isn't in the
+// schema cache yet (migration 0014/0015 not run, or a stale PostgREST cache).
+// The API route maps this to a distinct "temporarily unavailable" response —
+// we deliberately DO NOT fall back to a plain increment, which had no un-react
+// and let a counter grow without bound (phase-20 guard). The public /qrcode
+// still renders (reads only); only the toggle write is refused.
+export class ReactionRpcUnavailableError extends Error {
+  constructor() {
+    super("toggle_reaction RPC unavailable (schema cache stale or migration missing)");
+    this.name = "ReactionRpcUnavailableError";
+  }
+}
+
 // Toggles a visitor's reaction on (widget, emoji): first tap records it and
 // bumps the counter, a second tap (same salted voter hash) removes it and
 // decrements. Runs through the toggle_reaction security-definer RPC so anon has
 // no direct table write.
 //
-// Pre-migration tolerance (before 0014): the RPC/marks table don't exist yet, so
-// this degrades to a plain increment (phase-12 behaviour) and reports the
-// reaction as active — the public /qrcode keeps working, minus the un-react.
+// If the RPC is missing from the schema cache it throws
+// ReactionRpcUnavailableError (a distinct, surfaced failure) rather than
+// silently degrading to an unbounded increment.
 export async function toggleReaction(
   client: DbClient,
   widgetId: string,
@@ -636,10 +649,7 @@ export async function toggleReaction(
     p_voter_hash: voterHash,
   } as never);
   if (error) {
-    if (isMissingFunction(error)) {
-      const count = await incrementReaction(client, widgetId, emoji);
-      return { count, active: true };
-    }
+    if (isMissingFunction(error)) throw new ReactionRpcUnavailableError();
     throw error;
   }
   // The RPC returns a single-row table (count, active).

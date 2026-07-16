@@ -24,9 +24,11 @@ const BIRD_R = 13; // bird radius
 
 export function mountFlappy(
   canvas: HTMLCanvasElement,
-  theme: GameTheme,
+  initialTheme: GameTheme,
   cb: GameCallbacks,
 ): GameHandle {
+  // Mutable so the palette button / dark-mode toggle can recolour a live game.
+  let theme = initialTheme;
   let view = fitCanvas(canvas);
   let scale = view.height / REF;
 
@@ -242,6 +244,12 @@ export function mountFlappy(
     if (!loop.running) render();
   };
 
+  const setTheme = (next: GameTheme) => {
+    theme = next;
+    // Repaint immediately when idle; the running loop repaints itself.
+    if (!loop.running) render();
+  };
+
   reset();
   const loop = createLoop(step, render);
   // Start in "ready": paint one static frame, no rAF until play begins.
@@ -253,6 +261,7 @@ export function mountFlappy(
     // Steering is a no-op for Flappy; the modal maps space/tap/up to `press`.
     setDirection: () => {},
     resize,
+    setTheme,
     dispose: () => loop.stop(),
     get phase() {
       return phase;

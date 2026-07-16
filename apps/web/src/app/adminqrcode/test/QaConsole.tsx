@@ -16,12 +16,16 @@ import type { QaTypeEntry } from "@/widgets/qa";
 import { reVerifyAction } from "./actions";
 
 // Grid geometry of the two audited contexts, mirroring qrcode.css so each tile
-// is rendered at true public scale. Mobile: 3 cols in a ~390px viewport.
-// Desktop: 9 cols on the real 1360px board. The tile is a size container, so
-// each Renderer's @container queries adapt exactly as on the live page.
-const M = { cols: 3, gap: 10, pad: 16, wp: 13, viewport: 390 };
+// is rendered at true public scale.
+// - Mobile (3 cols, gap 10, pad 16 — see qrcode.css): sized FLUIDLY in CSS
+//   (cqw against the board frame) in qa.css, exactly like the live --qr-unit, so
+//   a w=3 tile spans the full board and can never overflow a narrow WebView.
+//   Only the inner padding (--wp: 13px) is passed from here.
+// - Desktop (9 cols on the real 1360px board): fixed px at true grid unit.
+// The tile is a size container, so each Renderer's @container queries adapt
+// exactly as on the live page.
+const M = { wp: 13 };
 const D = { unit: 136, gap: 12, wp: 15 };
-const M_UNIT = (M.viewport - 2 * M.pad - (M.cols - 1) * M.gap) / M.cols; // ≈ 112.7
 
 function tileBox(w: number, h: number, unit: number, gap: number): CSSProperties {
   return {
@@ -219,7 +223,7 @@ export default function QaConsole({
   const totalToVerify = actionable.length;
 
   return (
-    <main className="qa">
+    <main className={`qa qa--${bp}`}>
       <header className="qa-bar">
         <div className="qa-bar__lead">
           <span className="qa-bar__eyebrow">Console QA · {bp === "mobile" ? "Mobile · 3 col" : "Desktop · 9 col"}</span>
@@ -322,9 +326,12 @@ export default function QaConsole({
                           <figure className="qa-view">
                             <figcaption className="qa-view__cap">Mobile · 3 col</figcaption>
                             <div className="qa-view__frame" style={{ "--wp": `${M.wp}px` } as CSSProperties}>
+                              {/* Fluid sizing: qa.css derives the tile box from
+                                  the frame width (cqw) using --w/--h, mirroring
+                                  the live mobile grid so a w=3 tile fits exactly. */}
                               <LazyTile
                                 className={tileClass}
-                                style={tileBox(f.w, f.h, M_UNIT, M.gap)}
+                                style={{ "--w": f.w, "--h": f.h } as CSSProperties}
                                 shotKey={key}
                               >
                                 {node}

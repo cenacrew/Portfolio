@@ -123,9 +123,27 @@ export default function MiniGameModal({
     window.addEventListener("resize", onResize);
     // Re-measure once after layout settles (modal open animation).
     const raf = requestAnimationFrame(() => handle.resize());
+
+    // Recolour a live game when the palette button (--c1/--c2 on .qr-page) or
+    // the dark-mode toggle (body.dark-mode) changes the theme. A light
+    // MutationObserver on those two attribute sources re-reads the resolved
+    // CSS variables and swaps the engine's theme — coalesced into one rAF so a
+    // burst of mutations repaints at most once per frame.
+    let themeRaf = 0;
+    const applyTheme = () => {
+      cancelAnimationFrame(themeRaf);
+      themeRaf = requestAnimationFrame(() => handle.setTheme(readTheme(accent)));
+    };
+    const page = document.querySelector<HTMLElement>(".qr-page");
+    const obs = new MutationObserver(applyTheme);
+    if (page) obs.observe(page, { attributes: true, attributeFilter: ["style", "class"] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+
     return () => {
       window.removeEventListener("resize", onResize);
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(themeRaf);
+      obs.disconnect();
       handle.dispose();
       handleRef.current = null;
     };

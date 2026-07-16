@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getReactionCounts, reactionsSchema, toggleReaction } from "@portfolio/shared";
+import {
+  getReactionCounts,
+  reactionsSchema,
+  ReactionRpcUnavailableError,
+  toggleReaction,
+} from "@portfolio/shared";
 import { getServiceSupabase, getPublicServerSupabase } from "@/lib/supabase/server";
 import { getClientIp, voterHash } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
@@ -78,7 +83,15 @@ export async function POST(req: Request) {
       });
     }
     return NextResponse.json({ ok: true, emoji: parsed.emoji, count, active });
-  } catch {
+  } catch (e) {
+    // RPC not in the schema cache (migration missing / stale cache): surface a
+    // distinct 503 instead of silently incrementing without bound.
+    if (e instanceof ReactionRpcUnavailableError) {
+      return NextResponse.json(
+        { error: "Réactions momentanément indisponibles." },
+        { status: 503 },
+      );
+    }
     return NextResponse.json({ error: "Réaction impossible." }, { status: 500 });
   }
 }
