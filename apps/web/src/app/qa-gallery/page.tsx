@@ -54,8 +54,21 @@ function sampleWidget(type: WidgetType, config: unknown): Widget {
   };
 }
 
-export default function QaGalleryPage() {
+export default async function QaGalleryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ bp?: string }>;
+}) {
   if (!galleryEnabled()) notFound();
+
+  // Context selection (phase 18), mirroring the QA console: ?bp=mobile renders
+  // only the mobile 3-column tiles, ?bp=desktop only the desktop 9-column ones.
+  // No param = both side by side (back-compat / eyeball-friendly). The CI
+  // screenshot spec visits ?bp=mobile then ?bp=desktop successively, so the
+  // captures keep covering BOTH breakpoints.
+  const { bp } = await searchParams;
+  const showMobile = bp !== "desktop";
+  const showDesktop = bp !== "mobile";
 
   const types = Object.keys(registry) as WidgetType[];
 
@@ -99,7 +112,7 @@ export default function QaGalleryPage() {
                   const format = `${s.w}x${s.h}`;
                   return (
                     <div key={format} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                      {s.w <= M.cols ? (
+                      {showMobile && s.w <= M.cols ? (
                         <div className="qa-view__frame" style={{ "--wp": `${M.wp}px` } as CSSProperties}>
                           <div
                             className={tileClass}
@@ -113,18 +126,20 @@ export default function QaGalleryPage() {
                           </div>
                         </div>
                       ) : null}
-                      <div className="qa-view__frame" style={{ "--wp": `${D.wp}px` } as CSSProperties}>
-                        <div
-                          className={tileClass}
-                          data-qa-tile
-                          data-qa-type={type}
-                          data-qa-format={format}
-                          data-qa-bp="desktop"
-                          style={tileBox(s.w, s.h, D.unit, D.gap)}
-                        >
-                          {node}
+                      {showDesktop ? (
+                        <div className="qa-view__frame" style={{ "--wp": `${D.wp}px` } as CSSProperties}>
+                          <div
+                            className={tileClass}
+                            data-qa-tile
+                            data-qa-type={type}
+                            data-qa-format={format}
+                            data-qa-bp="desktop"
+                            style={tileBox(s.w, s.h, D.unit, D.gap)}
+                          >
+                            {node}
+                          </div>
                         </div>
-                      </div>
+                      ) : null}
                     </div>
                   );
                 })}
