@@ -5,6 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/server";
 import { getWidgets, updateWidget } from "@portfolio/shared";
 import { getClientIp } from "../_lib/request";
 import { rateLimit } from "../_lib/rateLimit";
+import { notifyAdmins } from "../_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -80,6 +81,11 @@ export async function POST(req: Request) {
   } catch {
     // The image is already saved; a failed version bump just delays refresh.
   }
+
+  notifyAdmins("toile", {
+    title: "🎨 Nouveau dessin sur la toile",
+    body: "Quelqu'un a laissé une trace sur la toile.",
+  });
 
   return NextResponse.json({ ok: true, version: nextVersion });
 }
