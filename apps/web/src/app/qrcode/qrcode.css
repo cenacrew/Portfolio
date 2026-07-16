@@ -3382,6 +3382,62 @@ body.dark-mode .qr-page {
   background: color-mix(in srgb, var(--c2) 6%, var(--qr-tile-2));
 }
 .w-react__btn:active { transform: translateY(0); }
+/* Active = this visitor currently reacts with it. Filled accent pill so the
+   like/unlike state reads at a glance; the count adopts the accent too. */
+.w-react__btn.is-active {
+  border-color: color-mix(in srgb, var(--c2) 55%, transparent);
+  background: color-mix(in srgb, var(--c2) 14%, var(--qr-tile-2));
+}
+.w-react__btn.is-active:hover {
+  background: color-mix(in srgb, var(--c2) 20%, var(--qr-tile-2));
+}
+.w-react__btn.is-active .w-react__count {
+  color: color-mix(in srgb, var(--c2) 78%, var(--qr-ink));
+}
+/* The "+" pill: quieter, dashed, invites without competing with the emojis. */
+.w-react__add {
+  border-style: dashed;
+  color: var(--qr-ink-soft);
+}
+.w-react__add .w-react__emoji { font-weight: 700; opacity: 0.8; }
+/* Inline add field, sized to sit in the pill row. */
+.w-react__add-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.w-react__add-input {
+  width: 3.4em;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--c2) 40%, transparent);
+  border-radius: 999px;
+  background: var(--qr-tile-2);
+  color: var(--qr-ink);
+  font: inherit;
+  font-size: 16px; /* keeps iOS from zooming the viewport on focus */
+  text-align: center;
+}
+.w-react__add-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--c2) 55%, transparent);
+  outline-offset: 1px;
+}
+.w-react__add-ok {
+  padding: 7px 11px;
+  border: 1px solid var(--qr-line-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--c2) 12%, var(--qr-tile-2));
+  color: var(--qr-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+.w-react__hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--qr-ink-soft);
+}
 .w-react__emoji {
   font-size: 18px;
   line-height: 1;

@@ -81,6 +81,17 @@ export interface WidgetReactionRow {
   count: number;
 }
 
+// Per-visitor trace of which emojis a visitor currently reacts with — phase 19.
+// Keyed by the salted IP+UA hash (same as poll votes). Only ever touched through
+// the toggle_reaction() security-definer RPC; the admin may purge rows for
+// moderation. Rows cascade-delete with their widget.
+export interface WidgetReactionMarkRow {
+  widget_id: string;
+  emoji: string;
+  voter_hash: string;
+  created_at: string;
+}
+
 // One high-score entry for a mini-game (phase 13). Public read; rows are only
 // ever inserted through the server API route (service role), never directly by
 // anon. `game` is a GameKey ('snake' | 'flappy'), `pseudo` the 3-letter arcade
@@ -258,6 +269,12 @@ export interface Database {
         Update: Partial<WidgetReactionRow>;
         Relationships: [];
       };
+      widget_reaction_marks: {
+        Row: WidgetReactionMarkRow;
+        Insert: { widget_id: string; emoji: string; voter_hash: string; created_at?: string };
+        Update: Partial<WidgetReactionMarkRow>;
+        Relationships: [];
+      };
       game_scores: {
         Row: GameScoreRow;
         Insert: GameScoreInsert;
@@ -282,6 +299,14 @@ export interface Database {
       increment_visits: { Args: Record<string, never>; Returns: number };
       get_visits: { Args: Record<string, never>; Returns: number };
       increment_reaction: { Args: { p_widget_id: string; p_emoji: string }; Returns: number };
+      toggle_reaction: {
+        Args: { p_widget_id: string; p_emoji: string; p_voter_hash: string };
+        Returns: { count: number; active: boolean }[];
+      };
+      add_custom_reaction: {
+        Args: { p_widget_id: string; p_emoji: string; p_config_emojis: string[]; p_cap: number };
+        Returns: number;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
