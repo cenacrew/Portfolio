@@ -13,6 +13,7 @@ import { useAuth } from "../../lib/auth";
 import { useDashboards } from "../../lib/dashboards";
 import { syncMaLocationOnce } from "../../lib/maLoc";
 import { syncPresenceOnce } from "../../lib/presence";
+import { registerForPushNotifications } from "../../lib/push";
 import { radius, space, useTheme } from "../../lib/theme";
 import { useWidgets } from "../../lib/widgets";
 
@@ -73,6 +74,9 @@ export default function Dashboard() {
   // (timezone + location) so the public dashboard follows the admin (C1).
   useEffect(() => {
     Promise.allSettled([syncMaLocationOnce(), syncPresenceOnce()]).then(() => refresh());
+    // Register this device for admin push once per launch (phase 15). No-op in
+    // Expo Go; best-effort, never blocks the dashboard.
+    registerForPushNotifications().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -188,6 +192,10 @@ export default function Dashboard() {
           <Button label="🪧 En-tête & statut" onPress={() => router.push("/(admin)/header")} variant="ghost" style={{ flex: 1 }} />
           <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
         </View>
+
+        {/* Push notifications preferences (phase 15) */}
+        <Button label="🔔 Notifications" onPress={() => router.push("/(admin)/notifications")} variant="ghost" />
+
 
         {/* Stats (phase 14) + QA console (phase 9). The QA entry carries a badge
             with the number of (type, format) couples still to verify. */}
