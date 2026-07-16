@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import GreatModal from "../ui/GreatModal";
+import { useRealtimeTable } from "../ui/useRealtimeTable";
 import { mountFlappy } from "./engine/flappy";
 import { mountSnake } from "./engine/snake";
 import type { Direction, GameHandle, GamePhase, GameTheme } from "./engine/types";
@@ -77,26 +78,16 @@ export default function MiniGameModal({
     }
   }, [game]);
 
-  // Initial board + Realtime subscription (a score from any browser refreshes).
+  // Initial board load (Realtime keeps it fresh below).
   useEffect(() => {
     // Async load that setStates after its await — same idiom as the toile /
     // guestbook modals; the rule can't see past the async boundary.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshBoard();
-    const supabase = getBrowserSupabase();
-    if (!supabase) return;
-    const channel = supabase
-      .channel(`scores-${game}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "game_scores", filter: `game=eq.${game}` },
-        () => void refreshBoard(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [game, refreshBoard]);
+  }, [refreshBoard]);
+
+  // Realtime: a score from any browser refreshes the board.
+  useRealtimeTable(`scores-${game}`, "game_scores", `game=eq.${game}`, () => void refreshBoard());
 
   // Mount the engine once, wiring its callbacks to React state.
   useEffect(() => {

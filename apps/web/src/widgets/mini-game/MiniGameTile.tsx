@@ -1,9 +1,10 @@
 "use client";
 
 import { GAME_ACCENTS, GAME_LABELS, getTopScores, type GameKey, type GameScoreRow } from "@portfolio/shared";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 import type { MiniGameConfig } from "./schema";
+import { useRealtimeTable } from "../ui/useRealtimeTable";
 import MiniGameModal from "./MiniGameModal";
 
 // Public arcade tile: a retro preview of the game + the top-3 board, adaptive to
@@ -27,28 +28,15 @@ export default function MiniGameTile({
   const label = title || GAME_LABELS[game];
 
   // Live top-3: refresh whenever a score for this game changes anywhere.
-  useEffect(() => {
+  useRealtimeTable(`scores-tile-${widgetId}`, "game_scores", `game=eq.${game}`, () => {
     const supabase = getBrowserSupabase();
     if (!supabase) return;
-    const refresh = async () => {
-      try {
-        setBoard(await getTopScores(supabase, game, 3));
-      } catch {
+    void getTopScores(supabase, game, 3)
+      .then(setBoard)
+      .catch(() => {
         /* keep current board on a transient error */
-      }
-    };
-    const channel = supabase
-      .channel(`scores-tile-${widgetId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "game_scores", filter: `game=eq.${game}` },
-        () => void refresh(),
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [widgetId, game]);
+      });
+  });
 
   return (
     <>

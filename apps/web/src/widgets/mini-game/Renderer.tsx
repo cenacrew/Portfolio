@@ -1,7 +1,7 @@
 import { getTopScores, type GameScoreRow } from "@portfolio/shared";
-import { getPublicServerSupabase } from "@/lib/supabase/server";
 import type { WidgetRendererProps } from "../types";
 import type { MiniGameConfig } from "./schema";
+import { readPublicOrDefault } from "../ui/readPublic";
 import MiniGameTile from "./MiniGameTile";
 
 // Server component: reads the current top scores so the tile shows a populated
@@ -9,15 +9,10 @@ import MiniGameTile from "./MiniGameTile";
 // (pre-migration 0010): the board defaults to empty and the tile still renders,
 // so /qrcode never breaks before the migration runs.
 export default async function MiniGameRenderer({ config, widget }: WidgetRendererProps<MiniGameConfig>) {
-  let initialBoard: GameScoreRow[] = [];
-  const supabase = getPublicServerSupabase();
-  if (supabase) {
-    try {
-      initialBoard = await getTopScores(supabase, config.game, 3);
-    } catch {
-      initialBoard = [];
-    }
-  }
+  const initialBoard = await readPublicOrDefault<GameScoreRow[]>(
+    (sb) => getTopScores(sb, config.game, 3),
+    [],
+  );
 
   return (
     <MiniGameTile
