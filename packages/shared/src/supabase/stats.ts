@@ -85,48 +85,52 @@ async function readGuestbook(client: DbClient): Promise<GuestbookStats> {
 // config for the option labels and the poll_votes tally for the live counts.
 async function readPolls(client: DbClient, widgets: WidgetRow[]): Promise<PollStat[]> {
   const polls = widgets.filter((w) => w.type === "poll");
-  const out: PollStat[] = [];
-  for (const w of polls) {
-    const parsed = pollSchema.safeParse(w.config);
-    if (!parsed.success) continue;
-    let counts: Record<string, number> = {};
-    try {
-      counts = await getPollCounts(client, w.id);
-    } catch {
-      counts = {};
-    }
-    const options = parsed.data.options.map((o) => ({ label: o.label, count: counts[o.id] ?? 0 }));
-    const total = options.reduce((n, o) => n + o.count, 0);
-    out.push({ widgetId: w.id, question: parsed.data.question, options, total });
-  }
-  return out;
+  // One count query per poll, run in parallel rather than awaited in series.
+  const out = await Promise.all(
+    polls.map(async (w): Promise<PollStat | null> => {
+      const parsed = pollSchema.safeParse(w.config);
+      if (!parsed.success) return null;
+      let counts: Record<string, number> = {};
+      try {
+        counts = await getPollCounts(client, w.id);
+      } catch {
+        counts = {};
+      }
+      const options = parsed.data.options.map((o) => ({ label: o.label, count: counts[o.id] ?? 0 }));
+      const total = options.reduce((n, o) => n + o.count, 0);
+      return { widgetId: w.id, question: parsed.data.question, options, total };
+    }),
+  );
+  return out.filter((p): p is PollStat => p !== null);
 }
 
 // Reaction totals per emoji for every reactions widget. Merges the offered
 // emojis (config) with their live counts so a zeroed emoji still shows.
 async function readReactions(client: DbClient, widgets: WidgetRow[]): Promise<ReactionStat[]> {
   const reactionWidgets = widgets.filter((w) => w.type === "reactions");
-  const out: ReactionStat[] = [];
-  for (const w of reactionWidgets) {
-    const parsed = reactionsSchema.safeParse(w.config);
-    if (!parsed.success) continue;
-    let counts: Record<string, number> = {};
-    try {
-      counts = await getReactionCounts(client, w.id);
-    } catch {
-      counts = {};
-    }
-    // Offered emojis first (in config order), then any extra emoji that has a
-    // recorded count but is no longer offered.
-    const seen = new Set(parsed.data.emojis);
-    const items = parsed.data.emojis.map((emoji) => ({ emoji, count: counts[emoji] ?? 0 }));
-    for (const [emoji, count] of Object.entries(counts)) {
-      if (!seen.has(emoji)) items.push({ emoji, count });
-    }
-    const total = items.reduce((n, i) => n + i.count, 0);
-    out.push({ widgetId: w.id, title: parsed.data.title, items, total });
-  }
-  return out;
+  // One count query per reactions widget, run in parallel.
+  const out = await Promise.all(
+    reactionWidgets.map(async (w): Promise<ReactionStat | null> => {
+      const parsed = reactionsSchema.safeParse(w.config);
+      if (!parsed.success) return null;
+      let counts: Record<string, number> = {};
+      try {
+        counts = await getReactionCounts(client, w.id);
+      } catch {
+        counts = {};
+      }
+      // Offered emojis first (in config order), then any extra emoji that has a
+      // recorded count but is no longer offered.
+      const seen = new Set(parsed.data.emojis);
+      const items = parsed.data.emojis.map((emoji) => ({ emoji, count: counts[emoji] ?? 0 }));
+      for (const [emoji, count] of Object.entries(counts)) {
+        if (!seen.has(emoji)) items.push({ emoji, count });
+      }
+      const total = items.reduce((n, i) => n + i.count, 0);
+      return { widgetId: w.id, title: parsed.data.title, items, total };
+    }),
+  );
+  return out.filter((r): r is ReactionStat => r !== null);
 }
 
 // Number of recorded runs for a game (row count in game_scores). 0 when the
@@ -145,28 +149,23 @@ async function gamePlays(client: DbClient, game: GameKey): Promise<number> {
 
 // Top score + play count for Snake and Flappy.
 async function readGames(client: DbClient): Promise<GameStat[]> {
-  const out: GameStat[] = [];
-  for (const game of GAME_KEYS) {
-    let topScore = 0;
-    let topPseudo: string | null = null;
-    try {
-      const top = await getTopScores(client, game, 1);
-      if (top[0]) {
-        topScore = top[0].score;
-        topPseudo = top[0].pseudo;
-      }
-    } catch {
-      /* leave zeroed */
-    }
-    let plays = 0;
-    try {
-      plays = await gamePlays(client, game);
-    } catch {
-      plays = 0;
-    }
-    out.push({ game, label: GAME_LABELS[game], topScore, topPseudo, plays });
-  }
-  return out;
+  // Both games, and the top-score + play-count query for each, all run in
+  // parallel (previously 4 round-trips awaited in series).
+  return Promise.all(
+    GAME_KEYS.map(async (game): Promise<GameStat> => {
+      const [top, plays] = await Promise.all([
+        getTopScores(client, game, 1).catch(() => []),
+        gamePlays(client, game).catch(() => 0),
+      ]);
+      return {
+        game,
+        label: GAME_LABELS[game],
+        topScore: top[0]?.score ?? 0,
+        topPseudo: top[0]?.pseudo ?? null,
+        plays,
+      };
+    }),
+  );
 }
 
 // One-shot aggregate for the admin Stats screen. Fetches widgets once (all

@@ -32,6 +32,13 @@ export const contactCardDefault: ContactCardConfig = {
 
 export const contactCardLabel = "Carte de contact";
 
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: the optional card photo (only when not using the header avatar).
+export const contactCardMedia: WidgetMediaSpec = {
+  urls: (config) => [(config as Partial<ContactCardConfig>)?.photoUrl],
+};
+
 // The dashboard header avatar, reused on the card when `useHeaderAvatar` is on.
 // A site-relative path (served from apps/web/public); the server turns it into
 // an absolute URL to fetch + embed in the vCard photo.
@@ -53,20 +60,32 @@ export function escapeVCardValue(value: string): string {
     .replace(/;/g, "\\;");
 }
 
+// One shared encoder — allocating a TextEncoder per character turned folding
+// the base64 PHOTO line (~2.7 M chars for a 2 MB photo) into hundreds of ms.
+const VCARD_ENCODER = new TextEncoder();
+
 // Folds one content line to 75 octets max (RFC 6350 §3.2): continuation lines
-// begin with a single space. UTF-8 aware so a multi-byte character is never
-// split across a fold. Emits CRLF, as the spec mandates.
+// begin with a single space (so their budget is 74 octets of content). UTF-8
+// aware so a multi-byte character is never split across a fold. Emits CRLF.
 function foldLine(line: string): string {
-  const bytes = new TextEncoder().encode(line);
-  if (bytes.length <= 75) return line;
+  const byteLength = VCARD_ENCODER.encode(line).length;
+  if (byteLength <= 75) return line;
+  // Fast path: pure ASCII (byte length === char length) — the base64 PHOTO
+  // line and every plain field. Each char is one octet, so slice by index and
+  // skip the per-character encoding entirely.
+  if (byteLength === line.length) {
+    const parts: string[] = [line.slice(0, 75)];
+    for (let i = 75; i < line.length; i += 74) parts.push(line.slice(i, i + 74));
+    return parts.join("\r\n ");
+  }
+  // General path (multi-byte text): fold on UTF-8 character boundaries so a
+  // code point is never split. Only runs for short, non-ASCII field values.
   const out: string[] = [];
   let chunkBytes = 0;
   let chunk = "";
   let first = true;
   for (const ch of line) {
-    const chBytes = new TextEncoder().encode(ch).length;
-    // First line budget is 75 octets; continuation lines 74 (the leading space
-    // counts toward the 75-octet limit).
+    const chBytes = VCARD_ENCODER.encode(ch).length;
     const budget = first ? 75 : 74;
     if (chunkBytes + chBytes > budget) {
       out.push(chunk);

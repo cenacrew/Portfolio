@@ -6,6 +6,7 @@ import {
   setVisitsDigestBaseline,
 } from "@portfolio/shared";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import { sendExpoPush } from "@/app/api/_lib/push";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,8 +16,6 @@ export const dynamic = "force-dynamic";
 // previous run, but ONLY when the visits mode is "daily". The route is guarded
 // by CRON_SECRET: Vercel cron requests carry `Authorization: Bearer <secret>`.
 // If CRON_SECRET is unset the endpoint is disabled (401) rather than left open.
-
-const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET;
@@ -38,6 +37,12 @@ export async function GET(req: Request) {
     const total = await getVisits(supabase);
 
     let sent = 0;
+    // Whether it is safe to advance the visits baseline this run. Stays true for
+    // every "nothing to send" case (mode ≠ daily, delta = 0, no devices) and
+    // only turns false when a send was attempted but failed — so a failed digest
+    // keeps the day's visits for the next run instead of dropping them.
+    let baselineOk = true;
+
     if (prefs.visits_mode === "daily") {
       const delta = Math.max(0, total - prefs.visits_digest_last_count);
       if (delta > 0) {
@@ -46,32 +51,22 @@ export async function GET(req: Request) {
           .map((d) => d.expo_push_token)
           .filter((t) => t.startsWith("ExponentPushToken") || t.startsWith("ExpoPushToken"));
         if (tokens.length > 0) {
-          const body = tokens.map((to) => ({
-            to,
+          const result = await sendExpoPush(tokens, {
             title: "📈 Résumé quotidien",
             body: `${delta.toLocaleString("fr-FR")} visite${delta > 1 ? "s" : ""} sur le dashboard depuis hier.`,
-            sound: "default" as const,
-          }));
-          try {
-            await fetch(EXPO_PUSH_URL, {
-              method: "POST",
-              headers: { "content-type": "application/json", accept: "application/json" },
-              body: JSON.stringify(body),
-            });
-            sent = tokens.length;
-          } catch {
-            // Best-effort; the baseline is still advanced below.
-          }
+          });
+          sent = result.sent;
+          baselineOk = result.ok;
         }
       }
     }
 
-    // Advance the baseline every run (regardless of mode) so switching to
-    // "daily" later reports only the visits from that point forward, not a
-    // lifetime backlog.
-    await setVisitsDigestBaseline(supabase, total);
+    // Advance the baseline (regardless of mode) so switching to "daily" later
+    // reports only the visits from that point forward, not a lifetime backlog —
+    // but NOT when a send failed, so those visits are retried next run.
+    if (baselineOk) await setVisitsDigestBaseline(supabase, total);
 
-    return NextResponse.json({ ok: true, mode: prefs.visits_mode, total, sent });
+    return NextResponse.json({ ok: true, mode: prefs.visits_mode, total, sent, baselineAdvanced: baselineOk });
   } catch {
     return NextResponse.json({ error: "Digest impossible." }, { status: 500 });
   }

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Breakpoint, SiteSettingsRow, Widget, WidgetRow } from "@portfolio/shared";
-import { GRID, getSiteSettings, getWidgets, resolveCollisions } from "@portfolio/shared";
+import { GRID, getSiteSettings, getWidgets, isCountdownHiddenNow, resolveCollisions } from "@portfolio/shared";
 import { widgets as localWidgets } from "@/config/widgets.config";
 import { getPublicServerSupabase, getServerSupabase } from "@/lib/supabase/server";
 import { registry } from "./registry";
@@ -49,13 +49,9 @@ function deoverlap(widgets: Widget[]): Widget[] {
 // Runs before de-overlap so the freed grid slot is repacked cleanly.
 function dropReachedHiddenCountdowns(widgets: Widget[]): Widget[] {
   const now = Date.now();
-  return widgets.filter((w) => {
-    if (w.type !== "countdown") return true;
-    const c = w.config as { endBehavior?: string; target?: string };
-    if (c.endBehavior !== "hide") return true;
-    const reached = new Date(c.target ?? "").getTime() <= now;
-    return !reached;
-  });
+  return widgets.filter(
+    (w) => w.type !== "countdown" || !isCountdownHiddenNow(w.config as { endBehavior?: string; target?: string }, now),
+  );
 }
 
 // Validates a widget's config with its type schema; returns null if the type

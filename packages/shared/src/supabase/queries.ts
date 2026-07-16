@@ -2,7 +2,8 @@
 // truth for reads/writes. Each takes a DbClient so the caller controls which
 // role/session runs the query (anon, authed cookie session, or service role).
 import type { DbClient } from "./client";
-import { WIDGET_MEDIA_BUCKET, extractMediaPaths, pruneMedia, type MediaWidget } from "./media";
+import { copyDuplicatedMedia, extractMediaPaths, pruneMedia, type MediaWidget } from "./media";
+import { MEDIA_TYPES } from "../widget-configs/media";
 import type {
   DashboardInsert,
   DashboardRow,
@@ -19,7 +20,6 @@ import type {
   WidgetRow,
   WidgetUpdate,
 } from "./types";
-import { toilePath } from "../widget-configs/toile";
 import { GRID, resolveCollisions } from "../grid";
 import type { WidgetBreakpointLayout } from "../widget";
 
@@ -153,16 +153,8 @@ export async function duplicateDashboard(
       .select("id")
       .single();
     if (insErr) throw insErr;
-    // Best-effort copy of a toile's PNG to the new widget's id-derived path.
-    if (w.type === "toile" && newRow) {
-      try {
-        await client.storage
-          .from(WIDGET_MEDIA_BUCKET)
-          .copy(toilePath(w.id), toilePath((newRow as { id: string }).id));
-      } catch {
-        /* the new toile just starts blank */
-      }
-    }
+    // Carry over id-keyed media (the toile canvas) to the new widget's id.
+    if (newRow) await copyDuplicatedMedia(client, w.type, w.id, (newRow as { id: string }).id);
   }
 
   // Copy header settings.
@@ -198,8 +190,13 @@ export async function deleteDashboard(client: DbClient, id: string): Promise<voi
   if (!row) return;
   if (row.is_default) throw new Error("La version par défaut ne peut pas être supprimée.");
 
-  // Media referenced by this version's widgets (candidates for pruning).
-  const { data: widgets } = await client.from("widgets").select("id,type,config").eq("dashboard_id", id);
+  // Media referenced by this version's widgets (candidates for pruning). Only
+  // media-bearing types can hold a path, so scan just those rows.
+  const { data: widgets } = await client
+    .from("widgets")
+    .select("id,type,config")
+    .eq("dashboard_id", id)
+    .in("type", MEDIA_TYPES);
   const candidates = ((widgets ?? []) as MediaWidget[]).flatMap((w) => extractMediaPaths(w));
 
   // Cascade deletes widgets + settings via the FK.
@@ -208,7 +205,10 @@ export async function deleteDashboard(client: DbClient, id: string): Promise<voi
 
   if (candidates.length > 0) {
     try {
-      const { data: remaining } = await client.from("widgets").select("id,type,config");
+      const { data: remaining } = await client
+        .from("widgets")
+        .select("id,type,config")
+        .in("type", MEDIA_TYPES);
       await pruneMedia(client, candidates, (remaining ?? []) as MediaWidget[]);
     } catch {
       /* storage cleanup is best-effort; the version is already gone */
@@ -275,14 +275,8 @@ export async function duplicateWidget(client: DbClient, sourceId: string): Promi
   };
   const created = await upsertWidget(client, insert);
 
-  // Best-effort copy of a toile's canvas to the new widget's id-derived path.
-  if (source.type === "toile") {
-    try {
-      await client.storage.from(WIDGET_MEDIA_BUCKET).copy(toilePath(source.id), toilePath(created.id));
-    } catch {
-      /* the duplicated toile just starts blank */
-    }
-  }
+  // Carry over id-keyed media (the toile canvas) to the duplicate's id.
+  await copyDuplicatedMedia(client, source.type, source.id, created.id);
   return created;
 }
 

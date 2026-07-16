@@ -372,8 +372,9 @@ export const registry: Record<WidgetType, RegistryEntry> = {
   "mini-game": defineWidget({
     schema: miniGame.miniGameSchema,
     defaultConfig: miniGame.miniGameDefault,
-    // Seed a populated board so the QA console shows the leaderboard layout
-    // (the live board is empty until real scores come in).
+    // A telling example for the QA console: the Snake variant with a title.
+    // Scores are read live from game_scores — there is no seeding mechanism, so
+    // the leaderboard shows whatever real data exists (empty on a fresh DB).
     sampleConfig: {
       game: "snake",
       title: "Snake",

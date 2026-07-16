@@ -29,3 +29,13 @@ export const photoDefault: PhotoConfig = {
 };
 
 export const photoLabel = "Photo / mini-galerie";
+
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: every slide's `src` is a widget-media URL.
+export const photoMedia: WidgetMediaSpec = {
+  urls: (config) => {
+    const images = (config as Partial<PhotoConfig>)?.images;
+    return Array.isArray(images) ? images.map((i) => i?.src) : [];
+  },
+};

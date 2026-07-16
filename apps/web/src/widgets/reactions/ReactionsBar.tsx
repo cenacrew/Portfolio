@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { getBrowserSupabase } from "@/lib/supabase/browser";
+import { useRealtimeTable } from "../ui/useRealtimeTable";
 
 // Client reaction bar. Optimistically bumps the tapped emoji with a spring
 // "pop", POSTs to /api/reactions (server runs the security-definer RPC), and
@@ -25,26 +25,12 @@ export default function ReactionsBar({
 
   // Realtime: adopt the authoritative count for any (widget, emoji) that
   // changes, so a second browser sees the counter move without a refresh.
-  useEffect(() => {
-    const supabase = getBrowserSupabase();
-    if (!supabase) return;
-    const channel = supabase
-      .channel(`reactions-${widgetId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "widget_reactions", filter: `widget_id=eq.${widgetId}` },
-        (payload) => {
-          const row = payload.new as { emoji?: string; count?: number };
-          if (row?.emoji && typeof row.count === "number") {
-            setCounts((c) => (c[row.emoji!] === undefined ? c : { ...c, [row.emoji!]: row.count! }));
-          }
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [widgetId]);
+  useRealtimeTable(`reactions-${widgetId}`, "widget_reactions", `widget_id=eq.${widgetId}`, (payload) => {
+    const row = payload.new as { emoji?: string; count?: number };
+    if (row?.emoji && typeof row.count === "number") {
+      setCounts((c) => (c[row.emoji!] === undefined ? c : { ...c, [row.emoji!]: row.count! }));
+    }
+  });
 
   useEffect(() => {
     return () => {

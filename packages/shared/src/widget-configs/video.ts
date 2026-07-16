@@ -22,3 +22,13 @@ export const videoDefault: VideoConfig = {
 };
 
 export const videoLabel = "Vidéo";
+
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: the video file and its optional poster still.
+export const videoMedia: WidgetMediaSpec = {
+  urls: (config) => {
+    const c = config as Partial<VideoConfig>;
+    return [c?.src, c?.poster];
+  },
+};

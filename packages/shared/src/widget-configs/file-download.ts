@@ -32,6 +32,13 @@ export const fileDownloadDefault: FileDownloadConfig = {
 
 export const fileDownloadLabel = "Fichier à télécharger";
 
+import type { WidgetMediaSpec } from "./media-spec";
+
+// Media: the single uploaded file.
+export const fileDownloadMedia: WidgetMediaSpec = {
+  urls: (config) => [(config as Partial<FileDownloadConfig>)?.fileUrl],
+};
+
 // Max upload size (~50 MB). Enforced in the mobile app before upload AND on the
 // server upload route so a hand-crafted request can't bypass it.
 export const MAX_FILE_BYTES = 50 * 1024 * 1024;

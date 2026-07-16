@@ -59,10 +59,23 @@ async function dispatch(source: PushSource, message: PushMessage): Promise<void>
   await sendExpoPush(tokens, message);
 }
 
-// Sends the message to every token in chunks, then purges any token Expo flags
-// as DeviceNotRegistered so the table doesn't accumulate dead entries.
-async function sendExpoPush(tokens: string[], message: PushMessage): Promise<void> {
+// Result of a fan-out: `ok` is false when any chunk failed to POST (network
+// error or non-2xx) so callers that must not lose state (the daily digest) can
+// decide whether to advance their baseline. `sent` counts tokens in chunks that
+// were delivered to Expo.
+export interface ExpoPushResult {
+  ok: boolean;
+  sent: number;
+}
+
+// Sends the message to every token in chunks (Expo caps a request at 100), then
+// purges any token Expo flags as DeviceNotRegistered so the table doesn't
+// accumulate dead entries. Shared by the public-write fan-out and the daily
+// digest cron so both get chunking + dead-token purge from one place.
+export async function sendExpoPush(tokens: string[], message: PushMessage): Promise<ExpoPushResult> {
   const invalid: string[] = [];
+  let ok = true;
+  let sent = 0;
 
   for (let i = 0; i < tokens.length; i += EXPO_CHUNK) {
     const chunk = tokens.slice(i, i + EXPO_CHUNK);
@@ -84,13 +97,18 @@ async function sendExpoPush(tokens: string[], message: PushMessage): Promise<voi
         body: JSON.stringify(body),
         signal: controller.signal,
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        ok = false;
+        continue;
+      }
       json = (await res.json()) as { data?: ExpoTicket[] };
     } catch {
+      ok = false;
       continue; // Network/timeout: skip this chunk, don't fail the rest.
     } finally {
       clearTimeout(timeout);
     }
+    sent += chunk.length;
 
     // Tickets align with the messages array order → index maps to token.
     const tickets = json?.data ?? [];
@@ -112,6 +130,8 @@ async function sendExpoPush(tokens: string[], message: PushMessage): Promise<voi
       }
     }
   }
+
+  return { ok, sent };
 }
 
 type ExpoTicket = {

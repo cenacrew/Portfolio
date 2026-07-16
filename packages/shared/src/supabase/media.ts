@@ -8,7 +8,7 @@
 // from phase 8 on, where duplicating a dashboard shares media).
 import type { DbClient } from "./client";
 import type { WidgetType } from "../widget";
-import { toilePath } from "../widget-configs/toile";
+import { WIDGET_MEDIA_SPECS, MEDIA_TYPES } from "../widget-configs/media";
 
 export const WIDGET_MEDIA_BUCKET = "widget-media";
 
@@ -37,51 +37,43 @@ export function storagePathFromPublicUrl(url: string): string | null {
   return path || null;
 }
 
-function asObj(config: unknown): Record<string, unknown> {
-  return config && typeof config === "object" ? (config as Record<string, unknown>) : {};
+// Every bucket object path a widget's config references, driven by the widget's
+// media spec (packages/shared/src/widget-configs/media.ts). URL media is
+// resolved from its public URL; id-keyed media (the toile PNG) uses the widget
+// id. A type with no spec references no media. Archives (toile/archive/*) are
+// intentional and never pruned here (nor by the purge script).
+export function extractMediaPaths(widget: MediaWidget): string[] {
+  const spec = WIDGET_MEDIA_SPECS[widget.type];
+  if (!spec) return [];
+  const paths = new Set<string>();
+  if (spec.urls) {
+    for (const url of spec.urls(widget.config)) {
+      const p = storagePathFromPublicUrl(url ?? "");
+      if (p) paths.add(p);
+    }
+  }
+  if (spec.idKeyedPath) paths.add(spec.idKeyedPath(widget.id));
+  return [...paths];
 }
 
-// Every bucket object path a widget's config references. URL-based media
-// (photo, video, file-download) is resolved from its public URL; the toile
-// stores a PNG at a path derived from the widget id.
-export function extractMediaPaths(widget: MediaWidget): string[] {
-  const paths = new Set<string>();
-  const add = (url: unknown) => {
-    if (typeof url !== "string") return;
-    const p = storagePathFromPublicUrl(url);
-    if (p) paths.add(p);
-  };
-  const c = asObj(widget.config);
-  switch (widget.type) {
-    case "photo": {
-      const images = Array.isArray(c.images) ? c.images : [];
-      for (const img of images) add(asObj(img).src);
-      break;
-    }
-    case "video":
-      add(c.src);
-      add(c.poster);
-      break;
-    case "file-download":
-      add(c.fileUrl);
-      break;
-    case "contact-card":
-      add(c.photoUrl);
-      break;
-    case "cv-timeline": {
-      const entries = Array.isArray(c.entries) ? c.entries : [];
-      for (const e of entries) add(asObj(e).logoUrl);
-      break;
-    }
-    case "toile":
-      // The live canvas PNG. Archives (toile/archive/*) are intentional and
-      // never pruned here (nor by the purge script).
-      paths.add(toilePath(widget.id));
-      break;
-    default:
-      break;
+// Copies a widget's id-keyed media (e.g. the toile PNG) to a freshly duplicated
+// widget's id, when its spec asks for it. Best-effort: a failure just leaves the
+// duplicate's media blank, never fails the duplication.
+export async function copyDuplicatedMedia(
+  client: DbClient,
+  type: WidgetType,
+  sourceId: string,
+  newId: string,
+): Promise<void> {
+  const spec = WIDGET_MEDIA_SPECS[type];
+  if (!spec?.copyOnDuplicate || !spec.idKeyedPath) return;
+  try {
+    await client.storage
+      .from(WIDGET_MEDIA_BUCKET)
+      .copy(spec.idKeyedPath(sourceId), spec.idKeyedPath(newId));
+  } catch {
+    /* the duplicate just starts blank */
   }
-  return [...paths];
 }
 
 // All bucket paths referenced by any widget in the list (the cross-widget guard
@@ -113,7 +105,9 @@ export async function pruneMedia(
 // action (the widget row change already succeeded).
 export async function pruneWidgetMedia(client: DbClient, candidatePaths: string[]): Promise<string[]> {
   if (candidatePaths.length === 0) return [];
-  const { data } = await client.from("widgets").select("id,type,config");
+  // Only media-bearing types can hold a referenced path, so scan just those
+  // rows instead of the whole widgets table.
+  const { data } = await client.from("widgets").select("id,type,config").in("type", MEDIA_TYPES);
   const remaining = (data ?? []) as MediaWidget[];
   return pruneMedia(client, candidatePaths, remaining);
 }
