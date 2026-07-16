@@ -290,6 +290,54 @@
   max-width: 100%;
 }
 
+/* ---------- mobile (?bp=mobile) context: the real device board ----------
+   The WebView complaint (phase 20): a w=3 tile, sized at a fixed px unit, was
+   WIDER than the padded card and overflowed to the right with no scroll. Fix:
+   reproduce the live mobile grid faithfully and fluidly.
+   - Strip the horizontal chrome (qa-type / qa-card padding + left border) so the
+     board FRAME spans the full .qa content width == the real board on this
+     device (viewport − 2×16px page padding), exactly like .qr-page. Card status
+     moves to a TOP border, and the HUD (check, tags, note) gets its own small
+     inline padding so it still reads inside the full-width card ("HUD hors du
+     flux horizontal de la tuile").
+   - Made an inline-size container, the tile is sized in cqw with the SAME math
+     as qrcode.css's --qr-unit: cell = (board − 2×gap) / 3. A w=3 tile therefore
+     equals 100cqw and fits precisely — it can never overflow the WebView.
+   - On a wide desktop the console is capped to a phone-like width so ?bp=mobile
+     still simulates a device rather than stretching to the full page. */
+.qa--mobile { max-width: 412px; }
+.qa--mobile .qa-formats { grid-template-columns: 1fr; }
+.qa--mobile .qa-type {
+  padding-left: 0;
+  padding-right: 0;
+  border: 0;
+  background: none;
+}
+.qa--mobile .qa-type__head { padding-inline: 2px; }
+.qa--mobile .qa-card {
+  padding-left: 0;
+  padding-right: 0;
+  border-left-width: 1px;
+  border-top-width: 3px;
+}
+.qa--mobile .qa-card--pending { border-top-color: var(--qa-amber); }
+.qa--mobile .qa-card--valid { border-top-color: var(--qa-green); }
+.qa--mobile .qa-card__top,
+.qa--mobile .qa-note { margin-inline: 2px; }
+.qa--mobile .qa-card__views { display: block; }
+.qa--mobile .qa-view { width: auto; }
+.qa--mobile .qa-view__frame {
+  container-type: inline-size;
+  padding: 10px 0; /* full-bleed horizontally; keep a little board above/below */
+  overflow: visible; /* the tile fits exactly — no inner scroll */
+}
+.qa--mobile .qa-tile {
+  --m-gap: 10px;
+  --m-cell: calc((100cqw - 2 * var(--m-gap)) / 3);
+  width: calc(var(--m-cell) * var(--w) + (var(--w) - 1) * var(--m-gap));
+  height: calc(var(--m-cell) * var(--h) + (var(--h) - 1) * var(--m-gap));
+}
+
 /* The audited tile — mirrors .qr-tile's container behaviour so each real
    Renderer adapts to the tile size exactly as on the public page. Size comes
    from an inline width/height matching the format at true grid unit. */
