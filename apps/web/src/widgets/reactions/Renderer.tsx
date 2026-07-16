@@ -14,13 +14,21 @@ export default async function ReactionsRenderer({ config, widget }: WidgetRender
     {},
   );
 
-  const initialCounts = Object.fromEntries(config.emojis.map((e) => [e, counts[e] ?? 0]));
+  // Configured emojis first (in config order), then any visitor-added custom
+  // emoji that has a counter row but isn't in the config (phase 19). Realtime
+  // keeps this list live on the client for emojis added/removed after load.
+  const emojis = [...config.emojis];
+  for (const emoji of Object.keys(counts)) {
+    if (!emojis.includes(emoji)) emojis.push(emoji);
+  }
+  const initialCounts = Object.fromEntries(emojis.map((e) => [e, counts[e] ?? 0]));
 
   return (
     <ReactionsBar
       widgetId={widget.id}
       title={config.title}
-      emojis={config.emojis}
+      emojis={emojis}
+      configEmojis={config.emojis}
       initialCounts={initialCounts}
     />
   );
