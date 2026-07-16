@@ -50,7 +50,13 @@ export default function MiniGameModal({
   title: string;
   onClose: () => void;
 }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // GreatModal mounts its portal children ONE render after this component (it
+  // resolves the portal target in an effect), so a plain mount effect reading a
+  // canvas ref runs while the canvas is still unmounted and never retries —
+  // leaving the engine handle null and the "Jouer" button inert (phase 17 bug
+  // 2). Tracking the canvas node in state (via a callback ref) re-runs the mount
+  // effect the moment the canvas actually attaches to the DOM.
+  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const handleRef = useRef<GameHandle | null>(null);
   const boardRef = useRef<GameScoreRow[]>([]);
   const swipe = useRef<{ x: number; y: number } | null>(null);
@@ -89,13 +95,13 @@ export default function MiniGameModal({
   // Realtime: a score from any browser refreshes the board.
   useRealtimeTable(`scores-${game}`, "game_scores", `game=eq.${game}`, () => void refreshBoard());
 
-  // Mount the engine once, wiring its callbacks to React state.
+  // Mount the engine when the canvas node attaches (and re-mount if the game or
+  // accent changes), wiring its callbacks to React state.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvasEl) return;
     const theme = readTheme(accent);
     const mount = game === "flappy" ? mountFlappy : mountSnake;
-    const handle = mount(canvas, theme, {
+    const handle = mount(canvasEl, theme, {
       onScore: setScore,
       onPhase: (p, s) => {
         setPhase(p);
@@ -123,7 +129,7 @@ export default function MiniGameModal({
       handle.dispose();
       handleRef.current = null;
     };
-  }, [game, accent]);
+  }, [canvasEl, game, accent]);
 
   // Keyboard: arrows/WASD steer Snake; space/up/W flap or (re)start. Ignored
   // while typing initials so the entry field owns the keys.
@@ -223,7 +229,7 @@ export default function MiniGameModal({
       <div className="mg" data-game={game} style={{ ["--mg-accent" as string]: accent }}>
         <div className="mg__stage">
           <canvas
-            ref={canvasRef}
+            ref={setCanvasEl}
             className="mg__canvas"
             style={{ touchAction: "none" }}
             onPointerDown={onPointerDown}

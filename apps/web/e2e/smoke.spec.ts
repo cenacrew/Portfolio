@@ -64,3 +64,41 @@ test("/ (portfolio) responds 200 and renders", async ({ page }) => {
   expect(res?.status(), "/ HTTP status").toBe(200);
   await expect(page.locator("body")).toBeVisible();
 });
+
+// Regression guard for the phase-17 "Jouer button is inert" bug: the modal
+// opened but tapping Jouer launched nothing because the canvas engine handle
+// was never wired (GreatModal mounts its portal children one render after the
+// modal, so the engine mount effect ran while the canvas ref was still null and
+// never retried). This asserts a click on Jouer REALLY starts a run: the ready
+// overlay disappears (phase === "playing") and the canvas actually animates.
+test("mini-game: clicking Jouer starts a run (canvas animates)", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const res = await page.goto("/qrcode", { waitUntil: "networkidle" });
+  expect(res?.status(), "/qrcode HTTP status").toBe(200);
+
+  // Open the first mini-game modal from its public tile (Snake in the local
+  // fallback config; whatever the live dashboard exposes when env vars are set).
+  const tile = page.locator("button.w-mg").first();
+  await expect(tile).toBeVisible();
+  await tile.click();
+
+  const modal = page.locator(".mg");
+  await expect(modal).toBeVisible();
+
+  // Ready overlay with the Jouer CTA is showing.
+  const play = modal.locator(".mg__overlay .mg__cta", { hasText: "Jouer" });
+  await expect(play).toBeVisible();
+
+  // Snapshot the (static) ready-frame canvas before starting.
+  const canvas = modal.locator(".mg__canvas");
+  const before = await canvas.evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+
+  await play.click();
+
+  // The run must actually begin: no ready/over overlay while playing …
+  await expect(page.locator(".mg__overlay")).toHaveCount(0);
+  // … and the canvas must animate (snake advances, apple pulses).
+  await page.waitForTimeout(500);
+  const after = await canvas.evaluate((c) => (c as HTMLCanvasElement).toDataURL());
+  expect(after, "canvas should change once the game is running").not.toBe(before);
+});
