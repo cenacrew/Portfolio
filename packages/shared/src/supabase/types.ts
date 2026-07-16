@@ -140,9 +140,16 @@ export type SiteSettingsUpdate = Partial<Omit<SiteSettingsRow, "id" | "updated_a
 // human last approved; a couple is "to verify" when it's null or ≠ current hash.
 export type WidgetQaStatus = "pending" | "ok" | "issue";
 
+// Which grid context a QA row was validated in (phase 18). Mirrors the shared
+// Breakpoint: the console audits mobile (3 col) and desktop (9 col) separately.
+export type WidgetQaBreakpoint = "mobile" | "desktop";
+
 export interface WidgetQaRow {
   widget_type: string;
   format: string;
+  // Part of the composite key since phase 18. Optional in the TS shape so reads
+  // still parse a pre-0013 row (column absent) without breaking.
+  breakpoint?: WidgetQaBreakpoint;
   validated_hash: string | null;
   status: WidgetQaStatus;
   note: string | null;
@@ -153,6 +160,7 @@ export interface WidgetQaRow {
 export type WidgetQaInsert = {
   widget_type: string;
   format: string;
+  breakpoint: WidgetQaBreakpoint;
   validated_hash?: string | null;
   status?: WidgetQaStatus;
   note?: string | null;

@@ -14,6 +14,7 @@ import type {
   SiteSettingsRow,
   SiteSettingsUpdate,
   WidgetInsert,
+  WidgetQaBreakpoint,
   WidgetQaInsert,
   WidgetQaRow,
   WidgetReactionRow,
@@ -44,7 +45,10 @@ export const LEGACY_DEFAULT: DashboardRow = {
 // dashboard_id column) not being migrated yet.
 function isMissingRelation(error: unknown): boolean {
   const code = (error as { code?: string } | null)?.code;
-  return code === "42P01" || code === "42703";
+  // 42P01/42703: Postgres "relation/column does not exist" (raw SQL filters).
+  // PGRST204: PostgREST "column not found in schema cache" — what an
+  // insert/upsert payload referencing a not-yet-migrated column returns.
+  return code === "42P01" || code === "42703" || code === "PGRST204";
 }
 
 // Lists dashboard versions (default first). Resilient: when the table doesn't
@@ -472,14 +476,24 @@ export async function changeVote(
 // reads return empty, writes no-op, so the QA console degrades to "everything
 // to verify, nothing persisted" instead of crashing.
 
-// A stable key for one (type, format) couple, used by the QA console maps.
+// A stable key for one (type, format) couple, used by the QA console maps. The
+// map itself is always scoped to a single breakpoint (getWidgetQaMap filters by
+// it), so the key stays 2-part — no collision between the two contexts.
 export function widgetQaKey(widgetType: string, format: string): string {
   return `${widgetType}::${format}`;
 }
 
-// All QA rows, keyed by `${type}::${format}`. Empty map when the table is
-// missing (pre-migration) so the console still renders.
-export async function getWidgetQaMap(client: DbClient): Promise<Record<string, WidgetQaRow>> {
+// QA rows for ONE breakpoint (phase 18), keyed by `${type}::${format}`. Empty
+// map when the table is missing (pre-migration) so the console still renders.
+//
+// Pre-0013 tolerance: we `select *` (never `.eq("breakpoint")`, which would
+// 42703 on the missing column) and filter in JS. A row without a breakpoint
+// (old shape) matches EVERY requested breakpoint, so prior validations survive
+// until 0013 runs — i.e. exactly the current behaviour.
+export async function getWidgetQaMap(
+  client: DbClient,
+  breakpoint: WidgetQaBreakpoint,
+): Promise<Record<string, WidgetQaRow>> {
   const { data, error } = await client.from("widget_qa").select("*");
   if (error) {
     if (isMissingRelation(error)) return {};
@@ -487,19 +501,20 @@ export async function getWidgetQaMap(client: DbClient): Promise<Record<string, W
   }
   const map: Record<string, WidgetQaRow> = {};
   for (const row of (data ?? []) as WidgetQaRow[]) {
+    if (row.breakpoint != null && row.breakpoint !== breakpoint) continue;
     map[widgetQaKey(row.widget_type, row.format)] = row;
   }
   return map;
 }
 
-// Upserts one QA row. Returns false (without throwing) when the table is
-// missing, so a caller can surface a "persistence unavailable" warning while
-// still producing the GitHub issue.
+// Upserts one QA row (scoped to its breakpoint). Returns false (without
+// throwing) when the table/column is missing, so a caller can surface a
+// "persistence unavailable" warning while still producing the GitHub issue.
 export async function upsertWidgetQa(client: DbClient, row: WidgetQaInsert): Promise<boolean> {
   const payload: WidgetQaInsert = { ...row, updated_at: new Date().toISOString() };
   const { error } = await client
     .from("widget_qa")
-    .upsert(payload as never, { onConflict: "widget_type,format" });
+    .upsert(payload as never, { onConflict: "widget_type,format,breakpoint" });
   if (error) {
     if (isMissingRelation(error)) return false;
     throw error;
@@ -508,12 +523,18 @@ export async function upsertWidgetQa(client: DbClient, row: WidgetQaInsert): Pro
 }
 
 // "Re-verify this widget": clears the validated hash for EVERY format of a type
-// so it flags as to-verify again. No-op when the table is missing.
-export async function resetWidgetQa(client: DbClient, widgetType: string): Promise<boolean> {
+// in ONE breakpoint so it flags as to-verify again there. No-op when the
+// table/column is missing.
+export async function resetWidgetQa(
+  client: DbClient,
+  widgetType: string,
+  breakpoint: WidgetQaBreakpoint,
+): Promise<boolean> {
   const { error } = await client
     .from("widget_qa")
     .update({ validated_hash: null, status: "pending", updated_at: new Date().toISOString() } as never)
-    .eq("widget_type", widgetType);
+    .eq("widget_type", widgetType)
+    .eq("breakpoint", breakpoint);
   if (error) {
     if (isMissingRelation(error)) return false;
     throw error;
