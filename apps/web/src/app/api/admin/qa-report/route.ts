@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { WidgetType } from "@portfolio/shared";
+import type { WidgetQaBreakpoint, WidgetType } from "@portfolio/shared";
 import { WIDGET_MEDIA_BUCKET, upsertWidgetQa } from "@portfolio/shared";
 import { getServerSupabase } from "@/lib/supabase/server";
 import { currentHash } from "@/widgets/qa";
@@ -51,12 +51,15 @@ export async function POST(req: Request) {
   } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
 
-  let body: { results?: QaResult[] };
+  let body: { breakpoint?: string; results?: QaResult[] };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Corps invalide." }, { status: 400 });
   }
+  // The grid context this session audited (phase 18). Every row + screenshot +
+  // the GitHub issue is scoped to it. Defaults to desktop like the console page.
+  const bp: WidgetQaBreakpoint = body.breakpoint === "mobile" ? "mobile" : "desktop";
   const results = Array.isArray(body.results) ? body.results : [];
   if (results.length === 0) {
     return NextResponse.json({ error: "Rien à enregistrer." }, { status: 400 });
@@ -77,7 +80,7 @@ export async function POST(req: Request) {
       const decoded = decodeDataUrl(r.screenshotDataUrl);
       if (decoded) {
         const safeFormat = r.format.replace(/[^a-z0-9]+/gi, "");
-        const path = `qa/${r.type}-${safeFormat}-${at}.png`;
+        const path = `qa/${r.type}-${safeFormat}-${bp}-${at}.png`;
         try {
           const { error } = await supabase.storage
             .from(WIDGET_MEDIA_BUCKET)
@@ -96,6 +99,7 @@ export async function POST(req: Request) {
     const wrote = await upsertWidgetQa(supabase, {
       widget_type: r.type,
       format: r.format,
+      breakpoint: bp,
       validated_hash: r.validated ? hash : null,
       status: r.validated ? "ok" : "issue",
       note: r.validated ? null : (r.note?.trim() || null),
@@ -130,7 +134,7 @@ export async function POST(req: Request) {
         .map((i) => `### \`${i.type}\` — \`${i.format}\`\n\n![${i.type} ${i.format}](${i.screenshotUrl})`)
         .join("\n\n");
       const md = [
-        `Session QA du ${now.toLocaleString("fr-FR")}.`,
+        `Session QA du ${now.toLocaleString("fr-FR")} — contexte **${bp}** (${bp === "mobile" ? "3 colonnes" : "9 colonnes"}).`,
         "",
         "| Type | Format | Note | Capture |",
         "| --- | --- | --- | --- |",
@@ -149,9 +153,9 @@ export async function POST(req: Request) {
             "User-Agent": "cenacrew-qa-console",
           },
           body: JSON.stringify({
-            title: `QA widgets — ${now.toLocaleDateString("fr-FR")} (${issues.length} à corriger)`,
+            title: `QA widgets [${bp}] — ${now.toLocaleDateString("fr-FR")} (${issues.length} à corriger)`,
             body: md,
-            labels: ["qa", "widgets"],
+            labels: ["qa", "widgets", `qa-${bp}`],
           }),
         });
         if (res.ok) {

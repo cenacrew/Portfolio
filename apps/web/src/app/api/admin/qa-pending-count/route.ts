@@ -6,8 +6,10 @@ import { buildQaPlan, totalToVerify } from "@/widgets/qa";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// GET /api/admin/qa-pending-count — number of (type, format) couples still "to
-// verify" in the QA console (phase 14 badge on the app's "Test widgets" entry).
+// GET /api/admin/qa-pending-count — number of (type, format, breakpoint)
+// triples still "to verify" in the QA console (phase 14 badge on the app's
+// "Test widgets" entry). Since phase 18 the console is scoped per breakpoint;
+// the badge counts the SUM of both contexts so nothing pending is hidden.
 //
 // Auth: the mobile app carries a Supabase session as a Bearer JWT; the web
 // admin carries it as cookies. Accept either, verify server-side, and NEVER
@@ -40,8 +42,13 @@ export async function GET(req: Request) {
 
   let count = 0;
   try {
-    const qaMap = await getWidgetQaMap(client);
-    count = totalToVerify(buildQaPlan(qaMap, true));
+    const [mobileMap, desktopMap] = await Promise.all([
+      getWidgetQaMap(client, "mobile"),
+      getWidgetQaMap(client, "desktop"),
+    ]);
+    count =
+      totalToVerify(buildQaPlan(mobileMap, "mobile", true)) +
+      totalToVerify(buildQaPlan(desktopMap, "desktop", true));
   } catch {
     // Pre-migration or a transient read failure: report nothing pending rather
     // than erroring the badge.

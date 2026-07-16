@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { WidgetType } from "@portfolio/shared";
+import type { WidgetQaBreakpoint, WidgetType } from "@portfolio/shared";
 import { widgetQaKey } from "@portfolio/shared";
 import { toPng } from "html-to-image";
 import type { QaTypeEntry } from "@/widgets/qa";
@@ -95,10 +95,14 @@ export default function QaConsole({
   plan,
   previews,
   showAll,
+  bp,
 }: {
   plan: QaTypeEntry[];
   previews: Record<string, ReactNode>;
   showAll: boolean;
+  // The single grid context this session audits (phase 18): mobile 3 col when
+  // opened from the app's WebView (?bp=mobile), desktop 9 col on a PC.
+  bp: WidgetQaBreakpoint;
 }) {
   const router = useRouter();
   const [validated, setValidated] = useState<Record<string, boolean>>({});
@@ -121,9 +125,13 @@ export default function QaConsole({
   const setNote = (key: string, text: string) =>
     setNotes((n) => ({ ...n, [key]: text }));
 
+  // Base path of the console within the CURRENT context — every internal link
+  // must carry the bp param so a WebView session never falls back to desktop.
+  const basePath = `/adminqrcode/test?bp=${bp}`;
+
   async function reVerify(type: WidgetType) {
     try {
-      await reVerifyAction(type);
+      await reVerifyAction(type, bp);
       router.refresh();
     } catch {
       setFinish({ running: false, tone: "error", message: "Impossible de réinitialiser ce widget." });
@@ -155,8 +163,8 @@ export default function QaConsole({
       const isValid = Boolean(validated[key]);
       let screenshotDataUrl: string | undefined;
       if (!isValid) {
-        // The desktop tile is tagged with data-shot-key; a lazily-unrevealed tile
-        // simply has no content to shoot (best-effort, as before).
+        // The context's tile is tagged with data-shot-key; a lazily-unrevealed
+        // tile simply has no content to shoot (best-effort, as before).
         const node = document.querySelector<HTMLDivElement>(`[data-shot-key="${key}"]`);
         if (node) {
           try {
@@ -173,7 +181,7 @@ export default function QaConsole({
       const res = await fetch("/api/admin/qa-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ results }),
+        body: JSON.stringify({ breakpoint: bp, results }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -182,7 +190,7 @@ export default function QaConsole({
       }
       const parts: string[] = [];
       parts.push(`${data.validated} validé(s), ${data.flagged} à corriger.`);
-      if (!data.persisted) parts.push("Table widget_qa absente : rien n'a été enregistré en base (migration 0008 à exécuter).");
+      if (!data.persisted) parts.push("Table widget_qa absente ou pas à jour : rien n'a été enregistré en base (migrations 0008/0013 à exécuter).");
       if (data.issueSkipped && data.flagged > 0) parts.push("Issue GitHub non créée (GITHUB_TOKEN non configuré ou API indisponible).");
       const tone: FinishState["tone"] = !data.persisted || data.issueSkipped ? "warn" : "ok";
       setFinish({
@@ -214,7 +222,7 @@ export default function QaConsole({
     <main className="qa">
       <header className="qa-bar">
         <div className="qa-bar__lead">
-          <span className="qa-bar__eyebrow">Console QA</span>
+          <span className="qa-bar__eyebrow">Console QA · {bp === "mobile" ? "Mobile · 3 col" : "Desktop · 9 col"}</span>
           <h1 className="qa-bar__title">Test des widgets</h1>
         </div>
         <div className="qa-bar__meter" aria-live="polite">
@@ -224,7 +232,7 @@ export default function QaConsole({
           <span className="qa-bar__total">{totalToVerify} à vérifier</span>
         </div>
         <div className="qa-bar__actions">
-          <Link href={showAll ? "/adminqrcode/test" : "/adminqrcode/test?all=1"} className="admin-btn admin-btn--ghost admin-btn--sm">
+          <Link href={showAll ? basePath : `${basePath}&all=1`} className="admin-btn admin-btn--ghost admin-btn--sm">
             {showAll ? "À vérifier" : "Tout voir"}
           </Link>
           <Link href="/adminqrcode" className="admin-btn admin-btn--ghost admin-btn--sm">
@@ -250,8 +258,8 @@ export default function QaConsole({
         <div className="qa-empty">
           <h2 className="qa-empty__title">Tout est à jour</h2>
           <p className="qa-empty__sub">
-            Aucun widget à vérifier : chaque type a été validé pour son code actuel.{" "}
-            <Link href="/adminqrcode/test?all=1" className="qa-link">
+            Aucun widget à vérifier dans ce contexte ({bp === "mobile" ? "mobile" : "desktop"}) : chaque type a été validé pour son code actuel.{" "}
+            <Link href={`${basePath}&all=1`} className="qa-link">
               Tout revoir
             </Link>
           </p>
@@ -308,28 +316,35 @@ export default function QaConsole({
                       </div>
 
                       <div className="qa-card__views">
-                        {f.w <= M.cols ? (
+                        {/* One context per session (phase 18): the plan only
+                            contains formats this breakpoint's grid can hold. */}
+                        {bp === "mobile" ? (
                           <figure className="qa-view">
                             <figcaption className="qa-view__cap">Mobile · 3 col</figcaption>
                             <div className="qa-view__frame" style={{ "--wp": `${M.wp}px` } as CSSProperties}>
-                              <LazyTile className={tileClass} style={tileBox(f.w, f.h, M_UNIT, M.gap)}>
+                              <LazyTile
+                                className={tileClass}
+                                style={tileBox(f.w, f.h, M_UNIT, M.gap)}
+                                shotKey={key}
+                              >
                                 {node}
                               </LazyTile>
                             </div>
                           </figure>
-                        ) : null}
-                        <figure className="qa-view">
-                          <figcaption className="qa-view__cap">Desktop · 9 col</figcaption>
-                          <div className="qa-view__frame" style={{ "--wp": `${D.wp}px` } as CSSProperties}>
-                            <LazyTile
-                              className={tileClass}
-                              style={tileBox(f.w, f.h, D.unit, D.gap)}
-                              shotKey={key}
-                            >
-                              {node}
-                            </LazyTile>
-                          </div>
-                        </figure>
+                        ) : (
+                          <figure className="qa-view">
+                            <figcaption className="qa-view__cap">Desktop · 9 col</figcaption>
+                            <div className="qa-view__frame" style={{ "--wp": `${D.wp}px` } as CSSProperties}>
+                              <LazyTile
+                                className={tileClass}
+                                style={tileBox(f.w, f.h, D.unit, D.gap)}
+                                shotKey={key}
+                              >
+                                {node}
+                              </LazyTile>
+                            </div>
+                          </figure>
+                        )}
                       </div>
 
                       {f.toVerify && !isValid ? (
