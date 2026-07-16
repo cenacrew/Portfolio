@@ -100,6 +100,14 @@ function PickVideoButton({ onDone }: { onDone: (url: string) => void }) {
 // Pick any document from the device and upload it to widget-media (files/).
 // expo-document-picker works in Expo Go. The ~50 MB cap is enforced in
 // uploadFile; here we just surface a clear error if the read/upload fails.
+//
+// copyToCacheDirectory MUST stay false. When true, expo-document-picker copies
+// the file into Expo Go's *un-scoped* native cache (context.cacheDir) and hands
+// back a file:// uri there; the new expo-file-system only grants READ inside the
+// experience-scoped sandbox, so reading that path throws
+// "FileSystemFile.bytes … missing 'READ' permission" (phase 17 bug 1). With
+// false we get the original content:// SAF uri, which the new FS reads directly
+// via ContentResolver (see readLocalFile). No temp copy is created either way.
 function PickFileButton({
   onDone,
 }: {
@@ -109,7 +117,7 @@ function PickFileButton({
     <PickButton
       label="📎 Importer un fichier"
       run={async (setBusy) => {
-        const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: true, multiple: false });
+        const res = await DocumentPicker.getDocumentAsync({ type: "*/*", copyToCacheDirectory: false, multiple: false });
         if (res.canceled || !res.assets?.[0]?.uri) return;
         const asset = res.assets[0];
         setBusy(true);

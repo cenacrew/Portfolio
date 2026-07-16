@@ -126,7 +126,11 @@ function id(row: WidgetRow) {
 
 // ---- media upload ----------------------------------------------------------
 
-// Reads a picked local file (file:// URI) into bytes with expo-file-system.
+// Reads a picked file into bytes with expo-file-system. Handles both the
+// scoped file:// uris that expo-image-picker returns (photos/videos, copied
+// into the experience sandbox) and the content:// SAF uris from
+// expo-document-picker (see PickFileButton) — the new File API grants READ for
+// content:// and streams them through Android's ContentResolver.
 //
 // THE BUG (phase 4.6): RN's `fetch(uri).arrayBuffer()` returns a truncated
 // 14-byte body for local file:// URIs in Expo Go, so uploaded videos landed in
