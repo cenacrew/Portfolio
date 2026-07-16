@@ -193,6 +193,9 @@ export default function Dashboard() {
           <Button label="💌 Livre d'or" onPress={() => router.push("/(admin)/guestbook")} variant="ghost" style={{ flex: 1 }} />
         </View>
 
+        {/* Reaction moderation (phase 19) — remove visitor-added emojis */}
+        <Button label="😀 Réactions" onPress={() => router.push("/(admin)/reactions")} variant="ghost" />
+
         {/* Push notifications preferences (phase 15) */}
         <Button label="🔔 Notifications" onPress={() => router.push("/(admin)/notifications")} variant="ghost" />
 
