@@ -601,6 +601,102 @@ export async function incrementReaction(
   return Number(data ?? 0);
 }
 
+// Postgres "function does not exist" / PostgREST "function not found" — the
+// phase-19 RPCs not being migrated yet (0014). Distinct from isMissingRelation
+// so callers can degrade the toggle to a plain increment pre-migration.
+function isMissingFunction(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  // 42883: Postgres "function does not exist". PGRST202: PostgREST can't find
+  // the function in its schema cache.
+  return code === "42883" || code === "PGRST202";
+}
+
+export interface ReactionToggleResult {
+  count: number;
+  active: boolean;
+}
+
+// Toggles a visitor's reaction on (widget, emoji): first tap records it and
+// bumps the counter, a second tap (same salted voter hash) removes it and
+// decrements. Runs through the toggle_reaction security-definer RPC so anon has
+// no direct table write.
+//
+// Pre-migration tolerance (before 0014): the RPC/marks table don't exist yet, so
+// this degrades to a plain increment (phase-12 behaviour) and reports the
+// reaction as active — the public /qrcode keeps working, minus the un-react.
+export async function toggleReaction(
+  client: DbClient,
+  widgetId: string,
+  emoji: string,
+  voterHash: string,
+): Promise<ReactionToggleResult> {
+  const { data, error } = await client.rpc("toggle_reaction", {
+    p_widget_id: widgetId,
+    p_emoji: emoji,
+    p_voter_hash: voterHash,
+  } as never);
+  if (error) {
+    if (isMissingFunction(error)) {
+      const count = await incrementReaction(client, widgetId, emoji);
+      return { count, active: true };
+    }
+    throw error;
+  }
+  // The RPC returns a single-row table (count, active).
+  const row = (Array.isArray(data) ? data[0] : data) as { count?: number; active?: boolean } | null;
+  return { count: Number(row?.count ?? 0), active: Boolean(row?.active) };
+}
+
+// Creates the counter row (count 0) for a visitor-added custom emoji so it
+// appears for everyone via Realtime, enforcing the custom-emoji cap server-side.
+// `configEmojis` are the widget's configured emojis (never counted against the
+// cap); `cap` is the max number of CUSTOM emojis. Throws on cap/validation
+// failure so the API route can surface a clean rejection.
+//
+// Requires migration 0014 (the RPC). Pre-migration it throws (isMissingFunction
+// true), which the API route maps to a 503 — no anon can seed a counter row
+// directly, so the custom flow is simply unavailable until 0014 runs.
+export async function ensureCustomReaction(
+  client: DbClient,
+  widgetId: string,
+  emoji: string,
+  configEmojis: string[],
+  cap: number,
+): Promise<number> {
+  const { data, error } = await client.rpc("add_custom_reaction", {
+    p_widget_id: widgetId,
+    p_emoji: emoji,
+    p_config_emojis: configEmojis,
+    p_cap: cap,
+  } as never);
+  if (error) throw error;
+  return Number(data ?? 0);
+}
+
+// Moderation (admin only): removes an emoji from a reactions widget — purges its
+// counter row and every visitor mark for it. The public tile drops the emoji in
+// Realtime (widget_reactions DELETE). Runs under the authenticated admin session
+// (RLS admin delete policies). Tolerates the marks table not existing yet.
+export async function deleteReactionEmoji(
+  client: DbClient,
+  widgetId: string,
+  emoji: string,
+): Promise<void> {
+  const { error: countErr } = await client
+    .from("widget_reactions")
+    .delete()
+    .eq("widget_id", widgetId)
+    .eq("emoji", emoji);
+  if (countErr && !isMissingRelation(countErr)) throw countErr;
+
+  const { error: markErr } = await client
+    .from("widget_reaction_marks")
+    .delete()
+    .eq("widget_id", widgetId)
+    .eq("emoji", emoji);
+  if (markErr && !isMissingRelation(markErr)) throw markErr;
+}
+
 // ---------- mini-game scores (phase 13) ------------------------------------
 // The leaderboard reads tolerate the game_scores table not existing yet
 // (pre-migration 0010): an empty board renders instead of crashing, so the
