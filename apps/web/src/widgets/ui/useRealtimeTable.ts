@@ -20,7 +20,9 @@ export function useRealtimeTable(
   onChange: (payload: RealtimeChange) => void,
 ): void {
   const handler = useRef(onChange);
-  handler.current = onChange;
+  useEffect(() => {
+    handler.current = onChange;
+  });
 
   useEffect(() => {
     const supabase = getBrowserSupabase();
