@@ -41,7 +41,19 @@ export function mountFlappy(
 
   const setPhase = (p: GamePhase) => {
     phase = p;
+    syncLoop();
     cb.onPhase(p, score);
+  };
+
+  // The physics/render loop only needs to run while playing. In ready/over —
+  // including the long "enter your initials" pause — one static frame suffices,
+  // so stop the rAF loop to spare the battery.
+  const syncLoop = () => {
+    if (phase === "playing") loop.start();
+    else {
+      loop.stop();
+      render();
+    }
   };
 
   const spacing = () => Math.max(GAP * scale + PIPE_W * scale + 40 * scale, view.width * 0.62);
@@ -226,11 +238,14 @@ export function mountFlappy(
     scale = view.height / REF;
     birdY = prevRatioY * view.height;
     birdX = view.width * 0.3;
+    // Repaint immediately when idle (the loop isn't running to do it for us).
+    if (!loop.running) render();
   };
 
   reset();
   const loop = createLoop(step, render);
-  loop.start();
+  // Start in "ready": paint one static frame, no rAF until play begins.
+  syncLoop();
 
   return {
     play,

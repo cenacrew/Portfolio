@@ -46,7 +46,19 @@ export function mountSnake(
 
   const setPhase = (p: GamePhase) => {
     phase = p;
+    syncLoop();
     cb.onPhase(p, score);
+  };
+
+  // The 60fps rAF loop only needs to run while playing (moving snake + pulsing
+  // apple). In ready/over — including the long "enter your initials" pause — a
+  // single static frame is enough, so stop the loop to spare the battery.
+  const syncLoop = () => {
+    if (phase === "playing") loop.start();
+    else {
+      loop.stop();
+      render();
+    }
   };
 
   const randomApple = () => {
@@ -111,15 +123,6 @@ export function mountSnake(
     }
   };
 
-  const roundRect = (
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    r: number,
-  ) => roundRectPath(ctx, x, y, w, h, r);
-
   const render = () => {
     const { ctx, width, height } = view;
     // Square play-field centred in the canvas.
@@ -132,7 +135,7 @@ export function mountSnake(
     ctx.clearRect(0, 0, width, height);
     // Board.
     ctx.fillStyle = theme.paper;
-    roundRect(ctx, ox, oy, board, board, 10);
+    roundRectPath(ctx, ox, oy, board, board, 10);
     ctx.fill();
 
     // Faint grid.
@@ -151,7 +154,7 @@ export function mountSnake(
     const pulse = 0.5 + 0.5 * Math.sin(blink / 260);
     const pad = cell * (0.16 + 0.06 * pulse);
     ctx.fillStyle = theme.danger;
-    roundRect(ctx, ox + apple.x * cell + pad, oy + apple.y * cell + pad, cell - pad * 2, cell - pad * 2, cell * 0.32);
+    roundRectPath(ctx, ox + apple.x * cell + pad, oy + apple.y * cell + pad, cell - pad * 2, cell - pad * 2, cell * 0.32);
     ctx.fill();
 
     // Snake — accent body, brighter head, rounded segments.
@@ -160,7 +163,7 @@ export function mountSnake(
       const head = i === 0;
       const gap = head ? cell * 0.1 : cell * 0.16;
       ctx.fillStyle = head ? theme.ink : theme.accent;
-      roundRect(ctx, ox + s.x * cell + gap, oy + s.y * cell + gap, cell - gap * 2, cell - gap * 2, cell * 0.3);
+      roundRectPath(ctx, ox + s.x * cell + gap, oy + s.y * cell + gap, cell - gap * 2, cell - gap * 2, cell * 0.3);
       ctx.fill();
     }
     // Eye on the head so direction reads at a glance.
@@ -197,11 +200,14 @@ export function mountSnake(
 
   const resize = () => {
     view = fitCanvas(canvas);
+    // Repaint immediately when idle (the loop isn't running to do it for us).
+    if (!loop.running) render();
   };
 
   reset();
   const loop = createLoop(step, render);
-  loop.start();
+  // Start in "ready": paint one static frame, no rAF until play begins.
+  syncLoop();
 
   return {
     play,
