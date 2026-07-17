@@ -1,10 +1,11 @@
 name: CI
 
-# Dev safety net (PLAN2 phase 10). Runs on every push and pull request.
-# The absolute rule — cenacrew.com/qrcode must always work and never overlap
-# tiles — is guarded automatically here: the web app is BUILT AND SERVED WITH
-# NO ENV VARS (the degraded local-config fallback, on purpose), then Playwright
-# asserts /qrcode renders with zero tile overlap at mobile + desktop.
+# Dev safety net. Runs on every push and pull request.
+# Since the multi-zone cutover (M4), cenacrew.com/qrcode is served by the
+# MosaLink zone (cenacrew/MosaLink) through the hub's rewrites — its build and
+# Playwright guards live in that repo. This hub CI now covers the portfolio web
+# app (build + lint) plus the still-in-repo mobile (tsc) and shared (unit tests)
+# packages, which move out in M5.
 on:
   push:
   pull_request:
@@ -33,13 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # ---- Static checks -------------------------------------------------
-      # Lint baseline note: this repo previously carried 7 pre-existing ESLint
-      # errors (not-found <a>, and react-hooks set-state-in-effect / immutability
-      # on HeaderClock, ThemeToggle, Settings, countdown, GreatModal, ToileModal).
-      # Phase 10 resolved them all — not-found now uses next/link, and the
-      # intentional hydration-safe / portal idioms carry scoped, documented
-      # eslint-disable comments. `pnpm lint` is therefore a true zero-error gate;
-      # any NEW lint error fails CI.
+      # `pnpm lint` is a true zero-error gate; any NEW lint error fails CI.
       - name: Lint (web)
         run: pnpm lint
 
@@ -49,34 +44,6 @@ jobs:
       - name: Unit tests (shared — collision resolver + widget Zod schemas)
         run: pnpm test
 
-      # ---- Build with NO env vars (degraded local-config fallback) -------
-      - name: Build web (no env vars)
+      # ---- Build the hub web app (portfolio) -----------------------------
+      - name: Build web
         run: pnpm build
-
-      # ---- End-to-end (Playwright) ---------------------------------------
-      - name: Install Playwright browser
-        run: pnpm --filter web exec playwright install --with-deps chromium
-
-      - name: Smoke test (/qrcode zero-overlap + / 200)
-        run: pnpm --filter web exec playwright test smoke
-
-      - name: QA screenshots (every widget type x format x breakpoint)
-        run: pnpm --filter web exec playwright test qa-screenshots
-
-      - name: Upload QA screenshots artifact
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: qa-screenshots
-          path: apps/web/qa-screenshots
-          if-no-files-found: warn
-          retention-days: 14
-
-      - name: Upload Playwright report on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: apps/web/playwright-report
-          if-no-files-found: ignore
-          retention-days: 7
