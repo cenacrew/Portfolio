@@ -1,5 +1,5 @@
 {
-  "name": "portfolio-monorepo",
+  "name": "portfolio-hub",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -10,13 +10,6 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "start": "pnpm --filter web start",
-    "lint": "pnpm --filter web lint",
-    "test": "pnpm --filter @portfolio/shared test",
-    "purge:media": "tsx scripts/purge-orphan-media.ts"
-  },
-  "devDependencies": {
-    "@portfolio/shared": "workspace:*",
-    "@supabase/supabase-js": "^2.110.1",
-    "tsx": "^4.19.2"
+    "lint": "pnpm --filter web lint"
   }
 }
