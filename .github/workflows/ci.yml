@@ -1,11 +1,10 @@
 name: CI
 
-# Dev safety net. Runs on every push and pull request.
-# Since the multi-zone cutover (M4), cenacrew.com/qrcode is served by the
-# MosaLink zone (cenacrew/MosaLink) through the hub's rewrites — its build and
-# Playwright guards live in that repo. This hub CI now covers the portfolio web
-# app (build + lint) plus the still-in-repo mobile (tsc) and shared (unit tests)
-# packages, which move out in M5.
+# Dev safety net for the cenacrew.com hub. Runs on every push and pull request.
+# The hub is a plain Next.js portfolio: every MosaLink path (/qrcode,
+# /adminqrcode, /api, …) is proxied to the cenacrew/MosaLink zone via the
+# rewrites in apps/web/next.config.ts, so this CI only needs to lint and build
+# the hub's web app. It runs with no env vars.
 on:
   push:
   pull_request:
@@ -17,7 +16,7 @@ concurrency:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -33,17 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # ---- Static checks -------------------------------------------------
       # `pnpm lint` is a true zero-error gate; any NEW lint error fails CI.
       - name: Lint (web)
         run: pnpm lint
 
-      - name: Typecheck (mobile, tsc --noEmit)
-        run: pnpm --filter mobile exec tsc --noEmit
-
-      - name: Unit tests (shared — collision resolver + widget Zod schemas)
-        run: pnpm test
-
-      # ---- Build the hub web app (portfolio) -----------------------------
       - name: Build web
         run: pnpm build
